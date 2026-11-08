@@ -1,7 +1,7 @@
 package com.example.kmmbase
 
-import com.example.kmmbase.domain.GetGreetingUseCase
-import com.example.kmmbase.domain.GreetingRepository
+import com.example.kmmbase.domain.usecase.GetGreetingUseCase
+import com.example.kmmbase.domain.repository.GreetingRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

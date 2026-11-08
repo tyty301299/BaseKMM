@@ -1,33 +1,99 @@
-# BaseKMM
+# KmmBase
 
-Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native riêng.
+Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native riêng: Jetpack Compose trên Android, SwiftUI trên iOS. Base không dùng Compose Multiplatform.
 
-## Cấu trúc
+## Cây thư mục
 
-- `shared/src/commonMain`: domain (repository interface, use case), data (repository implementation), di (constructor injection).
-- `shared/src/commonTest`: test xử lý tên rỗng, khoảng trắng và tiếng Việt.
-- `androidApp`: Jetpack Compose, màn hình mẫu gọi shared use case.
-- `iosApp/iosApp.xcodeproj`: project Xcode + SwiftUI, tự build framework Shared bằng Gradle build phase.
-- `gradle/libs.versions.toml`: quản lý phiên bản dependency tập trung.
+```text
+KmmBase/
+├── shared/src/
+│   ├── commonMain/kotlin/com/example/kmmbase/
+│   │   ├── domain/                  # Không phụ thuộc tầng nào khác
+│   │   │   ├── model/               # Note, AppError
+│   │   │   ├── repository/          # Interface repository
+│   │   │   └── usecase/             # Quy tắc nghiệp vụ
+│   │   ├── data/
+│   │   │   ├── local/               # Realm entity, cấu hình database
+│   │   │   └── repository/          # Implementation của repository
+│   │   ├── presentation/
+│   │   │   ├── common/              # StoreSubscription cho Swift
+│   │   │   └── notes/               # State, Action, Effect, Store theo màn hình
+│   │   └── di/                      # AppContainer, LocalDataContainer
+│   ├── commonTest/                  # Test chạy trên Android và iOS
+│   └── iosTest/                     # Test Realm trên iOS
+├── androidApp/src/main/kotlin/com/example/kmmbase/android/
+│   ├── app/                         # Application, MainActivity
+│   ├── navigation/                  # Route và AppNavHost
+│   ├── common/                      # Giữ Store trong ViewModel, text lỗi
+│   └── features/
+│       ├── home/
+│       └── notes/
+├── iosApp/iosApp/
+│   ├── App/                         # Điểm vào của app
+│   ├── Navigation/                  # Route và RootView
+│   ├── Common/                      # Text lỗi
+│   └── Features/
+│       ├── Home/
+│       └── Notes/
+└── gradle/libs.versions.toml        # Phiên bản dependency
+```
 
-Luồng mẫu: UI → GetGreetingUseCase → GreetingRepository → DefaultGreetingRepository.
-Đây là base tối thiểu; đã thêm Realm local database; chưa thêm API, authentication hoặc navigation khi chưa có yêu cầu nghiệp vụ.
+Thêm màn hình mới: tạo `presentation/<tên>/` trong `shared`, `features/<tên>/` trên Android và `Features/<Tên>/` trên iOS. File Swift mới phải được thêm vào target `iosApp` trong Xcode.
+
+## Kiến trúc
+
+Clean Architecture bản gọn, dữ liệu đi một chiều:
+
+```text
+SwiftUI / Compose ── Action ──▶ Store ──▶ UseCase ──▶ Repository ──▶ Realm
+        ▲                         │
+        └──────── State ──────────┘
+```
+
+| Tầng | Vị trí | Được phép phụ thuộc |
+|---|---|---|
+| UI | `androidApp`, `iosApp` | `presentation` |
+| Presentation | `shared/presentation` | `domain` |
+| Domain | `shared/domain` | Không phụ thuộc tầng nào khác |
+| Data | `shared/data` | `domain` |
+| DI | `shared/di` | Tất cả |
+
+### Rule cho action và state
+
+1. Action mô tả việc người dùng làm, ví dụ `Delete(id)`, `Retry`. UI không gọi thẳng Repository.
+2. Mỗi màn hình có đúng một `State`. UI chỉ tự giữ thứ thuộc về hiển thị, như vị trí cuộn hay animation.
+3. Việc chỉ xảy ra một lần dùng `Effect`, ví dụ lưu xong thì quay lại.
+4. Store là class Kotlin thường và là `AutoCloseable`. Android bọc nó trong `ViewModel` để sống qua xoay màn hình, iOS bọc trong `ObservableObject`.
+5. Chỉ tạo UseCase khi có quy tắc nghiệp vụ hoặc cần ghép nhiều nguồn dữ liệu. CRUD đơn giản cho Store gọi thẳng Repository.
+
+Mẫu đầy đủ: `presentation/notes/NoteListStore.kt` và `NoteEditStore.kt`.
+
+### Rule chuyển màn hình
+
+1. Navigation nằm ở từng nền tảng: `navigation/AppNavHost.kt` trên Android, `Navigation/RootView.swift` trên iOS. `shared` không biết gì về màn hình.
+2. Chỉ truyền id hoặc giá trị đơn giản, không truyền cả object.
+3. Màn hình đích tự lấy dữ liệu theo id qua Store.
+4. Màn hình không tự điều hướng, chỉ gọi callback như `onOpenNote(id)`.
+5. Không truyền kết quả ngược lại: màn hình sửa lưu vào Realm, màn hình trước tự cập nhật qua `Flow`.
+6. Id không còn dữ liệu thì hiện trạng thái "không tìm thấy", không được crash.
+
+### Gọi Kotlin từ Swift
+
+- Hàm `suspend` có `@Throws` được gọi bằng `try await`, lỗi Kotlin trở thành Swift error.
+- `Flow` được nghe qua `observeState` và `observeEffects`, trả về `StoreSubscription` để hủy. Callback chạy trên main thread.
 
 ## Công cụ
 
 Cấu hình cố định: Kotlin 2.2.10, AGP 8.10.1, Gradle 8.14.3, JDK 17, Android SDK 35.
-Android min SDK 24; iOS deployment target 16.0. Các target iOS hiện có: thiết bị ARM64 và simulator Apple Silicon.
+Android min SDK 24; iOS deployment target 16.0. Các target iOS: thiết bị ARM64, simulator Apple Silicon và simulator Intel.
 
-Tham khảo tương thích: https://kotlinlang.org/docs/multiplatform/multiplatform-compatibility-guide.html
-Kotlin 2.2.10 được liệt kê với Xcode 16.3; Xcode 26.5 trên máy hiện tại chưa được kiểm chứng build với cấu hình này.
-Plugin Android KMP: https://developer.android.com/kotlin/multiplatform/plugin
+Realm fork 3.2.9 ghim Kotlin 2.2.10, nên không nâng Kotlin khi chưa có bản Realm tương ứng.
 
 ## Chạy Android
 
-1. Cài JDK 17 và Android Studio; cài Android SDK Platform 35 qua SDK Manager.
-2. Mở thư mục `KmmBase` bằng Android Studio và chọn Gradle JDK 17.
-3. Tạo `local.properties` tại root, đặt `sdk.dir` thành đường dẫn Android SDK trên máy. Không commit file này.
-4. Sync Gradle và chạy cấu hình module `androidApp`.
+1. Cài JDK 17 và Android SDK Platform 35, qua Android Studio hoặc command-line tools.
+2. Tạo `local.properties` tại root với `sdk.dir=<đường dẫn Android SDK>`. Không commit file này.
+3. Mở thư mục `KmmBase` bằng Android Studio và chạy module `androidApp`, hoặc dùng lệnh:
 
 ```sh
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
@@ -37,66 +103,46 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 ## Chạy iOS
 
 1. Cần JDK 17 và Android SDK như trên để Gradle cấu hình toàn bộ project.
-2. Mở `iosApp/iosApp.xcodeproj`, chọn scheme `iosApp` và iPhone simulator Apple Silicon.
-3. Run. Build phase `Compile Kotlin Framework` chạy `:shared:embedAndSignAppleFrameworkForXcode` tự động.
+2. Mở `iosApp/iosApp.xcodeproj`, chọn scheme `iosApp` và một iPhone simulator.
+3. Run. Build phase `Compile Kotlin Framework` tự chạy `:shared:embedAndSignAppleFrameworkForXcode`.
 4. Nếu chạy thiết bị thật: chọn Development Team trong Signing & Capabilities và đổi bundle identifier.
 
 ```sh
-./gradlew :shared:iosSimulatorArm64Test
+./gradlew :shared:iosSimulatorArm64Test # Mac Apple Silicon
+./gradlew :shared:iosX64Test            # Mac Intel
 ```
 
-Nếu dùng Mac Intel, cần thêm target `iosX64()` trong `shared/build.gradle.kts` và dùng task test tương ứng.
 Lần build đầu cần internet để tải Gradle, dependencies và Kotlin/Native.
 
-## Mở rộng
+## Trước khi dùng cho app thật
 
-Thêm interface nghiệp vụ vào `domain`, implementation vào `data`, rồi ghép dependency ở `AppContainer`.
-Dùng `androidMain` / `iosMain` khi cần API theo nền tảng. Logic dùng chung ở `commonMain` không phụ thuộc UI.
-Đổi package `com.example.kmmbase`, Android applicationId và iOS bundle identifier trước khi dùng cho app thật.
+Đổi package `com.example.kmmbase`, Android applicationId và iOS bundle identifier.
 
-## Trạng thái kiểm tra
+## Quyền camera, micro và âm thanh
 
-- `project.pbxproj` qua `plutil -lint` thành công.
-- Gradle shell script qua kiểm tra cú pháp; file wrapper JAR qua kiểm tra ZIP.
-- Đã kèm checksum distribution chính thức trong Gradle Wrapper.
-- Chưa build hoặc chạy test Kotlin thành công: máy chưa có Java Runtime và Android SDK tại thời điểm tạo.
-- Chưa kiểm chứng compile/link iOS hoặc chạy simulator. Không xem các kiểm tra cấu trúc là xác nhận build thành công.
+- Android (`AndroidManifest.xml`): `CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`. Camera và micro khai báo là phần cứng tùy chọn.
+- iOS (`project.pbxproj`, build settings `INFOPLIST_KEY_*`): `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`. Sửa nội dung thông báo theo mục đích thật của app trước khi lên App Store.
+
+Đây mới là phần khai báo. Trước khi dùng camera hoặc micro vẫn phải xin quyền lúc chạy: Android dùng `rememberLauncherForActivityResult` với `RequestPermission`, iOS dùng `AVCaptureDevice.requestAccess`.
+Phát âm thanh thông thường không cần quyền. Nếu cần phát nhạc khi app ở nền, iOS phải thêm `UIBackgroundModes` là `audio`, Android phải thêm foreground service.
 
 ## Realm local data
 
-Dùng **fork Infomaniak Realm Kotlin 3.2.9**, ghim Kotlin **2.2.10** theo bảng tương thích của nhà phát hành:
-https://github.com/Infomaniak/realm-kotlin#version-compatibility
-Đây là dependency bên thứ ba, không phải artifact `io.realm.kotlin` gốc. AGP được điều chỉnh về 8.10.1 theo dải tương thích Kotlin 2.2.10. Không cấu hình cloud sync.
+Dùng **fork Infomaniak Realm Kotlin 3.2.9**, là dependency bên thứ ba, không phải artifact `io.realm.kotlin` gốc: https://github.com/Infomaniak/realm-kotlin. Không cấu hình cloud sync.
 
-- `domain/Note.kt`, `NoteRepository.kt`: model và hợp đồng CRUD/Flow.
-- `data/local`: Realm entity, cấu hình file `kmmbase.realm`, schema version 1.
-- `data/RealmNoteRepository.kt`: upsert theo primary key, query có tham số, delete, observe.
-- `di/LocalDataContainer.kt`: sở hữu Realm instance, hỗ trợ thư mục mặc định hoặc truyền thư mục riêng.
-- `AppContainer.localData`: lazy, chỉ mở database khi truy cập lần đầu. Màn hình greeting hiện tại chưa dùng dữ liệu Note.
-
-Ví dụ trong coroutine của Android/shared:
-
-```kotlin
-val container = AppContainer() // giữ ở app/session scope
-val notes = container.localData.notes
-notes.save(Note(id = "note-1", title = "Xin chào", body = "Lưu bằng Realm"))
-val saved = notes.findById("note-1")
-// notes.observeAll().collect { ... } ở một job có lifecycle phù hợp
-notes.delete("note-1")
-// Hủy và join các job/Flow collector trước khi đóng:
-container.close()
-```
-
-`save` và `delete` dùng suspend transaction. `findById` đọc trên Default dispatcher.
-`observeAll` trả domain snapshots, không đưa managed Realm object ra UI.
-Việc mở Realm là đồng bộ: khi tích hợp UI thật, mở container ngoài main thread để tránh chặn giao diện khi mở/migrate file lớn.
-Trên iOS, dùng async bridge cho suspend API và một adapter có lifecycle cho Flow khi thêm UI Note.
+- `AppContainer.openLocalData()`: suspend, chỉ mở database ở lần gọi đầu và chạy ngoài main thread.
+- `RealmNoteRepository`: upsert theo primary key, query có tham số, delete, observe. Trả domain model, không đưa managed Realm object ra UI.
+- Hủy các job và Flow collector trước khi gọi `AppContainer.close()`.
 
 Khi đổi schema, tăng `schemaVersion` và thêm migration khi cần chuyển đổi dữ liệu. Không bật xóa database khi migration lỗi.
-Test iOS kiểm tra upsert, lưu qua lần mở lại, delete và ID rỗng:
 
-```sh
-./gradlew :shared:iosSimulatorArm64Test
-```
+## Trạng thái kiểm tra
 
-Các test Realm chưa chạy vì môi trường thiếu JDK/Android SDK; compile/link với Xcode hiện tại cũng chưa được xác nhận.
+Đã kiểm tra trên Mac Intel, Xcode 26.5, JDK 17:
+
+- `:shared:testAndroidHostTest`: 8 test pass.
+- `:shared:iosX64Test`: 9 test pass, gồm test Realm.
+- `:androidApp:assembleDebug` và `xcodebuild` cho iPhone simulator build thành công.
+- App mở được màn hình Home trên Android emulator API 35 và iPhone 17 Pro simulator iOS 26.5.
+
+Chưa kiểm tra target `iosSimulatorArm64` trên Mac Apple Silicon và chưa chạy trên thiết bị thật.

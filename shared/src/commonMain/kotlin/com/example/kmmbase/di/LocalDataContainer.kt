@@ -1,8 +1,8 @@
 package com.example.kmmbase.di
 
-import com.example.kmmbase.data.RealmNoteRepository
+import com.example.kmmbase.data.repository.RealmNoteRepository
 import com.example.kmmbase.data.local.RealmDatabase
-import com.example.kmmbase.domain.NoteRepository
+import com.example.kmmbase.domain.repository.NoteRepository
 
 /** Own one per app/session. Cancel repository jobs and Flow collectors before close(). */
 class LocalDataContainer private constructor(directory: String?) {
