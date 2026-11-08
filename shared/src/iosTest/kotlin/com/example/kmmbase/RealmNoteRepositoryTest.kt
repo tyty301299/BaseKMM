@@ -1,8 +1,8 @@
 package com.example.kmmbase
 
-import com.example.kmmbase.data.RealmNoteRepository
+import com.example.kmmbase.data.repository.RealmNoteRepository
 import com.example.kmmbase.data.local.RealmDatabase
-import com.example.kmmbase.domain.Note
+import com.example.kmmbase.domain.model.Note
 import io.realm.kotlin.Realm
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest

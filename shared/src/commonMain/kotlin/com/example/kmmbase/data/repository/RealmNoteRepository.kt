@@ -1,8 +1,8 @@
-package com.example.kmmbase.data
+package com.example.kmmbase.data.repository
 
 import com.example.kmmbase.data.local.NoteEntity
-import com.example.kmmbase.domain.Note
-import com.example.kmmbase.domain.NoteRepository
+import com.example.kmmbase.domain.model.Note
+import com.example.kmmbase.domain.repository.NoteRepository
 import io.realm.kotlin.Realm
 import io.realm.kotlin.UpdatePolicy
 import io.realm.kotlin.ext.query

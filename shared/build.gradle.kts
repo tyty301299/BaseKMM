@@ -9,10 +9,12 @@ kotlin {
         namespace = "com.example.kmmbase.shared"
         compileSdk = 35
         minSdk = 24
-        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+        compilations.configureEach {
+            compilerOptions.configure { jvmTarget.set(JvmTarget.JVM_17) }
+        }
         withHostTestBuilder {}.configure {}
     }
-    listOf(iosArm64(), iosSimulatorArm64()).forEach {
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
         it.binaries.framework {
             baseName = "Shared"
             isStatic = true
@@ -22,7 +24,10 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.realm.base)
-            implementation(libs.coroutines.core)
+            api(libs.coroutines.core) // Flow and StateFlow are part of the public API.
+        }
+        androidMain.dependencies {
+            implementation(libs.coroutines.android) // Provides Dispatchers.Main.
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

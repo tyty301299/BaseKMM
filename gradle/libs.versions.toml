@@ -3,6 +3,8 @@ kotlin = "2.2.10"
 agp = "8.10.1"
 compose-bom = "2025.08.01"
 activity = "1.10.1"
+navigation = "2.9.3"
+lifecycle = "2.9.3"
 
 realm = "3.2.9"
 coroutines = "1.10.2"
@@ -10,6 +12,9 @@ coroutines = "1.10.2"
 [libraries]
 realm-base = { module = "com.infomaniak.realm.kotlin:library-base", version.ref = "realm" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
@@ -22,3 +27,4 @@ android-kmp = { id = "com.android.kotlin.multiplatform.library", version.ref = "
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
