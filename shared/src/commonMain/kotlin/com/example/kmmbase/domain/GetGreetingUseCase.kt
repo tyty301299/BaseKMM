@@ -1,0 +1,5 @@
+package com.example.kmmbase.domain
+
+class GetGreetingUseCase(private val repository: GreetingRepository) {
+    fun execute(name: String): String = repository.greeting(name.trim().ifEmpty { "bạn" })
+}
