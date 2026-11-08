@@ -3,6 +3,7 @@ import Shared
 
 enum Route: Hashable {
     case notes
+    case kitchen
     case noteEdit(noteId: String?)
 }
 
@@ -13,9 +14,15 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView(container: container) { path.append(.notes) }
+            HomeView(
+                container: container,
+                onOpenNotes: { path.append(.notes) },
+                onOpenKitchen: { path.append(.kitchen) }
+            )
                 .navigationDestination(for: Route.self) { route in
                     switch route {
+                    case .kitchen:
+                        KitchenView(container: container)
                     case .notes:
                         NoteListView(store: container.noteListStore()) { id in
                             path.append(.noteEdit(noteId: id))

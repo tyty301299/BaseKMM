@@ -13,8 +13,14 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        // Default reaches the host machine from the emulator. Override: -PkitchenServerUrl=https://...
+        val serverUrl = providers.gradleProperty("kitchenServerUrl").getOrElse("http://10.0.2.2:8787")
+        buildConfigField("String", "KITCHEN_SERVER_URL", "\"$serverUrl\"")
     }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -28,4 +34,7 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.navigation.compose)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
 }

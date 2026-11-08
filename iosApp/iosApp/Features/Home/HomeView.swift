@@ -4,6 +4,7 @@ import Shared
 struct HomeView: View {
     let container: AppContainer
     let onOpenNotes: () -> Void
+    let onOpenKitchen: () -> Void
     @State private var name = ""
 
     var body: some View {
@@ -12,7 +13,8 @@ struct HomeView: View {
             TextField("Tên của bạn", text: $name)
                 .textFieldStyle(.roundedBorder)
             Text(container.getGreeting.execute(name: name)).font(.title2)
-            Button("Ghi chú", action: onOpenNotes).buttonStyle(.borderedProminent)
+            Button("KitchenMate AI", action: onOpenKitchen).buttonStyle(.borderedProminent)
+            Button("Ghi chú", action: onOpenNotes).buttonStyle(.bordered)
             Spacer()
         }
         .padding(24)

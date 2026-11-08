@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Debug only: lets the app reach the local KitchenMate server over http. -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>

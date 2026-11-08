@@ -25,9 +25,16 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.realm.base)
             api(libs.coroutines.core) // Flow and StateFlow are part of the public API.
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.websockets)
+            implementation(libs.serialization.json)
         }
         androidMain.dependencies {
             implementation(libs.coroutines.android) // Provides Dispatchers.Main.
+            implementation(libs.ktor.client.okhttp)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

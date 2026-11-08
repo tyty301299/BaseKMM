@@ -35,6 +35,9 @@ KmmBase/
 │   └── Features/
 │       ├── Home/
 │       └── Notes/
+├── server/                          # Backend FastAPI cho KitchenMate, giữ Gemini API key
+│   ├── app/                         # api.py (endpoint), verify.py (kiểm tra ảnh), main.py
+│   └── tests/
 └── gradle/libs.versions.toml        # Phiên bản dependency
 ```
 
@@ -113,6 +116,48 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 ```
 
 Lần build đầu cần internet để tải Gradle, dependencies và Kotlin/Native.
+
+## KitchenMate AI
+
+AI nhìn mặt bàn bếp qua camera, nói chuyện bằng tiếng Việt và hướng dẫn 3 bước: gom cốc, xếp bát, gom thìa. Mở từ nút **KitchenMate AI** ở màn hình Home.
+
+```text
+App ── POST /api/live-token ──▶ server ──▶ Gemini (tạo token dùng 1 lần)
+App ◀──── WebSocket âm thanh, hình 1 fps ────▶ gemini-3.8-live
+App ── POST /api/scan, /api/verify (ảnh, stepId) ──▶ server ──▶ gemini-3.8-flash
+```
+
+- `shared/presentation/kitchen/KitchenStore.kt`: luồng 3 bước, Before/After, nối giọng nói với kiểm tra ảnh.
+- `shared/data/remote/KitchenRemote.kt`: gọi server và giao thức Gemini Live.
+- `KitchenDevice`: camera, micro, loa làm native ở `AndroidKitchenDevice.kt` và `IosKitchenDevice.swift`.
+- `server/app/verify.py`: điều kiện hoàn thành của từng bước. Id bước phải khớp `KitchenSteps` trong `shared`.
+
+Mọi action đều cập nhật `KitchenState.output` (INFO, SUCCESS, WARNING, ERROR) và UI hiện thành banner, nên người dùng luôn biết action vừa làm ra kết quả gì.
+
+Trên camera, khung xanh dương là từng cốc, bát, thìa nhận diện được (`objects`), khung xanh lá nét đứt là vị trí cần đặt đồ (`targetZone`), khung đỏ là món đang để sai (`misplaced`). App gọi `POST /api/scan` mỗi 5 giây để cập nhật; lần đầu khung xanh lá là vị trí mặc định của bước. Quét chỉ để vẽ, không dùng để kết luận bước đã xong. Khung trễ vài giây so với thực tế nên camera cần đặt cố định.
+
+Chỉ kiểm tra khi người dùng nói "Xong rồi" hoặc bấm **Kiểm tra**. Mất giọng nói thì nút **Kiểm tra** vẫn dùng được.
+
+### Chạy server
+
+```sh
+cd server
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+cp .env.example .env   # điền GEMINI_API_KEY
+.venv/bin/python -m uvicorn app.main:app --port 8787
+.venv/bin/python -m pytest
+```
+
+Chạy không cần key: đặt `MOCK_GEMINI=1`. Khi đó mỗi bước sai ở lần kiểm tra đầu và đúng ở lần sau, còn giọng nói không hoạt động.
+
+### Địa chỉ server
+
+- Android emulator: mặc định `http://10.0.2.2:8787`. Điện thoại thật: build với `-PkitchenServerUrl=https://...`. Bản release bắt buộc HTTPS.
+- iPhone simulator: mặc định `http://localhost:8787`. iPhone thật: đổi build setting `KITCHEN_SERVER_URL` thành URL HTTPS, hoặc `http://<IP của Mac>:8787` khi chung Wi-Fi và chạy uvicorn với `--host 0.0.0.0`.
+- Simulator iOS không có camera nên dùng ảnh xám giả, chỉ để thử giao diện với `MOCK_GEMINI=1`. Nhận ảnh thật phải dùng iPhone thật.
+
+Hai endpoint chưa có xác thực, chỉ dùng cho demo. Trước khi public phải thêm xác thực và giới hạn tần suất, nếu không ai cũng có thể dùng quota Gemini.
 
 ## Trước khi dùng cho app thật
 

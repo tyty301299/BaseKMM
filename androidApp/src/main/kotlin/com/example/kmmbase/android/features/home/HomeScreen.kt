@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun HomeScreen(greeting: (String) -> String, onOpenNotes: () -> Unit) {
+internal fun HomeScreen(greeting: (String) -> String, onOpenNotes: () -> Unit, onOpenKitchen: () -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     Scaffold { padding ->
         Column(
@@ -36,6 +36,7 @@ internal fun HomeScreen(greeting: (String) -> String, onOpenNotes: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(greeting(name), style = MaterialTheme.typography.titleLarge)
+            Button(onClick = onOpenKitchen) { Text("KitchenMate AI") }
             Button(onClick = onOpenNotes) { Text("Ghi chú") }
         }
     }
