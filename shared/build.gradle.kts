@@ -23,11 +23,17 @@ kotlin {
     jvmToolchain(17)
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.ktor.core)
+            implementation(libs.serialization.json)
             implementation(libs.realm.base)
             api(libs.coroutines.core) // Flow and StateFlow are part of the public API.
         }
         androidMain.dependencies {
+            implementation(libs.ktor.android)
             implementation(libs.coroutines.android) // Provides Dispatchers.Main.
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.darwin)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
