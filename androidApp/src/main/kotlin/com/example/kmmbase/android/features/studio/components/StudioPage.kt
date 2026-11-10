@@ -1,0 +1,39 @@
+package com.example.kmmbase.android.features.studio.components
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.example.kmmbase.android.features.looks.components.*
+import com.example.kmmbase.presentation.studio.*
+
+@Composable
+internal fun StudioPage(title: String, store: StudioStore, onBack: () -> Unit, content: @Composable ColumnScope.(StudioState) -> Unit) {
+    val state by store.state.collectAsState()
+    val busy = state.busy.isNotEmpty()
+    BackHandler(enabled = busy) {}
+    LookTheme {
+        CompositionLocalProvider(LocalOperationBusy provides busy) {
+            Column(Modifier.fillMaxSize().background(LookBackground).safeDrawingPadding()) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = onBack, enabled = !busy) { Text("Quay lại") }
+                    Text(title, Modifier.weight(1f).padding(vertical = 14.dp), style = MaterialTheme.typography.titleMedium)
+                }
+                Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
+                    if (state.loading) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Đang đọc dữ liệu trên máy…") }
+                    if (busy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(state.busy) }
+                    state.error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = { store.dispatch(StudioAction.Retry) }, enabled = !busy) { Text("Tải lại dữ liệu") }
+                    }
+                    content(state)
+                }
+            }
+        }
+    }
+}

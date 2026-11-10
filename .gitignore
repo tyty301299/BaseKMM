@@ -8,3 +8,7 @@ local.properties
 DerivedData/
 **/xcuserdata/
 *.xcuserstate
+__pycache__/
+
+# Local mobile toolchains and caches
+.toolchains/

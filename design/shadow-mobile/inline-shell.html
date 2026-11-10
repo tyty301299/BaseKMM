@@ -1,0 +1,33 @@
+<style>
+#shadow-prototype-root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color-scheme:light dark;position:relative}
+#shadow-prototype-root .shadow-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:0 0 18px}
+#shadow-prototype-root .shadow-controls select,#shadow-prototype-root .shadow-controls button{font:inherit;padding:10px 12px;border:1px solid light-dark(#ccd2c6,#4b5841);border-radius:12px;background:light-dark(#f5f6f0,#20291b);color:light-dark(#1c2417,#edf2e7);min-height:44px;cursor:pointer}
+#shadow-prototype-root #device{width:min(100%,393px);margin:0 auto;background:#10130f;border-radius:44px;overflow:hidden}
+#shadow-prototype-root #device.android{width:min(100%,412px);border-radius:30px}
+#shadow-prototype-root #device>svg{width:100%;height:auto;display:block}
+#shadow-prototype-root .shadow-status{font-size:12px;color:light-dark(#60675b,#adb8a4);text-align:center;min-height:20px;margin:10px 0}
+#shadow-prototype-root dialog{color:#f4f5eb;background:#20291b;border:1px solid #68765b;border-radius:24px;width:min(380px,calc(100% - 32px));padding:24px}
+#shadow-prototype-root dialog::backdrop{background:#0008;backdrop-filter:blur(8px)}
+#shadow-prototype-root dialog h2{font:600 20px/1.4 -apple-system,sans-serif;margin:0 0 16px}
+#shadow-prototype-root dialog textarea{font:16px/1.5 -apple-system,sans-serif;width:100%;min-height:100px;background:#10170b;color:#f4f5eb;border:1px solid #77856a;border-radius:12px;padding:12px}
+#shadow-prototype-root .shadow-editor-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:18px}
+#shadow-prototype-root .shadow-editor-actions button{font:500 15px -apple-system,sans-serif;padding:12px 18px;min-height:44px;border-radius:24px;border:1px solid #6a765c;background:#303a2a;color:#f4f5eb;cursor:pointer}
+#shadow-prototype-root .shadow-editor-actions button[type=submit]{background:#ffd23f;color:#211c09;border-color:#ffd23f}
+#shadow-prototype-root [hidden]{display:none!important}
+</style>
+<div id="shadow-prototype-root" data-start="tryon" aria-label="SHADOW — camera thử đồ và Lịch sử, iOS và Android">
+  <div class="shadow-controls">
+    <button type="button" id="platform">iOS</button>
+    <select id="screen-select" aria-label="Chọn màn hình"></select>
+    <button type="button" id="reset">Bắt đầu lại</button>
+    <button type="button" id="theme" hidden>Giao diện tối</button>
+    <button type="button" id="glass" hidden>Kính</button>
+  </div>
+  <div id="screen-list" hidden></div>
+  <div id="device" aria-label="Màn hình prototype tương tác"></div>
+  <div class="shadow-status"><span id="screen-label"></span> · camera/AI minh họa</div>
+  <div class="shadow-status" id="local-status"></div>
+  <div class="shadow-status" role="status" id="toast"></div>
+  <div id="platform-note" hidden></div>
+  <dialog id="editor"><form id="edit-form"><h2 id="edit-title">Chỉnh nội dung mẫu</h2><label id="edit-label" for="edit-value">Nội dung</label><textarea id="edit-value" maxlength="74" required></textarea><p id="edit-help"></p><div class="shadow-editor-actions"><button type="button" id="cancel-edit">Hủy</button><button type="submit" id="save-edit">Áp dụng</button></div></form></dialog>
+</div>

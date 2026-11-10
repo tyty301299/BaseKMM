@@ -1,5 +1,7 @@
 # KmmBase
 
+> **SHADOW mobile:** Đã có full flow UI native: tủ đồ, phối đồ, camera demo toàn màn hình, dạy/duyệt/làm theo kỹ năng, lịch sử, loading/toast và giao diện kính theo Clean Architecture. Xem [code UI native, kiến trúc và giới hạn kiểm tra](docs/SHADOW_NATIVE_UI.md). Các luồng API ban đầu vẫn được giữ qua mục Kết nối. Xem [phạm vi, cách kết nối và trạng thái kiểm tra](docs/SHADOW_MOBILE.md). Chưa xác minh build/runtime của thay đổi này; các kết quả template ở cuối README không áp dụng cho phần SHADOW.
+
 Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native riêng: Jetpack Compose trên Android, SwiftUI trên iOS. Base không dùng Compose Multiplatform.
 
 ## Cây thư mục
@@ -88,6 +90,10 @@ Cấu hình cố định: Kotlin 2.2.10, AGP 8.10.1, Gradle 8.14.3, JDK 17, Andr
 Android min SDK 24; iOS deployment target 16.0. Các target iOS: thiết bị ARM64, simulator Apple Silicon và simulator Intel.
 
 Realm fork 3.2.9 ghim Kotlin 2.2.10, nên không nâng Kotlin khi chưa có bản Realm tương ứng.
+
+## Cài môi trường tự động
+
+Chạy `python3 tools/setup_mobile_env.py --with-emulator` từ thư mục project trong Terminal có mạng. Xem [cài JDK/SDK, build và chạy simulator](docs/MOBILE_SETUP.md). Kotlin đã khai báo trong Gradle; không cần cài compiler riêng.
 
 ## Chạy Android
 
