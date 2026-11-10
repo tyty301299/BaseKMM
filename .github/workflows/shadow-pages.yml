@@ -1,0 +1,71 @@
+name: SHADOW HTML Preview
+
+on:
+  push:
+    branches: [main, feature/shadow-mobile]
+    paths:
+      - 'design/shadow-mobile/**'
+      - '.github/workflows/shadow-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shadow-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check prototype persistence
+        run: node design/shadow-mobile/check-local.cjs
+      - name: Prepare static website
+        run: |
+          mkdir -p _site
+          cp design/shadow-mobile/*.html design/shadow-mobile/*.js design/shadow-mobile/*.json design/shadow-mobile/*.md design/shadow-mobile/*.png design/shadow-mobile/*.svg _site/
+          cp -R design/shadow-mobile/screens _site/screens
+          cp design/shadow-mobile/start.html _site/index.html
+          touch _site/.nojekyll
+      - name: Upload downloadable HTML demo
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-html-demo
+          path: _site/
+          retention-days: 30
+      - name: Upload Pages website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Publish HTML UI
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Show preview links
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          {
+            echo '## SHADOW UI preview'
+            echo "- [Open UI](${PAGE_URL})"
+            echo "- [iOS prototype](${PAGE_URL}ios-prototype.html)"
+            echo "- [Android prototype](${PAGE_URL}android-prototype.html)"
+            echo 'Download shadow-html-demo from the workflow artifacts to open the HTML locally.'
+          } >> "$GITHUB_STEP_SUMMARY"

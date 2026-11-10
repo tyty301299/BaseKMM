@@ -6,6 +6,7 @@ Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native r
 
 ## Xem UI HTML / prototype
 
+- **[Xem PDF giao diện & flow iOS / Android (22 trang)](output/pdf/SHADOW_Full_App_Screen_Flow_iOS_Android.pdf)** - 54 artboard, 2 sơ đồ luồng và danh mục 27 màn hình mỗi nền tảng. Mở file PDF để xem trực tiếp trên GitHub hoặc chọn Download để tải về, không cần chạy HTML/GitHub Pages.
 - [Mở trang chọn prototype iOS / Android](design/shadow-mobile/start.html)
 - [Thử UI iOS](design/shadow-mobile/ios-prototype.html)
 - [Thử UI Android](design/shadow-mobile/android-prototype.html)
@@ -19,7 +20,16 @@ Mở trực tiếp trên macOS, từ thư mục `BaseKMM`:
 open design/shadow-mobile/start.html
 ```
 
-Khi xem README trên GitHub, link HTML mở mã nguồn. Để tương tác với UI, tải project về và mở bằng lệnh trên.
+Khi xem README trên GitHub, link file HTML phía trên mở mã nguồn. Workflow **SHADOW HTML Preview** xuất artifact `shadow-html-demo` để tải về và deploy giao diện lên GitHub Pages.
+
+### Bật link UI trên GitHub Pages
+
+1. Trong repo, mở **Settings → Pages → Build and deployment → Source → GitHub Actions**. Repo phải có quyền sử dụng Pages theo gói GitHub hiện tại.
+2. Push thay đổi demo lên `feature/shadow-mobile` hoặc `main`. Workflow tự chạy khi HTML/assets hoặc workflow thay đổi. Khi workflow đã có trên nhánh mặc định, có thể chạy thủ công trong **Actions → SHADOW HTML Preview → Run workflow**.
+3. Nếu environment `github-pages` giới hạn nhánh, cho phép nhánh đang deploy trong **Settings → Environments → github-pages**.
+4. Sau khi job `deploy` thành công, mở link **Open UI**, **iOS prototype** hoặc **Android prototype** trong Summary của lần chạy. Đây là link web hiển thị UI, không phải trang source code.
+
+Job `build` vẫn xuất artifact HTML nếu bước deploy bị chặn do Pages chưa bật. Tải `shadow-html-demo`, giải nén và mở `index.html`. Link web chỉ hoạt động sau khi deploy thành công; camera/AI trong demo vẫn là mô phỏng. Các lần deploy từ hai nhánh dùng chung một site, lần deploy thành công gần nhất sẽ được hiển thị.
 
 ## Cây thư mục
 
