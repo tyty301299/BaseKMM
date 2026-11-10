@@ -6,6 +6,7 @@ Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native r
 
 ## Xem UI HTML / prototype
 
+- **[Xem PDF giao diện & flow iOS / Android (22 trang)](output/pdf/SHADOW_Full_App_Screen_Flow_iOS_Android.pdf)** - 54 artboard, 2 sơ đồ luồng và danh mục 27 màn hình mỗi nền tảng. Mở file PDF để xem trực tiếp trên GitHub hoặc chọn Download để tải về, không cần chạy HTML/GitHub Pages.
 - [Mở trang chọn prototype iOS / Android](design/shadow-mobile/start.html)
 - [Thử UI iOS](design/shadow-mobile/ios-prototype.html)
 - [Thử UI Android](design/shadow-mobile/android-prototype.html)
