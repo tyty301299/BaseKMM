@@ -4,6 +4,23 @@
 
 Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native riêng: Jetpack Compose trên Android, SwiftUI trên iOS. Base không dùng Compose Multiplatform.
 
+## Xem UI HTML / prototype
+
+- [Mở trang chọn prototype iOS / Android](design/shadow-mobile/start.html)
+- [Thử UI iOS](design/shadow-mobile/ios-prototype.html)
+- [Thử UI Android](design/shadow-mobile/android-prototype.html)
+- [Xem sơ đồ screen flow](design/shadow-mobile/flow.svg)
+
+Prototype có các luồng tủ đồ, phối đồ, camera thử đồ toàn màn hình, lịch sử và học/làm theo. Camera và AI được mô phỏng; dữ liệu demo được lưu local trong trình duyệt.
+
+Mở trực tiếp trên macOS, từ thư mục `BaseKMM`:
+
+```sh
+open design/shadow-mobile/start.html
+```
+
+Khi xem README trên GitHub, link HTML mở mã nguồn. Để tương tác với UI, tải project về và mở bằng lệnh trên.
+
 ## Cây thư mục
 
 ```text
