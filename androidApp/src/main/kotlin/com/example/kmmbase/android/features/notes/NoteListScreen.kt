@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.notes
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,12 +38,13 @@ internal fun NoteListScreen(
     onOpenNote: (String?) -> Unit,
     onBack: () -> Unit,
 ) {
+    val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ghi chú") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Quay lại") } },
+                title = { Text(language.text(R.string.ui_066)) },
+                navigationIcon = { TextButton(onClick = onBack) { Text(language.text(R.string.back)) } },
             )
         },
         floatingActionButton = {
@@ -57,10 +60,10 @@ internal fun NoteListScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(error.message())
-                    Button(onClick = { store.dispatch(NoteListAction.Retry) }) { Text("Thử lại") }
+                    Text(language.systemText(error.message()))
+                    Button(onClick = { store.dispatch(NoteListAction.Retry) }) { Text(language.text(R.string.retry)) }
                 }
-                state.notes.isEmpty() -> Text("Chưa có ghi chú nào", Modifier.align(Alignment.Center))
+                state.notes.isEmpty() -> Text(language.text(R.string.ui_037), Modifier.align(Alignment.Center))
                 else -> LazyColumn(Modifier.fillMaxWidth()) {
                     items(state.notes, key = { it.id }) { note ->
                         ListItem(
@@ -68,7 +71,7 @@ internal fun NoteListScreen(
                             supportingContent = { Text(note.body, maxLines = 1) },
                             trailingContent = {
                                 TextButton(onClick = { store.dispatch(NoteListAction.Delete(note.id)) }) {
-                                    Text("Xóa")
+                                    Text(language.text(R.string.ui_197))
                                 }
                             },
                             modifier = Modifier.clickable { onOpenNote(note.id) },

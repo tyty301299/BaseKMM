@@ -2,12 +2,13 @@ import SwiftUI
 import Shared
 
 struct LookPresetPicker: View {
+    @EnvironmentObject private var language: AppLanguage
     @ObservedObject var model: LookModel
 
     var body: some View {
         HStack(spacing: 12) {
-            preset("coat", "Xanh rêu")
-            preset("blouse", "Cam đào")
+            preset("coat", language.text("ui_190"))
+            preset("blouse", language.text("ui_025"))
         }
     }
 

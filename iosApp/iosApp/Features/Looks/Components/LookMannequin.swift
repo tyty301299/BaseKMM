@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Native vector fixture for design review, deliberately not presented as an AI photo.
 struct LookMannequin: View {
+    @EnvironmentObject private var language: AppLanguage
     var preset = "coat"
     var before = false
     var flipped = false
@@ -36,6 +37,17 @@ struct LookMannequin: View {
             polygon(points([(135,403),(161,403),(161,416),(121,416),(126,409)]), .white)
             polygon(points([(172,403),(196,403),(213,415),(172,416)]), .white)
         }
-        .accessibilityLabel("Hình nhân trang phục mẫu, không phải ảnh AI")
+        .accessibilityLabel(language.text("ui_078"))
+    }
+}
+
+/// The same clearly-labelled sample garment photography used in the approved PDF.
+struct StudioGarmentImage: View {
+    @EnvironmentObject private var language: AppLanguage
+    var preset = "coat"
+    var body: some View {
+        Image(preset == "blouse" ? "ShadowBlouse" : "ShadowCoat")
+            .resizable().scaledToFill()
+            .accessibilityLabel(preset == "blouse" ? language.text("ui_011") : language.text("ui_208"))
     }
 }

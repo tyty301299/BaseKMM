@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.studio.screens
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -11,13 +13,14 @@ import com.example.kmmbase.presentation.studio.StudioStore
 
 @Composable
 internal fun StudioComponentsScreen(store: StudioStore, onBack: () -> Unit, onCamera: () -> Unit) {
-    StudioPage("Thành phần UI", store, onBack) {
+    val language = LocalAppLanguage.current
+    StudioPage(language.text(R.string.ui_159), store, onBack) {
         Text("SHADOW / Mobile system", style = MaterialTheme.typography.headlineLarge)
-        Text("Nội dung rõ ràng, kính ở lớp điều hướng.")
+        Text(language.text(R.string.ui_147))
         Text("Adaptive glass / Material", Modifier.fillMaxWidth().lookGlass().padding(24.dp))
-        LookButton("Thử màn camera", onClick = onCamera)
-        Text("Ví dụ trạng thái đang xử lý")
+        LookButton(language.text(R.string.ui_166), onClick = onCamera)
+        Text(language.text(R.string.ui_186))
         LinearProgressIndicator(Modifier.fillMaxWidth())
-        Text("Dữ liệu mẫu, không phải AI")
+        Text(language.text(R.string.ui_064))
     }
 }

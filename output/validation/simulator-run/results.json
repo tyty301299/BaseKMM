@@ -1,0 +1,26 @@
+{
+  "time": "2026-11-10T16:07:13.730630",
+  "results": [
+    {
+      "check": "android-build",
+      "exit_code": 1,
+      "log": "android-build.log"
+    },
+    {
+      "check": "ios-build",
+      "exit_code": 65,
+      "log": "ios-build.log"
+    },
+    {
+      "check": "open-ios-simulator",
+      "exit_code": 1,
+      "log": "open-ios-simulator.log"
+    },
+    {
+      "check": "android-sdk-download-check",
+      "exit_code": 6,
+      "log": "android-sdk-download-check.log"
+    }
+  ],
+  "installed_or_launched_app": false
+}

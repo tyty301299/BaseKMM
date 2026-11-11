@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.navigation
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -25,7 +27,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable internal data object CameraRoute
 @Serializable internal data object HistoryRoute
-@Serializable internal data class ServiceRoute(val initialTab: Int)
+@Serializable internal data class ServiceRoute(val initialTab: Int, val settings: Boolean = false)
 @Serializable internal data class LookDetailRoute(val id: String)
 @Serializable internal data object HomeRoute
 @Serializable internal data object NoteListRoute
@@ -34,7 +36,12 @@ import kotlinx.serialization.Serializable
 /** All routes, one-shot navigation effects and feedback collectors are owned here. */
 @Composable
 internal fun AppNavHost(container: AppContainer) {
+    val language = LocalAppLanguage.current
     val nav = rememberNavController()
+    val remote = rememberStore(key = "shadow-remote") { container.shadowStore() }
+    val remoteState by remote.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     val looks = rememberStore(key = "shadow-looks") { container.lookStore() }
     val studio = rememberStore(key = "shadow-studio") { container.studioStore() }
     val state by studio.state.collectAsState()
@@ -46,10 +53,11 @@ internal fun AppNavHost(container: AppContainer) {
     DisposableEffect(feedback) { onDispose { feedback.close() } }
     LaunchedEffect(looks) { looks.messages.collect { feedback.send(it) } }
     LaunchedEffect(studio) { studio.messages.collect { feedback.send(it) } }
+    LaunchedEffect(remote) { remote.messages.collect { feedback.send(it) } }
     LaunchedEffect(feedback) {
         for (message in feedback) {
             toastError = message.isError
-            snackbars.showSnackbar(message.text, withDismissAction = true, duration = SnackbarDuration.Short)
+            snackbars.showSnackbar(language.systemText(message.text), withDismissAction = true, duration = SnackbarDuration.Short)
         }
     }
     LaunchedEffect(studio, nav) {
@@ -66,6 +74,13 @@ internal fun AppNavHost(container: AppContainer) {
     val item: (String) -> Unit = { studio.dispatch(StudioAction.OpenItem(it)); nav.navigate(StudioRoute(StudioPageKey.ITEM, it)) }
     val skill: (String) -> Unit = { nav.navigate(StudioRoute(StudioPageKey.SKILL, it)) }
     val service: (Int) -> Unit = { nav.navigate(ServiceRoute(it)) }
+    LaunchedEffect(remote) {
+        val preferences = context.getSharedPreferences("shadow", android.content.Context.MODE_PRIVATE)
+        val endpoint = preferences.getString("endpoint", null) ?: com.example.kmmbase.domain.model.DEFAULT_SHADOW_ORIGIN
+        val code = if (endpoint == com.example.kmmbase.domain.model.DEFAULT_SHADOW_ORIGIN) com.example.kmmbase.domain.model.DEFAULT_SHADOW_ACCESS_CODE else ""
+        remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Connect(endpoint, code))
+    }
+
     val openCamera: () -> Unit = {
         if (!looks.currentState.saving && studio.currentState.busy.isEmpty()) {
             looks.dispatch(LookAction.Retake); nav.navigate(CameraRoute)
@@ -77,15 +92,17 @@ internal fun AppNavHost(container: AppContainer) {
             Box(Modifier.fillMaxSize()) {
                 NavHost(navController = nav, startDestination = HomeRoute) {
                     composable<HomeRoute> {
-                        LookHomeScreen(looks, studio, homeSelection, { go(StudioPageKey.CAMERA_INTRO) },
+                        LookHomeScreen(looks, studio, remoteState, homeSelection, { go(StudioPageKey.CAMERA_INTRO) },
                             { nav.navigate(LookDetailRoute(it)) }, service,
                             { go(StudioPageKey.ADD_ITEM) }, item, { go(StudioPageKey.OCCASION) },
                             { studio.dispatch(StudioAction.NewLesson); go(StudioPageKey.TEACH) }, skill,
-                            { if (!lookState.saving && state.busy.isEmpty()) go(StudioPageKey.SETTINGS) })
+                            { if (!lookState.saving && state.busy.isEmpty()) go(StudioPageKey.SETTINGS) },
+                            { remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Reconnect) })
                     }
                     composable<StudioRoute> { entry ->
-                        StudioDestination(entry.toRoute(), studio, looks, { nav.navigate(it) }, { nav.popBackStack() },
-                            openCamera, home, service, { nav.navigate(HistoryRoute) })
+                        StudioDestination(entry.toRoute(), studio, looks, remote, { nav.navigate(it) }, { nav.popBackStack() },
+                            openCamera, home, service, { nav.navigate(HistoryRoute) },
+                            { nav.navigate(ServiceRoute(0, settings = true)) })
                     }
                     composable<CameraRoute> {
                         CompositionLocalProvider(LocalLookDark provides true) {
@@ -96,7 +113,7 @@ internal fun AppNavHost(container: AppContainer) {
                     }
                     composable<HistoryRoute> {
                         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-                            TextButton(onClick = { nav.popBackStack() }) { Text("Quay lại") }
+                            TextButton(onClick = { nav.popBackStack() }) { Text(language.text(R.string.back)) }
                             LookHistoryScreen(looks, studio, { nav.navigate(LookDetailRoute(it)) }, { go(StudioPageKey.CAMERA_INTRO) }, skill)
                         }
                     }
@@ -106,9 +123,9 @@ internal fun AppNavHost(container: AppContainer) {
                         })
                     }
                     composable<ServiceRoute> { entry ->
-                        val remote = rememberStore { container.shadowStore() }
-                        LaunchedEffect(remote) { remote.messages.collect { feedback.send(it) } }
-                        HomeScreen(store = remote, initialTab = entry.toRoute<ServiceRoute>().initialTab)
+                        HomeScreen(container = container, store = remote,
+                            initialTab = entry.toRoute<ServiceRoute>().initialTab,
+                            initialSettings = entry.toRoute<ServiceRoute>().settings)
                     }
                     composable<NoteListRoute> {
                         NoteListScreen(rememberStore { container.noteListStore() }, { nav.navigate(NoteEditRoute(it)) }, { nav.navigateUp() })

@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.looks.screens
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,34 +20,35 @@ import java.util.Date
 
 @Composable
 internal fun LookHistoryScreen(store: LookStore, studio: StudioStore, onRecord: (String) -> Unit, onCamera: () -> Unit, onSkill: (String) -> Unit, modifier: Modifier = Modifier) {
+    val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     val studioState by studio.state.collectAsState()
     LazyColumn(modifier.fillMaxSize().background(LookBackground), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        item { Text("Lịch sử", style = MaterialTheme.typography.titleLarge) }
-        item { Text("Những lần bạn thích.", style = MaterialTheme.typography.headlineLarge) }
-        item { Text("${state.records.size + studioState.data.skills.size} mục · lưu trên máy", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { Text(language.text(R.string.history_tab), style = MaterialTheme.typography.titleLarge) }
+        item { Text(language.text(R.string.ui_142), style = MaterialTheme.typography.headlineLarge) }
+        item { Text(language.format(R.string.saved_items_count, (state.records.size + studioState.data.skills.size).toString()), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("all" to "Tất cả", "tryon" to "Thử đồ", "outfit" to "Bộ phối", "skill" to "Kỹ năng").forEach { (key, label) ->
-                    FilterChip(selected = state.filter == key, onClick = { store.dispatch(LookAction.Filter(key)) }, label = { Text(label) }, modifier = Modifier.weight(1f))
+                listOf("all" to language.text(R.string.filter_all), "tryon" to language.text(R.string.ui_169), "outfit" to language.text(R.string.ui_021), "skill" to language.text(R.string.ui_099)).forEach { (key, label) ->
+                    FilterChip(selected = state.filter == key, onClick = { store.dispatch(LookAction.Filter(key)) }, label = { Text(language.systemText(label)) }, modifier = Modifier.weight(1f))
                 }
             }
         }
         if (state.loading) item { CircularProgressIndicator() }
         state.error?.let { error -> item {
-            Text(error, color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = { store.dispatch(LookAction.Retry) }) { Text("Tải lại") }
+            Text(language.systemText(error), color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = { store.dispatch(LookAction.Retry) }) { Text(language.text(R.string.refresh)) }
         } }
         if (!state.loading && !studioState.loading && state.filteredRecords.isEmpty() && (state.filter !in setOf("all", "skill") || studioState.data.skills.isEmpty())) item {
-            Text("Chưa có mục đã lưu trong nhóm này.")
+            Text(language.text(R.string.ui_039))
             Spacer(Modifier.height(20.dp))
-            LookButton("Thử bộ đồ đầu tiên", onClick = onCamera)
+            LookButton(language.text(R.string.ui_165), onClick = onCamera)
         }
         if (state.filter in setOf("all", "skill")) items(studioState.data.skills, key = { "skill-" + it.id }) { skill ->
             Surface(shape = RoundedCornerShape(24.dp), color = LookPanel) {
                 Column(Modifier.fillMaxWidth().clickable { onSkill(skill.id) }.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(skill.title, style = MaterialTheme.typography.titleMedium)
-                    Text("Kỹ năng mẫu · ${skill.steps.size} bước", style = MaterialTheme.typography.labelMedium)
+                    Text(language.format(R.string.sample_skill_steps, (skill.steps.size).toString()), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -55,7 +58,7 @@ internal fun LookHistoryScreen(store: LookStore, studio: StudioStore, onRecord: 
                     LookMannequin(record.preset, Modifier.size(56.dp,72.dp).background(LookStudio, RoundedCornerShape(10.dp)), record.before, record.flipped)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(record.title, style = MaterialTheme.typography.titleMedium)
-                        Text(if (record.kind == "tryon") "Thử đồ mẫu" else "Bộ phối mẫu", style = MaterialTheme.typography.labelMedium)
+                        Text(if (record.kind == "tryon") language.text(R.string.ui_170) else language.text(R.string.ui_023), style = MaterialTheme.typography.labelMedium)
                         Text(DateFormat.getDateInstance().format(Date(record.createdAt)), style = MaterialTheme.typography.labelMedium)
                     }
                     Text("›")

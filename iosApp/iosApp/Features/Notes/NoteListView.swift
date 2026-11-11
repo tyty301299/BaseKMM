@@ -24,6 +24,7 @@ final class NoteListModel: ObservableObject {
 }
 
 struct NoteListView: View {
+    @EnvironmentObject private var language: AppLanguage
     @StateObject private var model: NoteListModel
     let onOpenNote: (String?) -> Void
 
@@ -34,9 +35,9 @@ struct NoteListView: View {
 
     var body: some View {
         content
-            .navigationTitle("Ghi chú")
+            .navigationTitle(language.text("ui_066"))
             .toolbar {
-                Button("Thêm") { onOpenNote(nil) }
+                Button(language.text("ui_160")) { onOpenNote(nil) }
             }
     }
 
@@ -45,11 +46,11 @@ struct NoteListView: View {
             ProgressView()
         } else if let error = model.state.error {
             VStack(spacing: 12) {
-                Text(error.message)
-                Button("Thử lại") { model.dispatch(NoteListActionRetry.shared) }
+                Text(language.systemText(error.message))
+                Button(language.text("retry")) { model.dispatch(NoteListActionRetry.shared) }
             }
         } else if model.state.notes.isEmpty {
-            Text("Chưa có ghi chú nào").foregroundStyle(.secondary)
+            Text(language.text("ui_037")).foregroundStyle(.secondary)
         } else {
             List(model.state.notes, id: \.id) { note in
                 Button { onOpenNote(note.id) } label: {
@@ -59,7 +60,7 @@ struct NoteListView: View {
                     }
                 }
                 .swipeActions {
-                    Button("Xóa", role: .destructive) {
+                    Button(language.text("ui_197"), role: .destructive) {
                         model.dispatch(NoteListActionDelete(id: note.id))
                     }
                 }

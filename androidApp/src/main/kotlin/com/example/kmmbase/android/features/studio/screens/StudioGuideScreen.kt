@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.studio.screens
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -11,23 +13,24 @@ import com.example.kmmbase.presentation.studio.*
 
 @Composable
 internal fun StudioGuideScreen(store: StudioStore, onBack: () -> Unit, onAsk: () -> Unit, onDone: () -> Unit) {
-    StudioPage("Làm theo", store, onBack) { state ->
+    val language = LocalAppLanguage.current
+    StudioPage(language.text(R.string.ui_107), store, onBack) { state ->
         val skill = state.activeSkill
-        if (skill == null) Text("Không tìm thấy kỹ năng. Hãy quay lại danh sách.")
+        if (skill == null) Text(language.text(R.string.ui_093))
         else if (state.completed) {
-            Text("Bạn đã hoàn thành.", style = MaterialTheme.typography.headlineLarge)
-            Text("Hoàn thành luồng hướng dẫn mẫu. AI chưa đánh giá thao tác thật.")
-            LookButton("Về Học & làm", onClick = onDone)
+            Text(language.text(R.string.ui_015), style = MaterialTheme.typography.headlineLarge)
+            Text(language.text(R.string.ui_073))
+            LookButton(language.text(R.string.ui_187), onClick = onDone)
         } else {
             Text(skill.title, style = MaterialTheme.typography.headlineLarge)
-            Text("BƯỚC ${state.stepIndex + 1} / ${skill.steps.size}")
+            Text(language.format(R.string.step_progress, (state.stepIndex + 1).toString(), (skill.steps.size).toString()))
             LinearProgressIndicator(progress = { (state.stepIndex + 1).toFloat() / skill.steps.size }, modifier = Modifier.fillMaxWidth())
             StudioInstructionIllustration()
-            Text(state.currentStep, style = MaterialTheme.typography.headlineSmall)
-            Text("Hướng dẫn mẫu. Không dùng camera để đánh giá thao tác.")
-            LookButton("Tôi đã làm xong bước này") { store.dispatch(StudioAction.NextStep) }
-            TextButton(onClick = { store.dispatch(StudioAction.PreviousStep) }, enabled = state.stepIndex > 0 && state.busy.isEmpty()) { Text("Bước trước") }
-            LookButton("Hỏi về bước này", onClick = onAsk)
+            Text(language.systemText(state.currentStep), style = MaterialTheme.typography.headlineSmall)
+            Text(language.text(R.string.ui_079))
+            LookButton(language.text(R.string.ui_178)) { store.dispatch(StudioAction.NextStep) }
+            TextButton(onClick = { store.dispatch(StudioAction.PreviousStep) }, enabled = state.stepIndex > 0 && state.busy.isEmpty()) { Text(language.text(R.string.previous_step)) }
+            LookButton(language.text(R.string.ui_081), onClick = onAsk)
         }
     }
 }

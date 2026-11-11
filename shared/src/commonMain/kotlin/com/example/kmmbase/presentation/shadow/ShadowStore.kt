@@ -1,5 +1,6 @@
 package com.example.kmmbase.presentation.shadow
 
+import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
 import com.example.kmmbase.presentation.common.StoreSubscription
@@ -24,38 +25,73 @@ data class ShadowState(
     val suggestions: ShadowSuggestions? = null,
     val suggestionsLabel: String = "",
     val suggestionsEvent: String = "",
+    val tryon: TryonResult? = null,
+    val tryingOn: Boolean = false,
 )
 
 sealed interface ShadowAction {
     data class Connect(val endpoint: String, val code: String) : ShadowAction
+    data object Reconnect : ShadowAction
     data object Refresh : ShadowAction
     data class OpenLesson(val id: String) : ShadowAction
     data object CloseLesson : ShadowAction
     data object ClearAnswer : ShadowAction
     data class Ask(val stepId: String, val question: String) : ShadowAction
     data class Suggest(val event: String, val notes: String) : ShadowAction
+    data class StylePerson(val image: String, val event: String, val notes: String) : ShadowAction
+    data object CancelTryon : ShadowAction
+    data object ClearTryon : ShadowAction
 }
 
+/** Weather context for styling; the demo is in Hanoi. */
+internal const val DEFAULT_CITY = "Hà Nội"
+
 class ShadowStore internal constructor(
-    private val repositoryFactory: (String) -> ShadowRepository,
+    private val repositoryFactory: (String, String) -> ShadowRepository,
     private val normalizeEndpoint: (String) -> String,
     dispatcher: CoroutineDispatcher,
 ) : AutoCloseable {
+    private val trace = ShadowTrace("App")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ShadowState())
     private val messageChannel = Channel<UiMessage>(Channel.BUFFERED)
     val messages = messageChannel.receiveAsFlow()
     fun observeMessages(onMessage: (UiMessage) -> Unit): StoreSubscription = messages.subscribeIn(scope, onMessage)
     private var repository: ShadowRepository? = null
+    private var lastConnection: ShadowAction.Connect? = null
     private var operation: Job? = null
     val state: StateFlow<ShadowState> = mutableState.asStateFlow()
     val currentState: ShadowState get() = mutableState.value
 
     fun observeState(onChange: (ShadowState) -> Unit): StoreSubscription = mutableState.subscribeIn(scope, onChange)
 
+    /** Opens a guide session on the connected server, or null when not connected yet. */
+    fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket? =
+        repository?.takeIf { currentState.connected }?.openSession()
+
+    /**
+     * The connected server, for flows that own their own store (teach, guide). Null until a
+     * connection succeeds, and swapped when the user changes server.
+     */
+    fun connectedRepository(): ShadowRepository? = repository?.takeIf { currentState.connected }
+
+    /**
+     * Headers an image loader needs for server media. Kept off [ShadowState] so the access code is
+     * never captured in UI snapshots or saved instance state.
+     */
+    fun mediaHeaders(): Map<String, String> = repository?.mediaHeaders() ?: emptyMap()
+
     fun dispatch(action: ShadowAction) {
+        trace.event("action", "type=${action::class.simpleName}")
         when (action) {
             is ShadowAction.Connect -> connect(action)
+            ShadowAction.Reconnect -> if (currentState.busy.isEmpty()) lastConnection?.let(::connect)
+            ShadowAction.CancelTryon -> {
+                if (currentState.tryingOn) {
+                    operation?.cancel()
+                    mutableState.update { it.copy(tryingOn = false, busy = "") }
+                }
+            }
             ShadowAction.CloseLesson -> {
                 operation?.cancel()
                 mutableState.update { it.copy(lesson = null, answer = null, answerLabel = "", busy = "", error = null) }
@@ -64,6 +100,27 @@ class ShadowStore internal constructor(
                 val repo = repository ?: return
                 if (!currentState.connected || currentState.busy.isNotEmpty()) return
                 when (action) {
+                    ShadowAction.ClearTryon -> mutableState.update { it.copy(tryon = null) }
+                    is ShadowAction.StylePerson -> {
+                        if (!action.image.startsWith("data:image/jpeg;base64,") || action.image.length > 8_000_000 ||
+                            action.event.isBlank() || action.event.length > 200 || action.notes.length > 300) return
+                        mutableState.update { it.copy(tryon = null, tryingOn = true) }
+                        run("Đang phối từ tủ đồ của bạn…") {
+                            try {
+                                val suggestions = repo.suggest(action.event.trim(), action.notes.trim(), DEFAULT_CITY)
+                                currentCoroutineContext().ensureActive()
+                                val outfit = suggestions.outfits.firstOrNull { it.items.isNotEmpty() }
+                                    ?: throw IllegalArgumentException("Chưa có bộ đồ phù hợp để mặc thử. Hãy thêm trang phục hoặc đổi dịp.")
+                                mutableState.update { it.copy(suggestions = suggestions, suggestionsEvent = action.event.trim(),
+                                    suggestionsLabel = shadowSourceLabel(suggestions.source), busy = "Đang tạo ảnh thử đồ…") }
+                                val result = repo.tryonPhoto(action.image, outfit.items.map { it.id }.distinct().take(8))
+                                currentCoroutineContext().ensureActive()
+                                mutableState.update { it.copy(tryon = result) }
+                            } finally {
+                                if (currentCoroutineContext().isActive) mutableState.update { it.copy(tryingOn = false) }
+                            }
+                        }
+                    }
                     ShadowAction.ClearAnswer -> mutableState.update { it.copy(answer = null, answerLabel = "", error = null) }
                     ShadowAction.Refresh -> run("Đang tải dữ liệu…") { refresh(repo) }
                     is ShadowAction.OpenLesson -> run("Đang mở kỹ năng…") {
@@ -86,7 +143,7 @@ class ShadowStore internal constructor(
                         if (action.event.isBlank() || action.event.length > 200 || action.notes.length > 300) return
                         mutableState.update { it.copy(suggestions = null, suggestionsLabel = "") }
                         run("Đang phối từ tủ đồ của bạn…") {
-                            val result = repo.suggest(action.event.trim(), action.notes.trim())
+                            val result = repo.suggest(action.event.trim(), action.notes.trim(), DEFAULT_CITY)
                             currentCoroutineContext().ensureActive()
                             mutableState.update { it.copy(suggestions = result, suggestionsLabel = shadowSourceLabel(result.source), suggestionsEvent = action.event.trim()) }
                         }
@@ -98,16 +155,18 @@ class ShadowStore internal constructor(
     }
 
     private fun connect(action: ShadowAction.Connect) {
+        lastConnection = action
         operation?.cancel()
         repository?.close()
         repository = null
         mutableState.value = ShadowState()
         run("Đang kết nối…") {
             val endpoint = normalizeEndpoint(action.endpoint)
-            val repo = repositoryFactory(endpoint)
+            val repo = repositoryFactory(endpoint, action.code.trim())
             repository = repo
             try {
                 val health = repo.health()
+                // /api/health is ungated, so validate the code explicitly before loading anything.
                 if (health.accessRequired) repo.authenticate(action.code.trim())
                 val skills = repo.skills()
                 val wardrobe = repo.wardrobe()
@@ -132,16 +191,21 @@ class ShadowStore internal constructor(
     }
 
     private fun run(label: String, block: suspend () -> Unit) {
+        val operationTrace = ShadowTrace("AppOperation")
+        operationTrace.event("start")
         mutableState.update { it.copy(busy = label, error = null) }
         operation = scope.launch {
             try {
                 block()
                 currentCoroutineContext().ensureActive()
+                operationTrace.event("success")
                 mutableState.update { it.copy(busy = "") }
                 messageChannel.send(UiMessage("Đã hoàn tất thao tác với SHADOW"))
             } catch (error: CancellationException) {
+                operationTrace.event("cancelled")
                 throw error
             } catch (error: Exception) {
+                operationTrace.failure("failed", error)
                 currentCoroutineContext().ensureActive()
                 mutableState.update { it.copy(busy = "", error = when (error) {
                     is IllegalArgumentException -> error.message ?: "Dữ liệu không hợp lệ."

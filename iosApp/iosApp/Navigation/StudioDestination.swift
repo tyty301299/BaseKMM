@@ -2,13 +2,16 @@ import SwiftUI
 import Shared
 
 struct StudioDestination: View {
+    @EnvironmentObject private var language: AppLanguage
     let route: StudioRoute
     @ObservedObject var model: StudioModel
     @ObservedObject var looks: LookModel
+    @ObservedObject var shadow: ShadowModel
     let navigate: (StudioRoute) -> Void
     let openCamera: () -> Void
     let homeTab: (Int) -> Void
     let service: (Int) -> Void
+    let connectionSettings: () -> Void
 
     @ViewBuilder var body: some View {
         switch route {
@@ -33,7 +36,7 @@ struct StudioDestination: View {
                 looks.send(LookActionSelectPreset(preset: preset)); navigate(.outfit)
             }, onAdd: { navigate(.addItem) })
         case .outfit:
-            StudioPage(title: "Chi tiết bộ phối", model: model) {
+            StudioPage(title: language.text("ui_029"), model: model) {
                 LookOutfitView(model: looks, onCamera: { navigate(.cameraIntro) }, onService: { service(1) })
             }
         case .cameraIntro:
@@ -63,7 +66,7 @@ struct StudioDestination: View {
         case .ask:
             StudioAskView(model: model, onService: { service(0) })
         case .settings:
-            StudioSettingsView(model: model, onService: { service(0) }, onComponents: { navigate(.components) })
+            StudioSettingsView(model: model, shadow: shadow, onService: connectionSettings, onComponents: { navigate(.components) })
         case .components:
             StudioComponentsView(model: model, onCamera: { navigate(.cameraIntro) })
         }

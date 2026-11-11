@@ -30,6 +30,7 @@ final class NoteEditModel: ObservableObject {
 }
 
 struct NoteEditView: View {
+    @EnvironmentObject private var language: AppLanguage
     @StateObject private var model: NoteEditModel
     let onDone: () -> Void
 
@@ -42,9 +43,9 @@ struct NoteEditView: View {
 
     var body: some View {
         content
-            .navigationTitle(model.state.isExisting ? "Sửa ghi chú" : "Ghi chú mới")
+            .navigationTitle(model.state.isExisting ? language.text("ui_156") : language.text("ui_067"))
             .toolbar {
-                Button("Lưu") { model.dispatch(NoteEditActionSave.shared) }
+                Button(language.text("ui_109")) { model.dispatch(NoteEditActionSave.shared) }
                     .disabled(!model.state.canSave)
             }
             .onAppear { model.onFinished = onDone }
@@ -57,20 +58,20 @@ struct NoteEditView: View {
             Form {
                 if let error = model.state.error {
                     Section {
-                        Text(error.message).foregroundStyle(.red)
+                        Text(language.systemText(error.message)).foregroundStyle(.red)
                         if !isMissing && model.state.isExisting {
-                            Button("Thử lại") { model.dispatch(NoteEditActionRetry.shared) }
+                            Button(language.text("retry")) { model.dispatch(NoteEditActionRetry.shared) }
                         }
                     }
                 }
                 if !isMissing {
-                    Section("Tiêu đề") {
-                        TextField("Tiêu đề", text: Binding(
+                    Section(language.text("ui_171")) {
+                        TextField(language.text("ui_171"), text: Binding(
                             get: { model.state.title },
                             set: { model.dispatch(NoteEditActionTitleChanged(value: $0)) }
                         ))
                     }
-                    Section("Nội dung") {
+                    Section(language.text("ui_143")) {
                         TextEditor(text: Binding(
                             get: { model.state.body },
                             set: { model.dispatch(NoteEditActionBodyChanged(value: $0)) }
@@ -78,7 +79,7 @@ struct NoteEditView: View {
                         .frame(minHeight: 120)
                     }
                     if model.state.isExisting {
-                        Button("Xóa ghi chú", role: .destructive) {
+                        Button(language.text("ui_198"), role: .destructive) {
                             model.dispatch(NoteEditActionDelete.shared)
                         }
                         .disabled(model.state.isSaving)

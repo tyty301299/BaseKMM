@@ -5,6 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import com.example.kmmbase.android.common.AppLanguage
+import com.example.kmmbase.android.common.LocalAppLanguage
 import com.example.kmmbase.android.navigation.AppNavHost
 
 class MainActivity : ComponentActivity() {
@@ -14,7 +18,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme { AppNavHost(container) }
+            val language = remember { AppLanguage(applicationContext) }
+            CompositionLocalProvider(LocalAppLanguage provides language) {
+                MaterialTheme { AppNavHost(container) }
+            }
         }
     }
 }

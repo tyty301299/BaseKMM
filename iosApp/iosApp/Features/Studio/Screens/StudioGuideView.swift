@@ -2,29 +2,30 @@ import SwiftUI
 import Shared
 
 struct StudioGuideView: View {
+    @EnvironmentObject private var language: AppLanguage
     @ObservedObject var model: StudioModel
     let onAsk: () -> Void
     let onDone: () -> Void
     var body: some View {
-        StudioPage(title: "Làm theo", model: model) {
+        StudioPage(title: language.text("ui_107"), model: model) {
             if let skill = model.state.activeSkill {
                 if model.state.completed {
                     Image(systemName: "checkmark.seal.fill").font(.system(size: 72)).foregroundStyle(LookStyle.accent)
-                    Text("Bạn đã hoàn thành.").font(.largeTitle.bold())
-                    Text("Hoàn thành luồng hướng dẫn mẫu. AI chưa đánh giá thao tác thật.")
-                    LookPrimaryButton(title: "Về Học & làm", action: onDone)
+                    Text(language.text("ui_015")).font(.largeTitle.bold())
+                    Text(language.text("ui_073"))
+                    LookPrimaryButton(title: language.text("ui_187"), action: onDone)
                 } else {
                     Text(skill.title).font(.title.bold())
-                    Text("BƯỚC \(model.state.stepIndex + 1) / \(skill.steps.count)").font(.caption).foregroundStyle(LookStyle.accent)
+                    Text(language.format("step_progress", String(model.state.stepIndex + 1), String(skill.steps.count))).font(.caption).foregroundStyle(LookStyle.accent)
                     ProgressView(value: Double(model.state.stepIndex + 1), total: Double(skill.steps.count))
                     StudioInstructionIllustration()
-                    Text(model.state.currentStep).font(.title2.bold())
-                    Text("Hướng dẫn mẫu. Không dùng camera để đánh giá thao tác.").foregroundStyle(.secondary)
-                    LookPrimaryButton(title: "Tôi đã làm xong bước này") { model.send(StudioActionNextStep.shared) }
-                    Button("Bước trước") { model.send(StudioActionPreviousStep.shared) }.disabled(model.state.stepIndex == 0).frame(minHeight: 44)
-                    LookPrimaryButton(title: "Hỏi về bước này", action: onAsk)
+                    Text(language.systemText(model.state.currentStep)).font(.title2.bold())
+                    Text(language.text("ui_079")).foregroundStyle(.secondary)
+                    LookPrimaryButton(title: language.text("ui_178")) { model.send(StudioActionNextStep.shared) }
+                    Button(language.text("previous_step")) { model.send(StudioActionPreviousStep.shared) }.disabled(model.state.stepIndex == 0).frame(minHeight: 44)
+                    LookPrimaryButton(title: language.text("ui_081"), action: onAsk)
                 }
-            } else if !model.state.loading { Text("Không tìm thấy kỹ năng. Hãy quay lại danh sách.") }
+            } else if !model.state.loading { Text(language.text("ui_093")) }
         }
     }
 }

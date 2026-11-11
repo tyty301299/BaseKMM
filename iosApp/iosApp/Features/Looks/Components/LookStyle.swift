@@ -23,6 +23,7 @@ extension EnvironmentValues {
 }
 
 struct LookGlass: ViewModifier {
+    @EnvironmentObject private var language: AppLanguage
     @Environment(\.lookGlassEnabled) private var glassEnabled
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -40,6 +41,7 @@ struct LookGlass: ViewModifier {
 }
 
 struct LookPrimaryButton: View {
+    @EnvironmentObject private var language: AppLanguage
     let title: String
     var disabled = false
     let action: () -> Void
