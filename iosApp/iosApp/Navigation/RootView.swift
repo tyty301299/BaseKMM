@@ -26,6 +26,8 @@ struct RootView: View {
         _looks = StateObject(wrappedValue: LookModel(store: container.lookStore()))
     }
     @State private var path: [Route] = []
+    /// Open on the server-backed flow: it is the real product, the sample screens are a fallback.
+    @State private var showedServiceOnLaunch = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -66,6 +68,11 @@ struct RootView: View {
                 HomeView(container: container, initialTab: serviceTab)
                     .toolbar { ToolbarItem(placement: .navigationBarLeading) { Button("Đóng") { showService = false } } }
             }
+        }
+        .onAppear {
+            guard !showedServiceOnLaunch else { return }
+            showedServiceOnLaunch = true
+            openService(0)
         }
         .sheet(item: $selectedRecord, onDismiss: {
             if retryAfterDismiss { retryAfterDismiss = false; showCamera = true }

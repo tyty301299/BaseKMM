@@ -66,6 +66,8 @@ internal fun AppNavHost(container: AppContainer) {
     val item: (String) -> Unit = { studio.dispatch(StudioAction.OpenItem(it)); nav.navigate(StudioRoute(StudioPageKey.ITEM, it)) }
     val skill: (String) -> Unit = { nav.navigate(StudioRoute(StudioPageKey.SKILL, it)) }
     val service: (Int) -> Unit = { nav.navigate(ServiceRoute(it)) }
+    // Open on the server-backed flow: it is the real product, the sample screens are a fallback.
+    LaunchedEffect(Unit) { nav.navigate(ServiceRoute(0)) }
     val openCamera: () -> Unit = {
         if (!looks.currentState.saving && studio.currentState.busy.isEmpty()) {
             looks.dispatch(LookAction.Retake); nav.navigate(CameraRoute)
@@ -108,7 +110,8 @@ internal fun AppNavHost(container: AppContainer) {
                     composable<ServiceRoute> { entry ->
                         val remote = rememberStore { container.shadowStore() }
                         LaunchedEffect(remote) { remote.messages.collect { feedback.send(it) } }
-                        HomeScreen(store = remote, initialTab = entry.toRoute<ServiceRoute>().initialTab)
+                        HomeScreen(container = container, store = remote,
+                            initialTab = entry.toRoute<ServiceRoute>().initialTab)
                     }
                     composable<NoteListRoute> {
                         NoteListScreen(rememberStore { container.noteListStore() }, { nav.navigate(NoteEditRoute(it)) }, { nav.navigateUp() })

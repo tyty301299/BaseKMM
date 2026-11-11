@@ -17,23 +17,46 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.example.kmmbase.android.common.CameraFrameSource
+import com.example.kmmbase.android.common.shadowImageRequest
+import com.example.kmmbase.android.features.guide.LiveGuideScreen
+import com.example.kmmbase.android.features.guide.rememberGuideStore
+import com.example.kmmbase.android.features.teach.LiveTeachScreen
+import com.example.kmmbase.android.features.teach.rememberTeachStore
+import com.example.kmmbase.di.AppContainer
+import com.example.kmmbase.domain.model.DEFAULT_SHADOW_ACCESS_CODE
+import com.example.kmmbase.domain.model.DEFAULT_SHADOW_ORIGIN
+import com.example.kmmbase.domain.model.ShadowOutfitItem
+import com.example.kmmbase.domain.model.WardrobeItem
+import com.example.kmmbase.presentation.guide.GuideAction
 import com.example.kmmbase.presentation.shadow.*
 
 private val ShadowAccent = Color(0xFFFFD23F)
 private val ShadowBackground = Color(0xFF0B0B0F)
 
 @Composable
-internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
+internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab: Int = 0) {
     val state by store.state.collectAsState()
     val context = LocalContext.current
     val preferences = remember { context.getSharedPreferences("shadow", Context.MODE_PRIVATE) }
-    var endpoint by rememberSaveable { mutableStateOf(preferences.getString("endpoint", "").orEmpty()) }
+    var endpoint by rememberSaveable {
+        mutableStateOf(preferences.getString("endpoint", null) ?: DEFAULT_SHADOW_ORIGIN)
+    }
     // Access codes stay in memory; never saved to preferences or instance state.
-    var accessCode by remember { mutableStateOf("") }
+    var accessCode by remember { mutableStateOf(DEFAULT_SHADOW_ACCESS_CODE) }
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var showConnection by rememberSaveable { mutableStateOf(false) }
     var event by rememberSaveable { mutableStateOf("Đi làm") }
     var notes by rememberSaveable { mutableStateOf("") }
+    // Non-null while the live camera guide is on screen: skill id to display name.
+    var guideSkill by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var teaching by remember { mutableStateOf(false) }
+    // Re-read on reconnect: server media is gated, so image requests need the access header.
+    val mediaHeaders = remember(state.connected, state.endpoint) { store.mediaHeaders() }
     val uriHandler = LocalUriHandler.current
     val busy = state.busy.isNotEmpty()
     val openWeb: (String) -> Unit = { route ->
@@ -50,10 +73,35 @@ internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
             showConnection = false
         }
     }
+    // Connect straight away so the demo opens on real skills, not a connect form.
+    LaunchedEffect(Unit) {
+        if (!state.connected && state.busy.isEmpty()) {
+            store.dispatch(ShadowAction.Connect(endpoint, accessCode))
+        }
+    }
     MaterialTheme(colorScheme = darkColorScheme(
         primary = ShadowAccent, onPrimary = Color(0xFF1B1500),
         background = ShadowBackground, surface = Color(0xFF16161E),
     )) {
+        val guide = guideSkill
+        if (guide != null) {
+            val frames = remember { CameraFrameSource() }
+            val guideStore = rememberGuideStore(container, store, frames)
+            BackHandler { guideStore.dispatch(GuideAction.Stop); guideSkill = null }
+            LiveGuideScreen(guide.first, guide.second, frames, guideStore) { guideSkill = null }
+            return@MaterialTheme
+        }
+        if (teaching) {
+            val frames = remember { CameraFrameSource() }
+            val teachStore = rememberTeachStore(container, store, frames)
+            val leave = {
+                teaching = false
+                store.dispatch(ShadowAction.Refresh) // the new skill should appear in the list
+            }
+            BackHandler(onBack = leave)
+            LiveTeachScreen(frames, teachStore, onDone = { leave() }, onExit = leave)
+            return@MaterialTheme
+        }
         BackHandler(enabled = state.lesson != null) { store.dispatch(ShadowAction.CloseLesson) }
         Scaffold(
             containerColor = ShadowBackground,
@@ -85,7 +133,7 @@ internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 val lesson = state.lesson
                 if (lesson != null) {
-                    LessonContent(state, store, openWeb)
+                    LessonContent(state, store) { guideSkill = lesson.id to lesson.title }
                 } else {
                     if (showConnection || !state.connected) {
                         Text("Kết nối với SHADOW", style = MaterialTheme.typography.headlineSmall)
@@ -103,8 +151,10 @@ internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
                     if (tab == 0) {
                         Text("Bạn làm mẫu.\nSHADOW học cùng.", style = MaterialTheme.typography.headlineLarge)
                         Text("Ghi lại cách bạn làm, xem các bước AI đã học và hỏi khi cần hướng dẫn.")
-                        WebButton("Dạy kỹ năng bằng camera", "Mở bản web · quay và nói để AI chia bước",
-                            state.connected && !busy) { openWeb("teach") }
+                        Button(onClick = { teaching = true }, enabled = state.connected && !busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                            Text("Dạy kỹ năng bằng camera")
+                        }
                         SectionTitle("Kỹ năng đã học", state.connected && !busy) { store.dispatch(ShadowAction.Refresh) }
                         if (state.skills.isEmpty()) Text(if (state.connected)
                             "Chưa có kỹ năng. Hãy dạy SHADOW thao tác đầu tiên của bạn."
@@ -127,10 +177,7 @@ internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
                             state.connected && !busy) { openWeb("wardrobe") }
                         SectionTitle("Tủ đồ · ${state.wardrobe.size}", state.connected && !busy) { store.dispatch(ShadowAction.Refresh) }
                         if (state.wardrobe.isEmpty()) Text("Thêm ảnh trang phục của bạn trên bản web, rồi tải lại để bắt đầu phối đồ.")
-                        state.wardrobe.forEach { item ->
-                            Text(item.name + if (item.demo) " · Đồ mẫu" else "")
-                            HorizontalDivider()
-                        }
+                        WardrobeGrid(state.wardrobe, mediaHeaders)
                         Text("Bạn sắp đi đâu?", style = MaterialTheme.typography.titleMedium)
                         // Vertically flowing choices also fit narrow screens and large system text.
                         listOf("Đi làm", "Đi chơi", "Hẹn hò").forEach { choice ->
@@ -146,12 +193,19 @@ internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
                         state.suggestions?.let { result ->
                             Text("Gợi ý cho: ${state.suggestionsEvent}", style = MaterialTheme.typography.titleMedium)
                             Text(state.suggestionsLabel, color = ShadowAccent)
+                            result.weather?.takeIf { it.available }?.let {
+                                Text(it.summary, color = Color(0xFF9FD4FF))
+                            }
+                            if (result.rulesUsed.isNotEmpty()) {
+                                Text("Quy tắc đã học: ${result.rulesUsed.joinToString("; ")}",
+                                    color = ShadowAccent, style = MaterialTheme.typography.bodySmall)
+                            }
                             if (result.outfits.isEmpty()) Text("Chưa có bộ phối phù hợp. Thử đổi dịp hoặc thêm trang phục.")
                             result.outfits.forEach { outfit ->
                                 Text(outfit.title, style = MaterialTheme.typography.headlineSmall)
-                                Text(outfit.items.joinToString(" + "), color = ShadowAccent)
+                                OutfitRow(outfit.items, mediaHeaders)
                                 Text(outfit.reason)
-                                if (outfit.tips.isNotEmpty()) Text(outfit.tips)
+                                if (outfit.tips.isNotEmpty()) Text(outfit.tips, color = Color(0xFFD8DCCF))
                                 HorizontalDivider()
                             }
                         }
@@ -163,14 +217,15 @@ internal fun HomeScreen(store: ShadowStore, initialTab: Int = 0) {
 }
 
 @Composable
-private fun LessonContent(state: ShadowState, store: ShadowStore, openWeb: (String) -> Unit) {
+private fun LessonContent(state: ShadowState, store: ShadowStore, onGuide: () -> Unit) {
     val lesson = state.lesson ?: return
     var index by rememberSaveable(lesson.id) { mutableStateOf(0) }
     var question by rememberSaveable(lesson.id) { mutableStateOf("") }
     val busy = state.busy.isNotEmpty()
     Text(lesson.title, style = MaterialTheme.typography.headlineLarge)
-    Text("Đọc các bước đã học. Để AI quan sát và hướng dẫn qua camera, mở bản web.")
-    WebButton("Hướng dẫn qua camera", "Mở bản web", !busy) { openWeb("guide/${android.net.Uri.encode(lesson.id)}") }
+    Text("SHADOW nhìn qua camera và hướng dẫn bạn từng bước bằng giọng nói.")
+    Button(onClick = onGuide, enabled = !busy,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Bắt đầu hướng dẫn qua camera") }
     if (lesson.steps.isNotEmpty()) {
         val step = lesson.steps[index.coerceIn(0, lesson.steps.lastIndex)]
         Text("Bước ${index + 1}/${lesson.steps.size}", color = ShadowAccent)
@@ -194,6 +249,52 @@ private fun LessonContent(state: ShadowState, store: ShadowStore, openWeb: (Stri
         Text(state.answerLabel, color = ShadowAccent)
         Text(state.answerQuestion, style = MaterialTheme.typography.titleMedium)
         Text(answer.text)
+    }
+}
+
+/** Wardrobe thumbnails in rows of three; the server supplies real garment photos. */
+@Composable
+private fun WardrobeGrid(items: List<WardrobeItem>, headers: Map<String, String>) {
+    val context = LocalContext.current
+    items.chunked(3).forEach { row ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.forEach { item ->
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (item.imageUrl.isNotEmpty()) {
+                        AsyncImage(
+                            model = shadowImageRequest(context, item.imageUrl, headers),
+                            contentDescription = item.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxWidth().height(110.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                        )
+                    }
+                    Text(item.name, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                }
+            }
+            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun OutfitRow(items: List<ShadowOutfitItem>, headers: Map<String, String>) {
+    val context = LocalContext.current
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.forEach { item ->
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (item.imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = shadowImageRequest(context, item.imageUrl, headers),
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth().height(120.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                    )
+                }
+                Text(item.name, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+            }
+        }
     }
 }
 

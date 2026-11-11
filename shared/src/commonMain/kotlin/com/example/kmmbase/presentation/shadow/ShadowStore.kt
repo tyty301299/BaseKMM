@@ -36,8 +36,11 @@ sealed interface ShadowAction {
     data class Suggest(val event: String, val notes: String) : ShadowAction
 }
 
+/** Weather context for styling; the demo is in Hanoi. */
+internal const val DEFAULT_CITY = "Hà Nội"
+
 class ShadowStore internal constructor(
-    private val repositoryFactory: (String) -> ShadowRepository,
+    private val repositoryFactory: (String, String) -> ShadowRepository,
     private val normalizeEndpoint: (String) -> String,
     dispatcher: CoroutineDispatcher,
 ) : AutoCloseable {
@@ -52,6 +55,22 @@ class ShadowStore internal constructor(
     val currentState: ShadowState get() = mutableState.value
 
     fun observeState(onChange: (ShadowState) -> Unit): StoreSubscription = mutableState.subscribeIn(scope, onChange)
+
+    /** Opens a guide session on the connected server, or null when not connected yet. */
+    fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket? =
+        repository?.takeIf { currentState.connected }?.openSession()
+
+    /**
+     * The connected server, for flows that own their own store (teach, guide). Null until a
+     * connection succeeds, and swapped when the user changes server.
+     */
+    fun connectedRepository(): ShadowRepository? = repository?.takeIf { currentState.connected }
+
+    /**
+     * Headers an image loader needs for server media. Kept off [ShadowState] so the access code is
+     * never captured in UI snapshots or saved instance state.
+     */
+    fun mediaHeaders(): Map<String, String> = repository?.mediaHeaders() ?: emptyMap()
 
     fun dispatch(action: ShadowAction) {
         when (action) {
@@ -86,7 +105,7 @@ class ShadowStore internal constructor(
                         if (action.event.isBlank() || action.event.length > 200 || action.notes.length > 300) return
                         mutableState.update { it.copy(suggestions = null, suggestionsLabel = "") }
                         run("Đang phối từ tủ đồ của bạn…") {
-                            val result = repo.suggest(action.event.trim(), action.notes.trim())
+                            val result = repo.suggest(action.event.trim(), action.notes.trim(), DEFAULT_CITY)
                             currentCoroutineContext().ensureActive()
                             mutableState.update { it.copy(suggestions = result, suggestionsLabel = shadowSourceLabel(result.source), suggestionsEvent = action.event.trim()) }
                         }
@@ -104,10 +123,11 @@ class ShadowStore internal constructor(
         mutableState.value = ShadowState()
         run("Đang kết nối…") {
             val endpoint = normalizeEndpoint(action.endpoint)
-            val repo = repositoryFactory(endpoint)
+            val repo = repositoryFactory(endpoint, action.code.trim())
             repository = repo
             try {
                 val health = repo.health()
+                // /api/health is ungated, so validate the code explicitly before loading anything.
                 if (health.accessRequired) repo.authenticate(action.code.trim())
                 val skills = repo.skills()
                 val wardrobe = repo.wardrobe()

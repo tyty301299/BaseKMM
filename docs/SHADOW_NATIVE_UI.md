@@ -1,8 +1,12 @@
-# SHADOW native UI: full app flow
+# SHADOW native UI: sample screens
 
-Both platforms now have the complete **native demo flow** from the screen-flow PDF: wardrobe, suggestions, full-screen try-on, local history, teaching, reviewing, guiding, question/answer and settings. SwiftUI / Jetpack Compose render the screens directly, with no embedded HTML.
+> **Các màn dưới đây là bản mẫu giao diện, không gọi máy chủ.** Luồng thật — camera, WebSocket, AI — nằm ở
+> [SHADOW_MOBILE.md](SHADOW_MOBILE.md) và là thứ app mở ra khi khởi động. Các màn mẫu này giữ lại làm phương án
+> dự phòng khi mất mạng và để tham chiếu thiết kế; bấm "Đóng" ở màn máy chủ để quay về.
 
-This is an implementation of the UI prototype, not a completed camera/AI engine. The app labels sample content. Hardware capture, speech transcription, real garment photos and live AI assessment are not implemented by the demo. Existing server-backed flows remain reachable through “Kết nối dịch vụ SHADOW”.
+Both platforms have the complete **sample flow** from the screen-flow PDF: wardrobe, suggestions, full-screen try-on, local history, teaching, reviewing, guiding, question/answer and settings. SwiftUI / Jetpack Compose render the screens directly, with no embedded HTML.
+
+This is an implementation of the UI prototype, not a camera/AI engine. The app labels sample content. Hardware capture, speech transcription, real garment photos and live AI assessment live in the server-backed flow instead, not in these screens.
 
 ## Flow coverage
 

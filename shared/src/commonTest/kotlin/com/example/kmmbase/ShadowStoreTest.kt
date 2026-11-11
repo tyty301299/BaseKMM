@@ -27,8 +27,23 @@ class ShadowStoreTest {
             askCount++
             return answerGate?.await() ?: ShadowAnswer("Đặt đế lên bàn.", "fallback")
         }
+        override suspend fun deleteSkill(id: String) = Unit
         override suspend fun wardrobe() = emptyList<WardrobeItem>()
-        override suspend fun suggest(event: String, notes: String) = ShadowSuggestions(emptyList(), "mock")
+        override suspend fun suggest(event: String, notes: String, city: String) =
+            ShadowSuggestions(emptyList(), "mock")
+        override suspend fun rules() = emptyList<ShadowRule>()
+        override suspend fun addRule(text: String, taughtBy: String) = Unit
+        override suspend fun compileSkill(request: TeachRequest) =
+            TeachDraft("draft", request.title, emptyList(), "{}")
+        override suspend fun teachProgress(jobId: String) = "learning"
+        override suspend fun saveSkill(draft: TeachDraft) = draft.skillId
+        override suspend fun tryonConfig() = TryonConfig(false, "mock", 30)
+        override suspend fun tryonPhoto(personImage: String, itemIds: List<String>) =
+            TryonResult("", "mock", 0.0)
+        override fun mediaUrl(path: String) = path
+        override fun mediaHeaders() = emptyMap<String, String>()
+        override fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket =
+            throw UnsupportedOperationException("not used in these tests")
         override fun close() { closed = true }
     }
 
@@ -42,7 +57,7 @@ class ShadowStoreTest {
 
     @Test fun authenticatesBeforeLoadingAndLabelsFallbackHonestly() = runTest {
         val repo = FakeShadow().apply { accessRequired = true }
-        val store = ShadowStore({ repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
         store.dispatch(ShadowAction.Connect("https://one.example", " code "))
         assertEquals("code", repo.enteredCode)
         assertTrue(store.currentState.connected)
@@ -58,7 +73,7 @@ class ShadowStoreTest {
 
     @Test fun rejectsDuplicateRequestsAndDoesNotPublishAfterClosingLesson() = runTest {
         val repo = FakeShadow().apply { answerGate = CompletableDeferred() }
-        val store = ShadowStore({ repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
         store.dispatch(ShadowAction.Connect("https://one.example", ""))
         store.dispatch(ShadowAction.OpenLesson("stand"))
         store.dispatch(ShadowAction.Ask("one", "Làm sao?"))
@@ -75,7 +90,7 @@ class ShadowStoreTest {
     @Test fun changingServerCancelsOldConnectionAndClearsOldData() = runTest {
         val old = FakeShadow().apply { skillGate = CompletableDeferred() }
         val fresh = FakeShadow()
-        val store = ShadowStore({ if (it.contains("old")) old else fresh }, { it }, UnconfinedTestDispatcher(testScheduler))
+        val store = ShadowStore({ endpoint, _ -> if (endpoint.contains("old")) old else fresh }, { it }, UnconfinedTestDispatcher(testScheduler))
         store.dispatch(ShadowAction.Connect("https://old.example", ""))
         store.dispatch(ShadowAction.Connect("https://new.example", ""))
         old.skillGate!!.complete(listOf(ShadowSkill("stale", "Old", "", "", 1)))
@@ -88,7 +103,7 @@ class ShadowStoreTest {
 
     @Test fun invalidQuestionsNeverCallBackend() = runTest {
         val repo = FakeShadow()
-        val store = ShadowStore({ repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
         store.dispatch(ShadowAction.Connect("https://one.example", ""))
         store.dispatch(ShadowAction.OpenLesson("stand"))
         store.dispatch(ShadowAction.Ask("one", " "))

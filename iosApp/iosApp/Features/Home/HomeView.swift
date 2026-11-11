@@ -17,6 +17,13 @@ final class ShadowModel: ObservableObject {
 
     func send(_ action: ShadowAction) { store.dispatch(action: action) }
 
+    /// The guide and teach flows own their own Kotlin stores, built from this one.
+    var shadowStore: ShadowStore { store }
+
+    /// Headers for gated server media. Kept off `ShadowState` so the access code is never
+    /// captured in a UI snapshot.
+    var mediaHeaders: [String: String] { store.mediaHeaders() as? [String: String] ?? [:] }
+
     deinit {
         messageSubscription?.cancel()
         subscription?.cancel()
@@ -24,12 +31,13 @@ final class ShadowModel: ObservableObject {
     }
 }
 
-private enum ShadowStyle {
+enum ShadowStyle {
     static let background = Color(red: 11/255, green: 11/255, blue: 15/255)
     static let accent = Color(red: 1, green: 210/255, blue: 63/255)
 }
 
 struct HomeView: View {
+    private let container: AppContainer
     @EnvironmentObject private var feedback: StudioFeedback
     @StateObject private var model: ShadowModel
     @AppStorage("shadow.endpoint") private var savedEndpoint = ""
@@ -37,11 +45,13 @@ struct HomeView: View {
     @State private var accessCode = ""
     @State private var tab = 0
     @State private var showConnection = false
+    @State private var teaching = false
     @State private var event = "Đi làm"
     @State private var notes = ""
     @Environment(\.openURL) private var openURL
 
     init(container: AppContainer, initialTab: Int = 0) {
+        self.container = container
         _tab = State(initialValue: initialTab)
         _model = StateObject(wrappedValue: ShadowModel(store: container.shadowStore()))
     }
@@ -85,7 +95,14 @@ struct HomeView: View {
         }
         .onAppear {
             model.onMessage = feedback.show
-            if endpoint.isEmpty { endpoint = savedEndpoint }
+            if endpoint.isEmpty {
+                endpoint = savedEndpoint.isEmpty ? ShadowDefaultsKt.DEFAULT_SHADOW_ORIGIN : savedEndpoint
+            }
+            if accessCode.isEmpty { accessCode = ShadowDefaultsKt.DEFAULT_SHADOW_ACCESS_CODE }
+            // Connect straight away so the demo opens on real skills, not a connect form.
+            if !model.state.connected && !busy {
+                model.send(ShadowActionConnect(endpoint: endpoint, code: accessCode))
+            }
         }
         .onChange(of: model.state.endpoint) { value in
             if !value.isEmpty {
@@ -98,7 +115,7 @@ struct HomeView: View {
             get: { model.state.lesson != nil },
             set: { if !$0 { model.send(ShadowActionCloseLesson.shared) } }
         )) {
-            ShadowLessonView(model: model)
+            ShadowLessonView(model: model, container: container)
                 .modifier(StudioFeedbackOverlay())
                 .preferredColorScheme(.dark).tint(ShadowStyle.accent)
         }
@@ -127,7 +144,17 @@ struct HomeView: View {
                 Text("Ghi lại cách bạn làm, xem các bước AI đã học và hỏi khi cần hướng dẫn.")
                     .foregroundStyle(.secondary)
             }
-            webButton("Dạy kỹ năng bằng camera", detail: "Mở bản web · quay và nói để AI chia bước", route: "teach")
+            Button("Dạy kỹ năng bằng camera") { teaching = true }
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .buttonStyle(.borderedProminent)
+                .disabled(!model.state.connected || busy)
+                .fullScreenCover(isPresented: $teaching) {
+                    LiveTeachView(container: container, shadow: model.shadowStore) {
+                        teaching = false
+                        model.send(ShadowActionRefresh.shared) // the new skill should appear
+                    }
+                    .preferredColorScheme(.dark)
+                }
             HStack {
                 Text("Kỹ năng đã học").font(.title2.bold())
                 Spacer()
@@ -177,13 +204,14 @@ struct HomeView: View {
                 Text("Thêm ảnh trang phục của bạn trên bản web, rồi tải lại để bắt đầu phối đồ.")
                     .foregroundStyle(.secondary)
             }
-            ForEach(model.state.wardrobe, id: \.id) { item in
-                HStack {
-                    Text(item.name)
-                    Spacer()
-                    if item.demo { Text("Đồ mẫu").font(.caption).foregroundStyle(ShadowStyle.accent) }
+            let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(model.state.wardrobe, id: \.id) { item in
+                    VStack(spacing: 4) {
+                        RemoteImage(url: item.imageUrl, headers: model.mediaHeaders, height: 110)
+                        Text(item.name).font(.caption2).lineLimit(2)
+                    }
                 }
-                Divider()
             }
             Text("Bạn sắp đi đâu?").font(.headline)
             Picker("Dịp sử dụng", selection: $event) {
@@ -200,11 +228,25 @@ struct HomeView: View {
             if let result = model.state.suggestions {
                 Text("Gợi ý cho: \(model.state.suggestionsEvent)").font(.headline)
                 Text(model.state.suggestionsLabel).font(.caption.bold()).foregroundStyle(ShadowStyle.accent)
+                if let weather = result.weather, weather.available {
+                    Text(weather.summary).font(.subheadline).foregroundStyle(.cyan)
+                }
+                if !result.rulesUsed.isEmpty {
+                    Text("Quy tắc đã học: " + result.rulesUsed.joined(separator: "; "))
+                        .font(.caption).foregroundStyle(ShadowStyle.accent)
+                }
                 if result.outfits.isEmpty { Text("Chưa có bộ phối phù hợp. Thử đổi dịp hoặc thêm trang phục.") }
                 ForEach(Array(result.outfits.enumerated()), id: \.offset) { _, outfit in
                     VStack(alignment: .leading, spacing: 10) {
                         Text(outfit.title).font(.title3.bold())
-                        Text(outfit.items.joined(separator: " + ")).foregroundStyle(ShadowStyle.accent)
+                        HStack(spacing: 8) {
+                            ForEach(outfit.items, id: \.id) { item in
+                                VStack(spacing: 4) {
+                                    RemoteImage(url: item.imageUrl, headers: model.mediaHeaders)
+                                    Text(item.name).font(.caption2).lineLimit(2)
+                                }
+                            }
+                        }
                         Text(outfit.reason)
                         if !outfit.tips.isEmpty { Text(outfit.tips).foregroundStyle(.secondary) }
                     }.padding(.vertical, 12)
@@ -243,9 +285,10 @@ struct HomeView: View {
 
 private struct ShadowLessonView: View {
     @ObservedObject var model: ShadowModel
+    let container: AppContainer
     @State private var stepIndex = 0
     @State private var question = ""
-    @Environment(\.openURL) private var openURL
+    @State private var guiding = false
 
     var body: some View {
         NavigationStack {
@@ -253,13 +296,17 @@ private struct ShadowLessonView: View {
                 if let lesson = model.state.lesson {
                     VStack(alignment: .leading, spacing: 20) {
                         Text(lesson.title).font(.largeTitle.bold())
-                        Text("Đọc các bước đã học. Để AI quan sát và hướng dẫn qua camera, mở bản web.")
+                        Text("SHADOW nhìn qua camera và hướng dẫn bạn từng bước bằng giọng nói.")
                             .foregroundStyle(.secondary)
-                        Button("Hướng dẫn qua camera · Mở bản web") {
-                            var url = URLComponents(string: model.state.endpoint + "/")
-                            url?.fragment = "/guide/" + lesson.id
-                            if let value = url?.url { openURL(value) }
-                        }.frame(minHeight: 44)
+                        Button("Bắt đầu hướng dẫn qua camera") { guiding = true }
+                            .frame(minHeight: 44)
+                            .fullScreenCover(isPresented: $guiding) {
+                                LiveGuideView(skillId: lesson.id, skillTitle: lesson.title,
+                                              container: container, shadow: model.shadowStore) {
+                                    guiding = false
+                                }
+                                .preferredColorScheme(.dark)
+                            }
                         if !lesson.steps.isEmpty {
                             Picker("Bước cần xem", selection: $stepIndex) {
                                 ForEach(Array(lesson.steps.enumerated()), id: \.offset) { index, _ in

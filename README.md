@@ -1,6 +1,12 @@
 # KmmBase
 
-> **SHADOW mobile:** Đã có full flow UI native: tủ đồ, phối đồ, camera demo toàn màn hình, dạy/duyệt/làm theo kỹ năng, lịch sử, loading/toast và giao diện kính theo Clean Architecture. Xem [code UI native, kiến trúc và giới hạn kiểm tra](docs/SHADOW_NATIVE_UI.md). Các luồng API ban đầu vẫn được giữ qua mục Kết nối. Xem [phạm vi, cách kết nối và trạng thái kiểm tra](docs/SHADOW_MOBILE.md). Chưa xác minh build/runtime của thay đổi này; các kết quả template ở cuối README không áp dụng cho phần SHADOW.
+> **SHADOW mobile:** App native (Android + iOS) chạy trọn bốn luồng với máy chủ thật `https://fourward.thangqt.com`:
+> **Dạy** (camera + giọng nói → AI sinh kỹ năng), **Hướng dẫn** (camera + WebSocket chấm từng bước, đọc tiếng Việt),
+> **Tủ đồ / Phối đồ** (ảnh thật, thời tiết thật) và **Hỏi Shadow**. App tự kết nối khi mở.
+> Xem [giao thức, kiến trúc, cách build và những gì chưa kiểm tra](docs/SHADOW_MOBILE.md).
+> Các màn mẫu cũ vẫn còn làm dự phòng: [SHADOW_NATIVE_UI.md](docs/SHADOW_NATIVE_UI.md).
+> **Chưa chạy trên điện thoại thật** — camera, TTS/STT tiếng Việt mới chỉ qua biên dịch và simulator.
+> Các kết quả template ở cuối README không áp dụng cho phần SHADOW.
 
 Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native riêng: Jetpack Compose trên Android, SwiftUI trên iOS. Base không dùng Compose Multiplatform.
 
