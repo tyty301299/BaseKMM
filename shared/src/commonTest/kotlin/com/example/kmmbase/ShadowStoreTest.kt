@@ -17,6 +17,10 @@ class ShadowStoreTest {
         var accessRequired = false
         var enteredCode: String? = null
         var askCount = 0
+        var suggestionResult = ShadowSuggestions(emptyList(), "mock")
+        var tryonCalls = 0
+        var tryonIds = emptyList<String>()
+        var tryonGate: CompletableDeferred<TryonResult>? = null
         var answerGate: CompletableDeferred<ShadowAnswer>? = null
         var skillGate: CompletableDeferred<List<ShadowSkill>>? = null
         override suspend fun health() = ShadowHealth("mock", accessRequired)
@@ -30,7 +34,7 @@ class ShadowStoreTest {
         override suspend fun deleteSkill(id: String) = Unit
         override suspend fun wardrobe() = emptyList<WardrobeItem>()
         override suspend fun suggest(event: String, notes: String, city: String) =
-            ShadowSuggestions(emptyList(), "mock")
+            suggestionResult
         override suspend fun rules() = emptyList<ShadowRule>()
         override suspend fun addRule(text: String, taughtBy: String) = Unit
         override suspend fun compileSkill(request: TeachRequest) =
@@ -38,8 +42,11 @@ class ShadowStoreTest {
         override suspend fun teachProgress(jobId: String) = "learning"
         override suspend fun saveSkill(draft: TeachDraft) = draft.skillId
         override suspend fun tryonConfig() = TryonConfig(false, "mock", 30)
-        override suspend fun tryonPhoto(personImage: String, itemIds: List<String>) =
-            TryonResult("", "mock", 0.0)
+        override suspend fun tryonPhoto(personImage: String, itemIds: List<String>): TryonResult {
+            tryonCalls++
+            tryonIds = itemIds
+            return tryonGate?.await() ?: TryonResult("https://one.example/result.jpg", "mock", 0.0)
+        }
         override fun mediaUrl(path: String) = path
         override fun mediaHeaders() = emptyMap<String, String>()
         override fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket =
@@ -112,4 +119,67 @@ class ShadowStoreTest {
         assertEquals(0, repo.askCount)
         store.close()
     }
+    @Test fun photoTryonUsesSuggestedItemsAndLabelsMockResult() = runTest {
+        val repo = FakeShadow().apply {
+            suggestionResult = ShadowSuggestions(listOf(ShadowOutfit("Outfit", "", listOf(
+                ShadowOutfitItem("coat", "Coat", "top", "", ""),
+                ShadowOutfitItem("coat", "Coat", "top", "", ""),
+            ), "")), "ai")
+        }
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,dGVzdA==", "Work", ""))
+        assertEquals(listOf("coat"), repo.tryonIds)
+        assertEquals("mock", store.currentState.tryon?.provider)
+        assertFalse(store.currentState.tryingOn)
+        assertEquals("", store.currentState.busy)
+        store.close()
+    }
+
+    @Test fun photoTryonCancellationSuppressesLateResultAndDuplicates() = runTest {
+        val repo = FakeShadow().apply {
+            tryonGate = CompletableDeferred()
+            suggestionResult = ShadowSuggestions(listOf(ShadowOutfit("Outfit", "", listOf(
+                ShadowOutfitItem("coat", "Coat", "top", "", ""),
+            ), "")), "ai")
+        }
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        val action = ShadowAction.StylePerson("data:image/jpeg;base64,dGVzdA==", "Work", "")
+        store.dispatch(action)
+        store.dispatch(action)
+        assertEquals(1, repo.tryonCalls)
+        store.dispatch(ShadowAction.CancelTryon)
+        repo.tryonGate!!.complete(TryonResult("stale", "mock", 0.0))
+        assertNull(store.currentState.tryon)
+        assertFalse(store.currentState.tryingOn)
+        assertEquals("", store.currentState.busy)
+        store.close()
+    }
+
+    @Test fun emptySuggestionsNeverSubmitPersonPhoto() = runTest {
+        val repo = FakeShadow()
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,dGVzdA==", "Work", ""))
+        assertEquals(0, repo.tryonCalls)
+        assertNotNull(store.currentState.error)
+        assertFalse(store.currentState.tryingOn)
+        store.close()
+    }
+
+    @Test fun reconnectReusesSessionCredentialsWithoutPuttingThemInState() = runTest {
+        val first = FakeShadow().apply { accessRequired = true }
+        val second = FakeShadow().apply { accessRequired = true }
+        var calls = 0
+        val store = ShadowStore({ _, _ -> if (calls++ == 0) first else second }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", "session-code"))
+        store.dispatch(ShadowAction.Reconnect)
+        assertTrue(first.closed)
+        assertEquals("session-code", second.enteredCode)
+        assertTrue(store.currentState.connected)
+        assertFalse(store.currentState.toString().contains("session-code"))
+        store.close()
+    }
+
 }

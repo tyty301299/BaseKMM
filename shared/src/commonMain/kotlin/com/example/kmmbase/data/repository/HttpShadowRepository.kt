@@ -235,6 +235,7 @@ class HttpShadowRepository(endpoint: String, private val accessCode: String = ""
         return TryonResult(
             mediaUrl(row.required("image_url")), row.text("provider"),
             row["seconds"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+            row.strings("skipped_item_ids"), row.text("note"),
         )
     }
 

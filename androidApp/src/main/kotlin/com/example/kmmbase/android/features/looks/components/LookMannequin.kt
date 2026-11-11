@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.looks.components
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,7 +17,8 @@ import androidx.compose.ui.semantics.semantics
 /** Vector fixture for native UI review. It is never labelled as a camera or AI photo. */
 @Composable
 internal fun LookMannequin(preset: String, modifier: Modifier = Modifier, before: Boolean = false, flipped: Boolean = false) {
-    Canvas(modifier.semantics { contentDescription = "Hình nhân trang phục mẫu, không phải ảnh AI" }) {
+    val language = LocalAppLanguage.current
+    Canvas(modifier.semantics { contentDescription = language.text(R.string.ui_078) }) {
         val factor = minOf(size.width / 345f, size.height / 440f)
         translate((size.width - 345 * factor) / 2, (size.height - 440 * factor) / 2) {
             scale(factor, factor, Offset.Zero) {
@@ -46,4 +49,14 @@ internal fun LookMannequin(preset: String, modifier: Modifier = Modifier, before
             }
         }
     }
+}
+
+@Composable
+internal fun StudioGarmentImage(preset: String, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(if (preset == "blouse") com.example.kmmbase.android.R.drawable.shadow_blouse else com.example.kmmbase.android.R.drawable.shadow_coat),
+        contentDescription = null,
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        modifier = modifier,
+    )
 }

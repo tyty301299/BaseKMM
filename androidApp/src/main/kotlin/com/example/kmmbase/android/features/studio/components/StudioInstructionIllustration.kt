@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.studio.components
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,8 +17,9 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 internal fun StudioInstructionIllustration() {
+    val language = LocalAppLanguage.current
     Canvas(Modifier.fillMaxWidth().height(220.dp).background(Color(0xFF3B4A3B), RoundedCornerShape(28.dp))
-        .semantics { contentDescription = "Minh họa lắp giá đỡ điện thoại, không phải camera thật" }) {
+        .semantics { contentDescription = language.text(R.string.ui_119) }) {
         val factor = minOf(size.width / 320f, size.height / 220f)
         translate((size.width - 320*factor)/2, (size.height - 220*factor)/2) {
             scale(factor, factor, Offset.Zero) {

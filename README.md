@@ -1,8 +1,8 @@
 # KmmBase
 
-> **SHADOW mobile:** App native (Android + iOS) chạy trọn bốn luồng với máy chủ thật `https://fourward.thangqt.com`:
-> **Dạy** (camera + giọng nói → AI sinh kỹ năng), **Hướng dẫn** (camera + WebSocket chấm từng bước, đọc tiếng Việt),
-> **Tủ đồ / Phối đồ** (ảnh thật, thời tiết thật) và **Hỏi Shadow**. App tự kết nối khi mở.
+> **SHADOW mobile:** App native Android + iOS có bốn tab Phối đồ, Tủ đồ, Học & làm, Lịch sử; tự kết nối nền với `https://fourward.thangqt.com`.
+> Chọn **Phối đồ cho hôm nay** để nhập ảnh người hoặc chọn một khung hình từ video, lấy bộ đồ gợi ý và tạo ảnh mặc thử. **SHADOW trực tuyến** có **Dạy** (camera + giọng nói) và **Hướng dẫn** (camera + WebSocket).
+> Settings có trạng thái kết nối/reconnect và ngôn ngữ Việt/English. Các luồng mẫu local được ghi rõ; video nhập vào chỉ tạo ảnh từ khung hình, chưa xuất video thử đồ.
 > Xem [giao thức, kiến trúc, cách build và những gì chưa kiểm tra](docs/SHADOW_MOBILE.md).
 > Các màn mẫu cũ vẫn còn làm dự phòng: [SHADOW_NATIVE_UI.md](docs/SHADOW_NATIVE_UI.md).
 > **Chưa chạy trên điện thoại thật** — camera, TTS/STT tiếng Việt mới chỉ qua biên dịch và simulator.

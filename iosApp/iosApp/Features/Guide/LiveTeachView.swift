@@ -6,6 +6,7 @@ import SwiftUI
 /// The server takes keyframes plus a timestamped transcript, never a video file, so recording
 /// means sampling frames and listening for Vietnamese sentences at the same time.
 struct LiveTeachView: View {
+    @EnvironmentObject private var language: AppLanguage
     let onFinished: () -> Void
 
     @StateObject private var model: TeachModel
@@ -24,22 +25,22 @@ struct LiveTeachView: View {
                     case .compiling: compiling
                     case .review: review
                     case .saved:
-                        Text("Đã lưu kỹ năng.").font(.title2.bold())
+                        Text(language.text("ui_244")).font(.title2.bold())
                             .foregroundStyle(ShadowStyle.accent)
                     default: record
                     }
 
                     if let error = model.state.error {
-                        Text(error).foregroundStyle(.red)
+                        Text(language.systemText(error)).foregroundStyle(.red)
                     }
                 }
                 .padding(20)
             }
-            .navigationTitle("Dạy kỹ năng mới")
+            .navigationTitle(language.text("ui_058"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Đóng") { model.stop(); onFinished() }
+                    Button(language.text("close")) { model.stop(); onFinished() }
                 }
             }
         }
@@ -59,13 +60,13 @@ struct LiveTeachView: View {
                 .frame(height: 260)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
         } else {
-            Text("Cần quyền camera để ghi lại thao tác mẫu.")
+            Text(language.text("ui_050"))
         }
 
         if model.state.phase == .recording {
-            Text("Đang ghi · \(model.state.elapsedMs / 1000)s · \(model.state.frameCount) khung hình")
+            Text(language.format("recording_counts", String(model.state.elapsedMs / 1000), String(model.state.frameCount)))
                 .font(.headline).foregroundStyle(ShadowStyle.accent)
-            Text("Vừa làm vừa nói: \"đầu tiên…\", \"nhớ là…\", \"đừng…\"")
+            Text(language.text("ui_189"))
                 .font(.subheadline).foregroundStyle(.secondary)
             if !model.state.liveTranscript.isEmpty {
                 Text(model.state.liveTranscript).foregroundStyle(.secondary)
@@ -73,30 +74,30 @@ struct LiveTeachView: View {
             ForEach(Array(model.state.lines.suffix(3).enumerated()), id: \.offset) { _, line in
                 Text("· \(line.text)").font(.caption)
             }
-            Button("Dừng ghi") { model.stopRecording() }
+            Button(language.text("ui_061")) { model.stopRecording() }
                 .frame(maxWidth: .infinity, minHeight: 48).buttonStyle(.borderedProminent)
         } else {
             if !model.state.speechAvailable {
-                Text("Thiết bị chưa nhận giọng nói tiếng Việt — hãy gõ ghi chú bên dưới, AI vẫn học được.")
+                Text(language.text("ui_157"))
                     .font(.caption).foregroundStyle(.orange)
             }
             if model.state.frameCount > 0 {
-                Text("Đã ghi \(model.state.frameCount) khung hình · \(model.state.lines.count) câu")
+                Text(language.format("recorded_counts", String(model.state.frameCount), String(model.state.lines.count)))
                     .font(.subheadline).foregroundStyle(ShadowStyle.accent)
             }
-            TextField("Tên kỹ năng", text: Binding(
+            TextField(language.text("ui_176"), text: Binding(
                 get: { model.state.title },
                 set: { model.send(TeachActionTitle(value: $0)) })).textFieldStyle(.roundedBorder)
-            TextField("Người dạy", text: Binding(
+            TextField(language.text("ui_135"), text: Binding(
                 get: { model.state.teacher },
                 set: { model.send(TeachActionTeacher(value: $0)) })).textFieldStyle(.roundedBorder)
-            TextField("Ghi chú thêm (hoặc mô tả bằng chữ)", text: Binding(
+            TextField(language.text("ui_068"), text: Binding(
                 get: { model.state.notes },
                 set: { model.send(TeachActionNotes(value: $0)) }), axis: .vertical)
                 .lineLimit(2...5).textFieldStyle(.roundedBorder)
-            Button(model.state.frameCount > 0 ? "Ghi lại" : "Bắt đầu ghi") { model.startRecording() }
+            Button(model.state.frameCount > 0 ? language.text("ui_069") : language.text("ui_018")) { model.startRecording() }
                 .frame(maxWidth: .infinity, minHeight: 48).buttonStyle(.bordered)
-            Button("AI học ngay") { model.send(TeachActionCompile.shared) }
+            Button(language.text("ui_005")) { model.send(TeachActionCompile.shared) }
                 .frame(maxWidth: .infinity, minHeight: 48).buttonStyle(.borderedProminent)
                 .disabled(!model.state.canCompile)
         }
@@ -105,34 +106,34 @@ struct LiveTeachView: View {
     @ViewBuilder private var compiling: some View {
         ProgressView().progressViewStyle(.linear)
         Text(model.state.compilePhase == "verifying"
-             ? "AI đang tự kiểm tra lại kỹ năng…"
-             : "AI đang chia thao tác thành từng bước…").font(.headline)
-        Text("Thường mất 10–30 giây.").foregroundStyle(.secondary)
-        Button("Huỷ") { model.send(TeachActionCancelCompile.shared) }
+             ? language.text("ui_008")
+             : language.text("ui_007")).font(.headline)
+        Text(language.text("ui_164")).foregroundStyle(.secondary)
+        Button(language.text("ui_076")) { model.send(TeachActionCancelCompile.shared) }
     }
 
     @ViewBuilder private var review: some View {
         if let draft = model.state.draft {
-            Text("AI đã học xong").font(.title2.bold())
+            Text(language.text("ui_009")).font(.title2.bold())
             Text(draft.title).font(.headline).foregroundStyle(ShadowStyle.accent)
             ForEach(Array(draft.steps.enumerated()), id: \.offset) { index, step in
                 VStack(alignment: .leading, spacing: 4) {
-                    TextField("Bước \(index + 1)", text: Binding(
+                    TextField(language.format("step_number", String(index + 1)), text: Binding(
                         get: { step.instruction },
                         set: { model.send(TeachActionEditStep(index: Int32(index), instruction: $0)) }),
                         axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                     if !step.tip.isEmpty {
-                        Text("Mẹo: \(step.tip)").font(.caption).foregroundStyle(.secondary)
+                        Text(language.format("tip_detail", String(step.tip))).font(.caption).foregroundStyle(.secondary)
                     }
                     if !step.warning.isEmpty {
-                        Text("Lưu ý: \(step.warning)").font(.caption).foregroundStyle(.orange)
+                        Text(language.format("warning_detail", String(step.warning))).font(.caption).foregroundStyle(.orange)
                     }
                 }
             }
-            Button("Lưu kỹ năng") { model.send(TeachActionSave.shared) }
+            Button(language.text("ui_111")) { model.send(TeachActionSave.shared) }
                 .frame(maxWidth: .infinity, minHeight: 48).buttonStyle(.borderedProminent)
-            Button("Dạy lại") { model.send(TeachActionReset.shared) }
+            Button(language.text("ui_059")) { model.send(TeachActionReset.shared) }
         }
     }
 }

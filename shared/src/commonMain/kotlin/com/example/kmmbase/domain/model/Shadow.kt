@@ -100,7 +100,8 @@ data class TeachDraft(val skillId: String, val title: String, val steps: List<Sh
 // ---- Try-on ---------------------------------------------------------------
 
 data class TryonConfig(val liveAvailable: Boolean, val photoProvider: String, val expectedSeconds: Int)
-data class TryonResult(val imageUrl: String, val provider: String, val seconds: Double)
+data class TryonResult(val imageUrl: String, val provider: String, val seconds: Double,
+    val skippedItemIds: List<String> = emptyList(), val note: String = "")
 
 fun shadowSourceLabel(source: String): String = when (source) {
     "ai" -> "AI"

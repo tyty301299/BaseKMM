@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.teach
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +33,7 @@ internal fun LiveTeachScreen(
     onDone: (skillId: String) -> Unit,
     onExit: () -> Unit,
 ) {
+    val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     val context = LocalContext.current
     val cameraGranted = rememberCameraPermission()
@@ -67,19 +70,19 @@ internal fun LiveTeachScreen(
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
-            Text("Dạy kỹ năng mới", style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = onExit) { Text("Đóng", color = Accent) }
+            Text(language.text(R.string.ui_058), style = MaterialTheme.typography.titleLarge)
+            TextButton(onClick = onExit) { Text(language.text(R.string.close), color = Accent) }
         }
 
         when (state.phase) {
             TeachPhase.RECORDING, TeachPhase.IDLE -> RecordStage(frames, store, state, cameraGranted)
             TeachPhase.COMPILING -> CompileStage(store, state)
             TeachPhase.REVIEW -> ReviewStage(store, state)
-            TeachPhase.SAVED -> Text("Đã lưu kỹ năng.", color = Accent,
+            TeachPhase.SAVED -> Text(language.text(R.string.ui_244), color = Accent,
                 style = MaterialTheme.typography.headlineSmall)
         }
 
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        state.error?.let { Text(language.systemText(it), color = MaterialTheme.colorScheme.error) }
     }
 }
 
@@ -90,85 +93,88 @@ private fun RecordStage(
     state: TeachState,
     cameraGranted: Boolean,
 ) {
+    val language = LocalAppLanguage.current
     if (cameraGranted) {
         CameraPreview(frames, Modifier.fillMaxWidth().height(260.dp))
     } else {
-        Text("Cần quyền camera để ghi lại thao tác mẫu.")
+        Text(language.text(R.string.ui_050))
     }
 
     if (state.phase == TeachPhase.RECORDING) {
-        Text("Đang ghi · ${state.elapsedMs / 1000}s · ${state.frameCount} khung hình",
+        Text(language.format(R.string.recording_counts, (state.elapsedMs / 1000).toString(), (state.frameCount).toString()),
             color = Accent, style = MaterialTheme.typography.titleMedium)
-        Text("Vừa làm vừa nói: \"đầu tiên…\", \"nhớ là…\", \"đừng…\"")
+        Text(language.text(R.string.ui_189))
         if (state.liveTranscript.isNotBlank()) {
             Text(state.liveTranscript, color = Color(0xFFADB8A4))
         }
         state.lines.takeLast(3).forEach { Text("· ${it.text}", style = MaterialTheme.typography.bodySmall) }
         Button(onClick = { store.dispatch(TeachAction.StopRecording) },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Dừng ghi") }
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(language.text(R.string.ui_061)) }
     } else {
         if (!state.speechAvailable) {
-            Text("Thiết bị chưa nhận giọng nói tiếng Việt — hãy gõ ghi chú bên dưới, AI vẫn học được.",
+            Text(language.text(R.string.ui_157),
                 color = Color(0xFFFFB547), style = MaterialTheme.typography.bodySmall)
         }
         if (state.frameCount > 0) {
-            Text("Đã ghi ${state.frameCount} khung hình · ${state.lines.size} câu",
+            Text(language.format(R.string.recorded_counts, (state.frameCount).toString(), (state.lines.size).toString()),
                 color = Accent, style = MaterialTheme.typography.bodyMedium)
         }
         OutlinedTextField(state.title, { store.dispatch(TeachAction.Title(it)) },
-            label = { Text("Tên kỹ năng") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            label = { Text(language.text(R.string.ui_176)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(state.teacher, { store.dispatch(TeachAction.Teacher(it)) },
-            label = { Text("Người dạy") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            label = { Text(language.text(R.string.ui_135)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(state.notes, { store.dispatch(TeachAction.Notes(it)) },
-            label = { Text("Ghi chú thêm (hoặc mô tả bằng chữ)") }, minLines = 2,
+            label = { Text(language.text(R.string.ui_068)) }, minLines = 2,
             modifier = Modifier.fillMaxWidth())
         Button(onClick = { store.dispatch(TeachAction.StartRecording) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Text(if (state.frameCount > 0) "Ghi lại" else "Bắt đầu ghi")
+            Text(if (state.frameCount > 0) language.text(R.string.ui_069) else language.text(R.string.ui_018))
         }
         Button(onClick = { store.dispatch(TeachAction.Compile) }, enabled = state.canCompile,
             colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color(0xFF211C09)),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("AI học ngay") }
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(language.text(R.string.ui_005)) }
     }
 }
 
 @Composable
 private fun CompileStage(store: TeachStore, state: TeachState) {
+    val language = LocalAppLanguage.current
     val label = when (state.compilePhase) {
-        "verifying" -> "AI đang tự kiểm tra lại kỹ năng…"
-        else -> "AI đang chia thao tác thành từng bước…"
+        "verifying" -> language.text(R.string.ui_008)
+        else -> language.text(R.string.ui_007)
     }
     LinearProgressIndicator(Modifier.fillMaxWidth())
     Text(label, style = MaterialTheme.typography.titleMedium)
-    Text("Thường mất 10–30 giây.", color = Color(0xFFADB8A4))
-    TextButton(onClick = { store.dispatch(TeachAction.CancelCompile) }) { Text("Huỷ", color = Accent) }
+    Text(language.text(R.string.ui_164), color = Color(0xFFADB8A4))
+    TextButton(onClick = { store.dispatch(TeachAction.CancelCompile) }) { Text(language.text(R.string.ui_076), color = Accent) }
 }
 
 @Composable
 private fun ReviewStage(store: TeachStore, state: TeachState) {
+    val language = LocalAppLanguage.current
     val draft = state.draft ?: return
-    Text("AI đã học xong", style = MaterialTheme.typography.headlineSmall)
+    Text(language.text(R.string.ui_009), style = MaterialTheme.typography.headlineSmall)
     Text(draft.title, color = Accent, style = MaterialTheme.typography.titleMedium)
     draft.steps.forEachIndexed { index, step ->
         OutlinedTextField(
             step.instruction,
             { store.dispatch(TeachAction.EditStep(index, it)) },
-            label = { Text("Bước ${index + 1}") },
+            label = { Text(language.format(R.string.step_number, (index + 1).toString())) },
             modifier = Modifier.fillMaxWidth(),
         )
         if (step.tip.isNotBlank()) {
-            Text("Mẹo: ${step.tip}", style = MaterialTheme.typography.bodySmall,
+            Text(language.format(R.string.tip_detail, (step.tip).toString()), style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFFADB8A4))
         }
         if (step.warning.isNotBlank()) {
-            Text("Lưu ý: ${step.warning}", style = MaterialTheme.typography.bodySmall,
+            Text(language.format(R.string.warning_detail, (step.warning).toString()), style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFFFFB547))
         }
     }
     Button(onClick = { store.dispatch(TeachAction.Save) },
         colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color(0xFF211C09)),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Lưu kỹ năng") }
-    TextButton(onClick = { store.dispatch(TeachAction.Reset) }) { Text("Dạy lại", color = Accent) }
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(language.text(R.string.ui_111)) }
+    TextButton(onClick = { store.dispatch(TeachAction.Reset) }) { Text(language.text(R.string.ui_059), color = Accent) }
 }
 
 @Composable

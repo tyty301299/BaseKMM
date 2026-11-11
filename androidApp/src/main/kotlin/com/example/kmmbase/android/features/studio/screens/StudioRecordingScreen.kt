@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.studio.screens
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,18 +16,19 @@ import com.example.kmmbase.presentation.studio.*
 
 @Composable
 internal fun StudioRecordingScreen(store: StudioStore, onBack: () -> Unit, onCompile: () -> Unit) {
-    StudioPage("Quay thao tác · demo", store, onBack) { state ->
+    val language = LocalAppLanguage.current
+    StudioPage(language.text(R.string.ui_149), store, onBack) { state ->
         StudioInstructionIllustration()
         Column(Modifier.fillMaxWidth().background(LookPanel, RoundedCornerShape(28.dp)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Text(if (state.recording) "Đang mô phỏng thao tác" else "Đoạn thao tác mẫu đã sẵn sàng", style = MaterialTheme.typography.headlineSmall)
-            Text("Không có video hoặc âm thanh được ghi.")
+            Text(if (state.recording) language.text(R.string.ui_221) else language.text(R.string.ui_236), style = MaterialTheme.typography.headlineSmall)
+            Text(language.text(R.string.ui_082))
         }
-        OutlinedTextField(state.transcript, { store.dispatch(StudioAction.Transcript(it)) }, label = { Text("Lời giải thích mẫu") }, enabled = state.busy.isEmpty(), minLines = 3, modifier = Modifier.fillMaxWidth())
-        Text("Nội dung này dùng duyệt flow; các bước tiếp theo là dữ liệu mẫu cố định.", style = MaterialTheme.typography.bodySmall)
-        if (state.recording) LookButton("Dừng thao tác mẫu") { store.dispatch(StudioAction.StopRecording) }
+        OutlinedTextField(state.transcript, { store.dispatch(StudioAction.Transcript(it)) }, label = { Text(language.text(R.string.ui_118)) }, enabled = state.busy.isEmpty(), minLines = 3, modifier = Modifier.fillMaxWidth())
+        Text(language.text(R.string.ui_146), style = MaterialTheme.typography.bodySmall)
+        if (state.recording) LookButton(language.text(R.string.ui_062)) { store.dispatch(StudioAction.StopRecording) }
         else {
-            LookButton("Xem AI chia bước · demo", state.recorded, onCompile)
-            TextButton(onClick = { store.dispatch(StudioAction.StartRecording) }, enabled = state.busy.isEmpty()) { Text("Làm mẫu lại") }
+            LookButton(language.text(R.string.ui_192), state.recorded, onCompile)
+            TextButton(onClick = { store.dispatch(StudioAction.StartRecording) }, enabled = state.busy.isEmpty()) { Text(language.text(R.string.ui_106)) }
         }
     }
 }

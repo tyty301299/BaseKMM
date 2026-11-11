@@ -4,6 +4,7 @@ import SwiftUI
 /// Full-screen camera with the step HUD on top. SHADOW watches through the camera and speaks each
 /// line in Vietnamese; long-pressing the HUD reveals the ◀ ▶ controls used to rescue a live demo.
 struct LiveGuideView: View {
+    @EnvironmentObject private var language: AppLanguage
     let skillId: String
     let skillTitle: String
     let onExit: () -> Void
@@ -29,9 +30,9 @@ struct LiveGuideView: View {
                 CameraPreview(camera: model.camera).ignoresSafeArea()
             } else {
                 VStack(spacing: 16) {
-                    Text("Cần quyền camera để SHADOW nhìn thao tác của bạn.")
+                    Text(language.text("ui_049"))
                         .foregroundStyle(.white).multilineTextAlignment(.center)
-                    Button("Quay lại", action: leave).tint(ShadowStyle.accent)
+                    Button(language.text("back"), action: leave).tint(ShadowStyle.accent)
                 }
                 .padding(32)
             }
@@ -57,20 +58,20 @@ struct LiveGuideView: View {
                 Text(model.state.skillName.isEmpty ? skillTitle : model.state.skillName)
                     .font(.headline).foregroundStyle(.white)
                 Spacer()
-                Button("Thoát", action: leave).tint(ShadowStyle.accent)
+                Button(language.text("ui_158"), action: leave).tint(ShadowStyle.accent)
             }
 
             if model.state.completed {
-                Text("Bạn đã hoàn thành!").font(.title2.bold()).foregroundStyle(ShadowStyle.accent)
+                Text(language.text("ui_014")).font(.title2.bold()).foregroundStyle(ShadowStyle.accent)
             } else if let step = model.state.step {
-                Text("BƯỚC \(step.index + 1) / \(step.total)")
+                Text(language.format("step_progress", String(step.index + 1), String(step.total)))
                     .font(.caption.bold()).foregroundStyle(ShadowStyle.accent)
                 Text(step.instruction).font(.title3.bold()).foregroundStyle(.white)
                 if !step.tip.isEmpty {
                     Text(step.tip).font(.subheadline).foregroundStyle(.white.opacity(0.8))
                 }
                 if !step.warning.isEmpty {
-                    Text("Lưu ý: \(step.warning)").font(.subheadline).foregroundStyle(.orange)
+                    Text(language.format("warning_detail", String(step.warning))).font(.subheadline).foregroundStyle(.orange)
                 }
                 if !step.referenceImageUrl.isEmpty, let url = URL(string: step.referenceImageUrl) {
                     AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
@@ -78,7 +79,7 @@ struct LiveGuideView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             } else {
-                Text("Đang chuẩn bị…").foregroundStyle(.white)
+                Text(language.text("ui_213")).foregroundStyle(.white)
             }
 
             status
@@ -106,10 +107,10 @@ struct LiveGuideView: View {
     }
 
     private var statusLabel: String {
-        if model.state.connection == SocketStatus.closed { return "Đang kết nối lại…" }
-        if model.state.connection == SocketStatus.connecting { return "Đang kết nối…" }
-        if model.state.judging { return "SHADOW đang nhìn…" }
-        return model.state.running ? "Đang theo dõi" : "Sẵn sàng"
+        if model.state.connection == SocketStatus.closed { return language.text("ui_214") }
+        if model.state.connection == SocketStatus.connecting { return language.text("connecting") }
+        if model.state.judging { return language.text("ui_152") }
+        return model.state.running ? language.text("ui_227") : language.text("ui_155")
     }
 
     private var footer: some View {
@@ -121,7 +122,7 @@ struct LiveGuideView: View {
                 Text(model.state.hint).font(.subheadline).foregroundStyle(.orange)
             }
             if let error = model.state.error {
-                Text(error).font(.subheadline).foregroundStyle(.red)
+                Text(language.systemText(error)).font(.subheadline).foregroundStyle(.red)
             }
             if model.state.debugControls {
                 HStack(spacing: 12) {

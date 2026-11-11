@@ -2,26 +2,27 @@ import SwiftUI
 import Shared
 
 struct StudioItemView: View {
+    @EnvironmentObject private var language: AppLanguage
     @ObservedObject var model: StudioModel
     let itemID: String
     let onTry: (String) -> Void
     @State private var confirm = false
     var body: some View {
-        StudioPage(title: "Chi tiết trang phục", model: model) {
+        StudioPage(title: language.text("ui_030"), model: model) {
             if let item = model.state.itemDraft, item.id == itemID,
                model.state.data.items.contains(where: { $0.id == itemID }) {
-                LookMannequin(preset: item.preset).frame(height: 300).frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.3), in: RoundedRectangle(cornerRadius: 28))
-                TextField("Tên trang phục", text: Binding(get: { model.state.itemDraft?.name ?? "" }, set: { model.send(StudioActionItemName(value: $0)) }))
-                    .textFieldStyle(.roundedBorder).accessibilityLabel("Tên trang phục")
-                Picker("Nhóm trang phục", selection: Binding(get: { model.state.itemDraft?.category ?? "Áo" }, set: { model.send(StudioActionItemCategory(value: $0)) })) {
-                    Text("Áo").tag("Áo"); Text("Áo khoác").tag("Áo khoác")
+                StudioGarmentImage(preset: item.preset).frame(height: 300).frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 28))
+                TextField(language.text("ui_177"), text: Binding(get: { model.state.itemDraft?.name ?? "" }, set: { model.send(StudioActionItemName(value: $0)) }))
+                    .textFieldStyle(.roundedBorder).accessibilityLabel(language.text("ui_177"))
+                Picker(language.text("ui_136"), selection: Binding(get: { model.state.itemDraft?.category ?? "Áo" }, set: { model.send(StudioActionItemCategory(value: $0)) })) {
+                    Text(language.text("filter_tops")).tag("Áo"); Text(language.text("filter_jackets")).tag("Áo khoác")
                 }.pickerStyle(.segmented)
-                Text("Trang phục mẫu").foregroundStyle(.secondary)
-                LookPrimaryButton(title: "Lưu thay đổi", disabled: item.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) { model.send(StudioActionSaveItem.shared) }
-                LookPrimaryButton(title: "Mở camera thử mẫu") { onTry(item.preset) }
-                Button("Xóa trang phục", role: .destructive) { confirm = true }.frame(minHeight: 44)
-            } else if !model.state.loading { Text("Không tìm thấy trang phục này.") }
+                Text(language.text("ui_173")).foregroundStyle(.secondary)
+                LookPrimaryButton(title: language.text("ui_114"), disabled: item.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) { model.send(StudioActionSaveItem.shared) }
+                LookPrimaryButton(title: language.text("ui_130")) { onTry(item.preset) }
+                Button(language.text("ui_205"), role: .destructive) { confirm = true }.frame(minHeight: 44)
+            } else if !model.state.loading { Text(language.text("ui_094")) }
         }
         .onAppear {
             if model.state.itemDraft?.id != itemID { model.send(StudioActionOpenItem(id: itemID)) }
@@ -29,9 +30,9 @@ struct StudioItemView: View {
         .onChange(of: model.state.data.items.map(\.id)) { _ in
             if model.state.itemDraft?.id != itemID { model.send(StudioActionOpenItem(id: itemID)) }
         }
-        .confirmationDialog("Xóa trang phục khỏi tủ đồ?", isPresented: $confirm, titleVisibility: .visible) {
-            Button("Xóa", role: .destructive) { model.send(StudioActionDeleteItem(id: itemID)) }
-            Button("Hủy", role: .cancel) {}
+        .confirmationDialog(language.text("ui_206"), isPresented: $confirm, titleVisibility: .visible) {
+            Button(language.text("ui_197"), role: .destructive) { model.send(StudioActionDeleteItem(id: itemID)) }
+            Button(language.text("cancel"), role: .cancel) {}
         }
     }
 }

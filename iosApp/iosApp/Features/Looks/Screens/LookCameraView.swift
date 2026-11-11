@@ -2,6 +2,7 @@ import SwiftUI
 import Shared
 
 struct LookCameraView: View {
+    @EnvironmentObject private var language: AppLanguage
     @ObservedObject var model: LookModel
     let onClose: () -> Void
     let onHistory: () -> Void
@@ -27,30 +28,30 @@ struct LookCameraView: View {
                     .ignoresSafeArea().allowsHitTesting(false)
                 VStack(spacing: 16) {
                     HStack {
-                        cameraButton("Đóng camera", icon: "chevron.left", action: onClose)
+                        cameraButton(language.text("ui_253"), icon: "chevron.left", action: onClose)
                         Spacer()
-                        Text("Camera thử đồ").font(.headline)
+                        Text(language.text("ui_027")).font(.headline)
                         Spacer()
-                        cameraButton("Lật hình nhân", icon: "arrow.triangle.2.circlepath") { model.send(LookActionFlip.shared) }
+                        cameraButton(language.text("ui_116"), icon: "arrow.triangle.2.circlepath") { model.send(LookActionFlip.shared) }
                     }
                     HStack {
-                        Button(model.state.before ? "Trước khi thử" : "Đang thử · mẫu") { model.send(LookActionCompare.shared) }
+                        Button(model.state.before ? language.text("ui_175") : language.text("ui_229")) { model.send(LookActionCompare.shared) }
                             .font(.subheadline.weight(.semibold)).padding(.horizontal, 20).frame(minHeight: 48).modifier(LookGlass())
                         Spacer()
                     }
                     Spacer(minLength: 12)
-                    Text("Hình nhân minh họa · camera demo").font(.caption).multilineTextAlignment(.center)
+                    Text(language.text("ui_077")).font(.caption).multilineTextAlignment(.center)
                     LookPresetPicker(model: model)
                     HStack {
-                        cameraButton("Mở lịch sử", icon: "clock.arrow.circlepath", action: onHistory)
+                        cameraButton(language.text("ui_133"), icon: "clock.arrow.circlepath", action: onHistory)
                         Spacer()
                         Button { model.send(LookActionCapture.shared) } label: {
                             Circle().fill(.white).padding(7).overlay(Circle().stroke(.white, lineWidth: 3)).frame(width: 80, height: 80)
-                        }.accessibilityLabel("Chụp kết quả mẫu")
+                        }.accessibilityLabel(language.text("ui_044"))
                         Spacer()
                         Color.clear.frame(width: 48, height: 48).accessibilityHidden(true)
                     }.padding(.top, 4)
-                    Text("Chụp ảnh mẫu").font(.caption)
+                    Text(language.text("ui_046")).font(.caption)
                 }.padding(.horizontal, 24).padding(.vertical, 12).foregroundStyle(.white)
             }
         }

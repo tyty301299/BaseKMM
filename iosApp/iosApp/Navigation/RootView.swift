@@ -9,11 +9,14 @@ enum Route: Hashable {
 
 /// The only place that decides where each screen goes.
 struct RootView: View {
+    @EnvironmentObject private var language: AppLanguage
     let container: AppContainer
+    @StateObject private var shadow: ShadowModel
     @StateObject private var looks: LookModel
     @StateObject private var studio: StudioModel
     @StateObject private var feedback = StudioFeedback()
     @State private var serviceTab = 0
+    @State private var serviceSettings = false
     @State private var tab = 0
     @State private var showCamera = false
     @State private var showService = false
@@ -22,16 +25,17 @@ struct RootView: View {
 
     init(container: AppContainer) {
         self.container = container
+        _shadow = StateObject(wrappedValue: ShadowModel(store: container.shadowStore()))
         _studio = StateObject(wrappedValue: StudioModel(store: container.studioStore()))
         _looks = StateObject(wrappedValue: LookModel(store: container.lookStore()))
     }
     @State private var path: [Route] = []
-    /// Open on the server-backed flow: it is the real product, the sample screens are a fallback.
+    /// Connect once without presenting a modal over the four primary tabs.
     @State private var showedServiceOnLaunch = false
 
     var body: some View {
         NavigationStack(path: $path) {
-            LookHomeView(model: looks, studio: studio, tab: $tab, onCamera: { navigate(.cameraIntro) },
+            LookHomeView(model: looks, studio: studio, shadow: shadow, tab: $tab, onCamera: { navigate(.cameraIntro) },
                 onRecord: { selectedRecord = LookRecordRoute(id: $0) },
                 onService: { openService(tab == 2 ? 0 : 1) },
                 onAdd: { navigate(.addItem) }, onItem: { id in
@@ -42,9 +46,10 @@ struct RootView: View {
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .studio(let destination):
-                        StudioDestination(route: destination, model: studio, looks: looks,
+                        StudioDestination(route: destination, model: studio, looks: looks, shadow: shadow,
                             navigate: navigate, openCamera: openCamera,
-                            homeTab: { tab = $0; path = [] }, service: openService)
+                            homeTab: { tab = $0; path = [] }, service: openService,
+                            connectionSettings: { serviceTab = 0; serviceSettings = true; showService = true })
                     case .notes:
                         NoteListView(store: container.noteListStore()) { id in
                             path.append(.noteEdit(noteId: id))
@@ -65,14 +70,16 @@ struct RootView: View {
         }
         .sheet(isPresented: $showService) {
             NavigationStack {
-                HomeView(container: container, initialTab: serviceTab)
-                    .toolbar { ToolbarItem(placement: .navigationBarLeading) { Button("Đóng") { showService = false } } }
+                HomeView(container: container, initialTab: serviceTab, initialSettings: serviceSettings, existingModel: shadow)
+                    .toolbar { ToolbarItem(placement: .navigationBarLeading) { Button(language.text("close")) { showService = false } } }
             }
         }
         .onAppear {
             guard !showedServiceOnLaunch else { return }
             showedServiceOnLaunch = true
-            openService(0)
+            let endpoint = UserDefaults.standard.string(forKey: "shadow.endpoint") ?? ShadowDefaultsKt.DEFAULT_SHADOW_ORIGIN
+            let code = endpoint == ShadowDefaultsKt.DEFAULT_SHADOW_ORIGIN ? ShadowDefaultsKt.DEFAULT_SHADOW_ACCESS_CODE : ""
+            shadow.send(ShadowActionConnect(endpoint: endpoint, code: code))
         }
         .sheet(item: $selectedRecord, onDismiss: {
             if retryAfterDismiss { retryAfterDismiss = false; showCamera = true }
@@ -88,6 +95,8 @@ struct RootView: View {
         .environment(\.lookOperationBusy, looks.state.saving)
         .environmentObject(feedback)
         .onAppear {
+            shadow.onMessage = feedback.show
+            feedback.localize = language.systemText
             looks.onMessage = feedback.show
             studio.onMessage = feedback.show
             let routes = $path
@@ -102,7 +111,7 @@ struct RootView: View {
     }
 
     private func navigate(_ route: StudioRoute) { path.append(.studio(route)) }
-    private func openService(_ section: Int) { serviceTab = section; showService = true }
+    private func openService(_ section: Int) { serviceTab = section; serviceSettings = false; showService = true }
 
     private func openCamera() {
         guard !looks.state.saving else { return }

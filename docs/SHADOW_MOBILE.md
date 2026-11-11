@@ -21,7 +21,7 @@ hackathon, **đừng dùng cách này cho máy chủ có dữ liệu thật**.
 | Thêm ảnh đồ, mặc thử | **Vẫn mở bản web** | nút "Thêm ảnh & quản lý tủ đồ" |
 | Các màn mẫu cũ (hình nhân vẽ, lịch sử local) | Dữ liệu mẫu | Realm, không gọi mạng |
 
-App mở thẳng vào luồng máy chủ. Các màn mẫu cũ vẫn còn phía sau (bấm "Đóng") làm phương án dự phòng.
+App mở bốn tab thiết kế, tự kết nối nền và hiện badge trạng thái. Nút Phối đồ cho hôm nay / Thử đồ với ảnh của bạn mở luồng máy chủ; các màn dữ liệu mẫu vẫn có nhãn riêng và đường vào rõ ràng.
 
 ## Hai chi tiết giao thức dễ làm sai
 
@@ -122,7 +122,7 @@ SHADOW_ACCESS_CODE=<mã> ./gradlew :shared:testAndroidHostTest --tests '*LiveSer
   camera là ảnh giả.
 - **Chưa đo độ chính xác với model đang chạy.** Máy chủ hiện dùng `deepseek-flash`, khác `qwen3-vl-8b-instruct`
   mà toàn bộ số liệu trong `shadown-fourward/PROGRESS.md` đã đo. Cần chạy lại eval trên bài demo thật.
-- **Mặc thử** (`/api/tryon/photo`) chưa có trong app; mặc thử trực tiếp Decart cũng chưa, vì máy chủ báo
+- **Mặc thử ảnh** (`/api/tryon/photo`) đã có UI và nối API, nhưng chưa kiểm chứng chất lượng trên thiết bị thật. Mặc thử video trực tiếp Decart chưa có, vì máy chủ báo
   `live.available: false` (thiếu `DECART_API_KEY`).
 - Giới hạn tần suất: tối đa 3 WebSocket cùng lúc trên một IP, 30 tin nhắn/giây. Cả nhóm test chung một mạng có thể
   bị đóng kết nối với mã 1008 — biết trước để không nhầm là lỗi app.
@@ -152,3 +152,15 @@ Không log access code, header, payload, ảnh/base64, lời nói, câu hỏi, g
 địa chỉ server hoặc thông báo exception có thể chứa dữ liệu riêng tư.
 Log frame có thể xuất mỗi 1,5–2 giây khi đang chạy. Chưa bổ sung log riêng
 cho permission/callback camera, TTS/STT native; khi frame không có, xem `frame_unavailable`.
+
+
+## Settings, ngôn ngữ và ảnh người (11/11/2026)
+
+- Hai nền tảng dùng chung một phiên `ShadowStore` ở cấp navigation. Mở app tự kết nối một lần, không dùng sheet che bốn tab thiết kế. Badge luôn hiện trạng thái; Reconnect giữ mã trong bộ nhớ phiên, không ghi mã vào preferences/state.
+- Settings chia nhóm Kết nối, Ngôn ngữ, Giao diện, Dữ liệu. iOS dùng Form/navigation picker và TabView native (Liquid Glass trên iOS 26+); Android dùng Material 3. Nền dùng chung token của app; các màn camera giữ nền tương phản riêng.
+- Việt/English được lưu ở native preferences. Nhãn, trạng thái hệ thống và chuỗi có tham số dùng String Catalog / Android resources. Không dịch nội dung người dùng nhập, lời nói hoặc nội dung kỹ năng/câu trả lời server.
+- `Phối đồ cho hôm nay` → chọn ảnh người hoặc video → chọn khung hình nếu cần → chọn dịp/ghi chú → `Tạo ảnh thử đồ`. Ảnh được thu nhỏ tối đa 1024px, JPEG 85%, không gửi ảnh gốc hay toàn bộ video. Chỉ gửi sau khi người dùng bấm tạo.
+- `StylePerson` gọi gợi ý trang phục, lấy bộ đầu tiên có món đồ, rồi gọi `/api/tryon/photo`. Kết quả giữ nguyên provider; `mock` hiển thị nhãn ảnh ghép demo. Món bị bỏ qua và ghi chú của provider được hiển thị. Có hủy yêu cầu, chống gửi lặp và không công bố kết quả muộn sau hủy.
+- Import video chỉ hỗ trợ chọn khung hình để tạo **ảnh** thử đồ, chưa xử lý/xuất toàn bộ video có quần áo mới. Thêm ảnh trang phục vào tủ đồ server vẫn dùng bản web.
+- Icon chữ S được thiết kế vector trong `design/shadow-mobile/brand`, gắn vào AppIcon iOS, launcher/adaptive/themed icon Android. Ảnh áo mẫu dùng cùng nguồn với PDF; xem `design/shadow-mobile/ASSETS.md`.
+- Kiểm tra: 45 Android host tests qua, Android debug APK và iOS Simulator build qua. Chưa có kiểm chứng trên điện thoại thật; thao tác nhập media/khả năng AI cần kiểm tra với server và thiết bị thực tế.

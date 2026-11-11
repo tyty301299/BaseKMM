@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Task illustration, not a live camera preview or AI assessment.
 struct StudioInstructionIllustration: View {
+    @EnvironmentObject private var language: AppLanguage
     var body: some View {
         Canvas { context, size in
             let scale = min(size.width / 320, size.height / 220)
@@ -21,6 +22,6 @@ struct StudioInstructionIllustration: View {
         }
         .frame(maxWidth: .infinity).frame(height: 220)
         .background(Color(red: 0.23, green: 0.29, blue: 0.23), in: RoundedRectangle(cornerRadius: 28))
-        .accessibilityLabel("Minh họa lắp giá đỡ điện thoại, không phải camera thật")
+        .accessibilityLabel(language.text("ui_119"))
     }
 }

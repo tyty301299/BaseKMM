@@ -9,3 +9,9 @@ Các ảnh đều lấy từ bộ demo đã có trong `shadown-fourward/backend/
 Nguồn chi tiết: `shadown-fourward/backend/wardrobe_seed/SOURCES.md`.
 
 Icon đường nét và hình nhân thử đồ và minh họa giá đỡ/tay trong camera do prototype vẽ bằng SVG. Không phải camera feed hoặc bằng chứng đánh giá thị giác của AI. Không sao chép hình ảnh từ Pinterest.
+
+## Native app assets
+
+Hai ảnh `coat`/`blouse` được tái sử dụng trong `iosApp/iosApp/Assets.xcassets` và `androidApp/src/main/res/drawable` để khớp bản PDF, vẫn chỉ là tài nguyên demo theo điều kiện nêu trên.
+
+Icon chữ S trong `brand/shadow-icon.svg` là thiết kế vector mới cho SHADOW; PNG 1024px là bản xuất từ vector để đóng gói launcher icons. Không có góc bo được vẽ sẵn: iOS/Android tự áp dụng mask hệ thống.

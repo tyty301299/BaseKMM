@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.looks.screens
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +24,7 @@ import com.example.kmmbase.presentation.looks.*
 
 @Composable
 internal fun LookCameraScreen(store: LookStore, onClose: () -> Unit, onHistory: () -> Unit) {
+    val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     BackHandler { if (!state.saving) { if (state.capture != null) store.dispatch(LookAction.Retake) else onClose() } }
     LookTheme {
@@ -37,25 +40,25 @@ internal fun LookCameraScreen(store: LookStore, onClose: () -> Unit, onHistory: 
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).height(controlHeight).padding(horizontal = 24.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            CameraControl("Quay lại", LookSymbol.BACK, onClose)
-                            Text("Camera thử đồ", Modifier.weight(1f).padding(horizontal = 12.dp), color = Color.White, style = MaterialTheme.typography.titleMedium)
-                            CameraControl("Lật hình nhân", LookSymbol.FLIP) { store.dispatch(LookAction.Flip) }
+                            CameraControl(language.text(R.string.back), LookSymbol.BACK, onClose)
+                            Text(language.text(R.string.ui_027), Modifier.weight(1f).padding(horizontal = 12.dp), color = Color.White, style = MaterialTheme.typography.titleMedium)
+                            CameraControl(language.text(R.string.ui_116), LookSymbol.FLIP) { store.dispatch(LookAction.Flip) }
                         }
                         TextButton(onClick = { store.dispatch(LookAction.Compare) }, modifier = Modifier.lookGlass().heightIn(min = 48.dp)) {
-                            Text(if (state.before) "Trước khi thử" else "Đang thử · mẫu", color = Color.White)
+                            Text(if (state.before) language.text(R.string.ui_175) else language.text(R.string.ui_229), color = Color.White)
                         }
                         Spacer(Modifier.weight(1f))
-                        Text("Hình nhân minh họa · camera demo", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                        Text(language.text(R.string.ui_077), color = Color.White, style = MaterialTheme.typography.labelMedium)
                         LookPresetPicker(state, store::dispatch)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            CameraControl("Mở Lịch sử", LookSymbol.HISTORY, onHistory)
+                            CameraControl(language.text(R.string.ui_128), LookSymbol.HISTORY, onHistory)
                             TextButton(onClick = { store.dispatch(LookAction.Capture) }, contentPadding = PaddingValues(7.dp),
-                                modifier = Modifier.size(84.dp).border(3.dp, Color.White, CircleShape).semantics { contentDescription = "Chụp kết quả mẫu" }) {
+                                modifier = Modifier.size(84.dp).border(3.dp, Color.White, CircleShape).semantics { contentDescription = language.text(R.string.ui_044) }) {
                                 Box(Modifier.fillMaxSize().background(Color.White, CircleShape))
                             }
                             Spacer(Modifier.size(48.dp))
                         }
-                        Text("Chụp ảnh mẫu", Modifier.align(Alignment.CenterHorizontally), color = Color.White, style = MaterialTheme.typography.labelMedium)
+                        Text(language.text(R.string.ui_046), Modifier.align(Alignment.CenterHorizontally), color = Color.White, style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }

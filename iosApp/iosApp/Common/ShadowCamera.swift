@@ -97,16 +97,19 @@ private extension UIImage {
 /// Loads an image that sits behind the access gate. `AsyncImage` cannot send headers, so the
 /// request is made directly with the headers the repository supplies.
 struct RemoteImage: View {
+    @EnvironmentObject private var language: AppLanguage
     let url: String
     let headers: [String: String]
     var height: CGFloat = 120
+    var fit = false
 
     @State private var image: UIImage?
 
     var body: some View {
         Group {
             if let image {
-                Image(uiImage: image).resizable().scaledToFill()
+                if fit { Image(uiImage: image).resizable().scaledToFit() }
+                else { Image(uiImage: image).resizable().scaledToFill() }
             } else {
                 Color.white.opacity(0.08)
             }
@@ -114,7 +117,7 @@ struct RemoteImage: View {
         .frame(height: height)
         .frame(maxWidth: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .task(id: url) { await load() }
+        .task(id: url) { image = nil; await load() }
     }
 
     private func load() async {

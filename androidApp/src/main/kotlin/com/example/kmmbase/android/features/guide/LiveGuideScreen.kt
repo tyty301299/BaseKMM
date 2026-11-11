@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.guide
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -37,6 +39,7 @@ internal fun LiveGuideScreen(
     store: GuideStore,
     onExit: () -> Unit,
 ) {
+    val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     val granted = rememberCameraPermission()
 
@@ -53,10 +56,10 @@ internal fun LiveGuideScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("Cần quyền camera để SHADOW nhìn thao tác của bạn.",
+                Text(language.text(R.string.ui_049),
                     color = Color.White, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(16.dp))
-                TextButton(onClick = onExit) { Text("Quay lại", color = Accent) }
+                TextButton(onClick = onExit) { Text(language.text(R.string.back), color = Accent) }
             }
         }
 
@@ -74,15 +77,15 @@ internal fun LiveGuideScreen(
                 Text(state.skillName.ifBlank { skillTitle }, color = Color.White,
                     style = MaterialTheme.typography.titleMedium)
                 TextButton(onClick = { store.dispatch(GuideAction.Stop); onExit() }) {
-                    Text("Thoát", color = Accent)
+                    Text(language.text(R.string.ui_158), color = Accent)
                 }
             }
 
             val step = state.step
             if (state.completed) {
-                Text("Bạn đã hoàn thành!", color = Accent, style = MaterialTheme.typography.headlineSmall)
+                Text(language.text(R.string.ui_014), color = Accent, style = MaterialTheme.typography.headlineSmall)
             } else if (step != null) {
-                Text("BƯỚC ${step.index + 1} / ${step.total}", color = Accent,
+                Text(language.format(R.string.step_progress, (step.index + 1).toString(), (step.total).toString()), color = Accent,
                     style = MaterialTheme.typography.labelLarge)
                 Text(step.instruction, color = Color.White,
                     style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
@@ -90,18 +93,18 @@ internal fun LiveGuideScreen(
                     Text(step.tip, color = Color(0xFFD8DCCF), style = MaterialTheme.typography.bodyMedium)
                 }
                 if (step.warning.isNotBlank()) {
-                    Text("Lưu ý: ${step.warning}", color = Color(0xFFFFB547),
+                    Text(language.format(R.string.warning_detail, (step.warning).toString()), color = Color(0xFFFFB547),
                         style = MaterialTheme.typography.bodyMedium)
                 }
                 if (step.referenceImageUrl.isNotBlank()) {
                     AsyncImage(
                         model = step.referenceImageUrl,
-                        contentDescription = "Ảnh mẫu của người dạy",
+                        contentDescription = language.text(R.string.ui_261),
                         modifier = Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)),
                     )
                 }
             } else {
-                Text("Đang chuẩn bị…", color = Color.White)
+                Text(language.text(R.string.ui_213), color = Color.White)
             }
 
             StatusRow(state)
@@ -118,7 +121,7 @@ internal fun LiveGuideScreen(
                 Text(state.hint, color = Color(0xFFFFB547), style = MaterialTheme.typography.bodyMedium)
             }
             state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                Text(language.systemText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
             if (state.debugControls) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -138,12 +141,13 @@ internal fun LiveGuideScreen(
 /** Connection and judging indicator: yellow means the AI round-trip is in flight or degraded. */
 @Composable
 private fun StatusRow(state: GuideState) {
+    val language = LocalAppLanguage.current
     val (color, label) = when {
-        state.connection == SocketStatus.CLOSED -> Color(0xFFFFB547) to "Đang kết nối lại…"
-        state.connection == SocketStatus.CONNECTING -> Color(0xFFFFB547) to "Đang kết nối…"
-        state.judging -> Accent to "SHADOW đang nhìn…"
-        state.running -> Color(0xFF7BD88F) to "Đang theo dõi"
-        else -> Color(0xFFADB8A4) to "Sẵn sàng"
+        state.connection == SocketStatus.CLOSED -> Color(0xFFFFB547) to language.text(R.string.ui_214)
+        state.connection == SocketStatus.CONNECTING -> Color(0xFFFFB547) to language.text(R.string.connecting)
+        state.judging -> Accent to language.text(R.string.ui_152)
+        state.running -> Color(0xFF7BD88F) to language.text(R.string.ui_227)
+        else -> Color(0xFFADB8A4) to language.text(R.string.ui_155)
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.size(10.dp).clip(CircleShape).background(color))

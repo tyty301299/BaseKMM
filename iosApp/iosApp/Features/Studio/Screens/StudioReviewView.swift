@@ -2,20 +2,21 @@ import SwiftUI
 import Shared
 
 struct StudioReviewView: View {
+    @EnvironmentObject private var language: AppLanguage
     @ObservedObject var model: StudioModel
     var body: some View {
-        StudioPage(title: "Duyệt kỹ năng", model: model) {
-            Text("Bạn xác nhận trước khi lưu.").font(.largeTitle.bold())
-            TextField("Tên kỹ năng", text: Binding(get: { model.state.title }, set: { model.send(StudioActionLessonTitle(value: $0)) }))
-                .textFieldStyle(.roundedBorder).accessibilityLabel("Tên kỹ năng")
+        StudioPage(title: language.text("ui_056"), model: model) {
+            Text(language.text("ui_013")).font(.largeTitle.bold())
+            TextField(language.text("ui_176"), text: Binding(get: { model.state.title }, set: { model.send(StudioActionLessonTitle(value: $0)) }))
+                .textFieldStyle(.roundedBorder).accessibilityLabel(language.text("ui_176"))
             ForEach(Array(model.state.draftSteps.enumerated()), id: \.offset) { index, _ in
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Bước \(index + 1)").font(.headline).foregroundStyle(LookStyle.accent)
-                    TextField("Nội dung bước", text: Binding(get: { model.state.draftSteps[index] }, set: { model.send(StudioActionEditStep(index: Int32(index), value: $0)) }), axis: .vertical)
-                        .lineLimit(2...6).textFieldStyle(.roundedBorder).accessibilityLabel("Nội dung bước \(index + 1)")
+                    Text(language.format("step_number", String(index + 1))).font(.headline).foregroundStyle(LookStyle.accent)
+                    TextField(language.text("ui_144"), text: Binding(get: { model.state.draftSteps[index] }, set: { model.send(StudioActionEditStep(index: Int32(index), value: $0)) }), axis: .vertical)
+                        .lineLimit(2...6).textFieldStyle(.roundedBorder).accessibilityLabel(language.format("step_instruction_number", String(index + 1)))
                 }.padding(18).background(LookStyle.panel, in: RoundedRectangle(cornerRadius: 22))
             }
-            LookPrimaryButton(title: "Lưu kỹ năng trên máy", disabled: !model.state.canSaveSkill || model.state.savedSkillId != nil) { model.send(StudioActionSaveSkill.shared) }
+            LookPrimaryButton(title: language.text("ui_112"), disabled: !model.state.canSaveSkill || model.state.savedSkillId != nil) { model.send(StudioActionSaveSkill.shared) }
         }
     }
 }

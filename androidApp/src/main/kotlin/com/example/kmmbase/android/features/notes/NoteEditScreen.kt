@@ -1,5 +1,7 @@
 package com.example.kmmbase.android.features.notes
 
+import com.example.kmmbase.android.common.LocalAppLanguage
+import com.example.kmmbase.android.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import com.example.kmmbase.presentation.notes.NoteEditStore
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun NoteEditScreen(store: NoteEditStore, onDone: () -> Unit) {
+    val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     LaunchedEffect(store) {
         store.effects.collect { effect ->
@@ -42,13 +45,13 @@ internal fun NoteEditScreen(store: NoteEditStore, onDone: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isExisting) "Sửa ghi chú" else "Ghi chú mới") },
-                navigationIcon = { TextButton(onClick = onDone) { Text("Quay lại") } },
+                title = { Text(if (state.isExisting) language.text(R.string.ui_156) else language.text(R.string.ui_067)) },
+                navigationIcon = { TextButton(onClick = onDone) { Text(language.text(R.string.back)) } },
                 actions = {
                     TextButton(
                         onClick = { store.dispatch(NoteEditAction.Save) },
                         enabled = state.canSave,
-                    ) { Text("Lưu") }
+                    ) { Text(language.text(R.string.ui_109)) }
                 },
             )
         },
@@ -65,23 +68,23 @@ internal fun NoteEditScreen(store: NoteEditStore, onDone: () -> Unit) {
         ) {
             val error = state.error
             if (error != null) {
-                Text(error.message(), color = MaterialTheme.colorScheme.error)
+                Text(language.systemText(error.message()), color = MaterialTheme.colorScheme.error)
                 if (error == AppError.STORAGE && state.isExisting) {
-                    TextButton(onClick = { store.dispatch(NoteEditAction.Retry) }) { Text("Thử lại") }
+                    TextButton(onClick = { store.dispatch(NoteEditAction.Retry) }) { Text(language.text(R.string.retry)) }
                 }
             }
             if (error != AppError.NOT_FOUND) {
                 OutlinedTextField(
                     value = state.title,
                     onValueChange = { store.dispatch(NoteEditAction.TitleChanged(it)) },
-                    label = { Text("Tiêu đề") },
+                    label = { Text(language.text(R.string.ui_171)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = state.body,
                     onValueChange = { store.dispatch(NoteEditAction.BodyChanged(it)) },
-                    label = { Text("Nội dung") },
+                    label = { Text(language.text(R.string.ui_143)) },
                     minLines = 5,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -89,7 +92,7 @@ internal fun NoteEditScreen(store: NoteEditStore, onDone: () -> Unit) {
                     OutlinedButton(
                         onClick = { store.dispatch(NoteEditAction.Delete) },
                         enabled = !state.isSaving,
-                    ) { Text("Xóa ghi chú") }
+                    ) { Text(language.text(R.string.ui_198)) }
                 }
             }
         }

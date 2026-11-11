@@ -2,6 +2,7 @@ import SwiftUI
 import Shared
 
 struct StudioPage<Content: View>: View {
+    @EnvironmentObject private var language: AppLanguage
     @Environment(\.lookOperationBusy) private var lookBusy
     let title: String
     @ObservedObject var model: StudioModel
@@ -10,11 +11,11 @@ struct StudioPage<Content: View>: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                if model.state.loading { ProgressView("Đang đọc dữ liệu trên máy…") }
-                if model.busy { ProgressView(model.state.busy).accessibilityLabel(model.state.busy) }
+                if model.state.loading { ProgressView(language.text("ui_235")) }
+                if model.busy { ProgressView(language.systemText(model.state.busy)).accessibilityLabel(language.systemText(model.state.busy)) }
                 if let error = model.state.error {
-                    Text(error).foregroundStyle(.red).accessibilityLabel("Lỗi. \(error)")
-                    Button("Tải lại dữ liệu") { model.send(StudioActionRetry.shared) }.disabled(model.busy)
+                    Text(language.systemText(error)).foregroundStyle(.red).accessibilityLabel(language.format("error_detail", String(error)))
+                    Button(language.text("ui_180")) { model.send(StudioActionRetry.shared) }.disabled(model.busy)
                 }
                 content().disabled(model.busy || lookBusy)
             }.padding(24).frame(maxWidth: 640).frame(maxWidth: .infinity)
