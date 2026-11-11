@@ -1,5 +1,6 @@
 package com.example.kmmbase.presentation.teach
 
+import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
 import com.example.kmmbase.presentation.common.StoreSubscription
@@ -66,6 +67,7 @@ class TeachStore(
     private val newId: () -> String,
     dispatcher: CoroutineDispatcher,
 ) : AutoCloseable {
+    private val trace = ShadowTrace("Teach")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(TeachState())
     val state: StateFlow<TeachState> = mutableState.asStateFlow()
@@ -81,6 +83,9 @@ class TeachStore(
     private var jobId = ""
 
     fun dispatch(action: TeachAction) {
+        if (action !is TeachAction.PartialSentence) {
+            trace.event("action", "type=${action::class.simpleName} phase=${currentState.phase}")
+        }
         when (action) {
             TeachAction.StartRecording -> startRecording()
             TeachAction.StopRecording -> stopRecording()
@@ -147,7 +152,10 @@ class TeachStore(
     }
 
     private suspend fun keep(reason: String) {
-        val image = captureFrame(512) ?: return
+        val image = captureFrame(512) ?: run {
+            trace.event("frame_unavailable", "reason=$reason")
+            return
+        }
         val at = (nowMs() - startedAt) / 1000.0
         frames += TeachFrame(at, image, reason)
         if (frames.size > MAX_FRAMES) {
@@ -160,6 +168,7 @@ class TeachStore(
             frames.clear()
             frames += keep
         }
+        trace.event("frame_kept", "reason=$reason count=${frames.size}")
         mutableState.update { it.copy(frameCount = frames.size) }
     }
 
@@ -177,6 +186,7 @@ class TeachStore(
             notes = currentState.notes.trim(),
             jobId = jobId,
         )
+        trace.event("compile_start", "frames=${request.frames.size} lines=${request.transcript.size}")
         progressJob = scope.launch {
             while (isActive) {
                 delay(1_500)
@@ -189,11 +199,14 @@ class TeachStore(
         compileJob = scope.launch {
             try {
                 val draft = repo.compileSkill(request)
+                trace.event("compile_success", "steps=${draft.steps.size}")
                 currentCoroutineContext().ensureActive()
                 mutableState.update { it.copy(phase = TeachPhase.REVIEW, draft = draft, compilePhase = "") }
             } catch (error: CancellationException) {
+                trace.event("cancelled")
                 throw error
             } catch (error: Exception) {
+                trace.failure("operation_failed", error)
                 mutableState.update { it.copy(phase = TeachPhase.IDLE, compilePhase = "") }
                 fail(error.message ?: "AI chưa học được kỹ năng. Thử lại nhé.")
             } finally {
@@ -215,12 +228,16 @@ class TeachStore(
         val draft = currentState.draft ?: return
         scope.launch {
             try {
+                trace.event("save_start")
                 val id = repo.saveSkill(draft.withEditedInstructions())
+                trace.event("save_success")
                 currentCoroutineContext().ensureActive()
                 mutableState.update { it.copy(phase = TeachPhase.SAVED, savedSkillId = id) }
             } catch (error: CancellationException) {
+                trace.event("cancelled")
                 throw error
             } catch (error: Exception) {
+                trace.failure("operation_failed", error)
                 fail(error.message ?: "Chưa lưu được kỹ năng. Thử lại nhé.")
             }
         }
@@ -233,10 +250,11 @@ class TeachStore(
     }
 
     private fun fail(message: String) {
+        trace.event("error_shown", "phase=${currentState.phase}")
         mutableState.update { it.copy(error = message) }
     }
 
-    override fun close() { scope.cancel() }
+    override fun close() { trace.event("close"); scope.cancel() }
 }
 
 /**

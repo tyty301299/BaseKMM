@@ -126,3 +126,29 @@ SHADOW_ACCESS_CODE=<mã> ./gradlew :shared:testAndroidHostTest --tests '*LiveSer
   `live.available: false` (thiếu `DECART_API_KEY`).
 - Giới hạn tần suất: tối đa 3 WebSocket cùng lúc trên một IP, 30 tin nhắn/giây. Cả nhóm test chung một mạng có thể
   bị đóng kết nối với mã 1008 — biết trước để không nhầm là lỗi app.
+
+
+## Truy vết app native
+
+Lọc `[SHADOW]` trong Xcode Debug Console hoặc Android Studio Logcat (`message:SHADOW`).
+Từ Terminal có Android SDK: `adb logcat -v threadtime | rg '\[SHADOW\]'`.
+Log xuất qua stdout của app; chưa ghi file hay gửi lên server.
+
+Mỗi dòng có dạng `[SHADOW][HTTP][<trace-id>] +123ms response status=200`.
+Trace ID nhóm các dòng của một request, kết nối WebSocket hoặc instance store;
+`+...ms` là thời gian kể từ lúc trace đó được tạo, không phải thời gian giữa hai dòng.
+Các trace này là cục bộ, chưa phải ID dùng chung với server.
+
+- `App`/`AppOperation`: loại thao tác và bắt đầu/thành công/hủy/lỗi.
+- `HTTP`: method, route (ẩn ID động), status, thời gian đọc/parse JSON, loại exception.
+  `success` ở đây chỉ xác nhận HTTP và JSON, chưa xác nhận mapping domain hay UI hoàn tất.
+- `WS`: kết nối, nối lại, thời gian chờ, gửi thành công/bỏ qua/lỗi và lỗi parse JSON.
+- `Guide`: trạng thái kết nối, phase/bước, lấy/gửi frame, kết quả vision,
+  xác nhận ngay và speech epoch bị bỏ vì cũ. `frame_dispatch` là yêu cầu gửi;
+  xem thêm `WS sent` hoặc `send_failed` để biết kết quả gửi.
+- `Teach`: ghi hình, số frame/transcript, compile, review, save, hủy và lỗi.
+
+Không log access code, header, payload, ảnh/base64, lời nói, câu hỏi, ghi chú,
+địa chỉ server hoặc thông báo exception có thể chứa dữ liệu riêng tư.
+Log frame có thể xuất mỗi 1,5–2 giây khi đang chạy. Chưa bổ sung log riêng
+cho permission/callback camera, TTS/STT native; khi frame không có, xem `frame_unavailable`.

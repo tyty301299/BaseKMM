@@ -1,5 +1,6 @@
 package com.example.kmmbase.presentation.guide
 
+import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowSessionSocket
 import com.example.kmmbase.presentation.common.StoreSubscription
@@ -55,6 +56,7 @@ class GuideStore(
     private val nowMs: () -> Long,
     dispatcher: CoroutineDispatcher,
 ) : AutoCloseable {
+    private val trace = ShadowTrace("Guide")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(GuideState())
     val state: StateFlow<GuideState> = mutableState.asStateFlow()
@@ -70,6 +72,7 @@ class GuideStore(
     private var sending = false
 
     fun dispatch(action: GuideAction) {
+        trace.event("action", "type=${action::class.simpleName}")
         when (action) {
             is GuideAction.Start -> start(action.skillId)
             GuideAction.Stop -> stop()
@@ -115,12 +118,17 @@ class GuideStore(
     }
 
     private suspend fun handle(event: SessionEvent) {
+        trace.event("received", "type=${event::class.simpleName}")
         when (event) {
-            is SessionEvent.Connection -> mutableState.update { it.copy(connection = event.status) }
+            is SessionEvent.Connection -> {
+                trace.event("connection", "status=${event.status}")
+                mutableState.update { it.copy(connection = event.status) }
+            }
 
             is SessionEvent.Ready -> mutableState.update { it.copy(imageMaxSide = event.imageMaxSide) }
 
             is SessionEvent.Hud -> {
+                trace.event("hud", "phase=${event.phase} step=${event.step?.index} total=${event.step?.total}")
                 val previousStep = currentState.step?.id
                 mutableState.update {
                     it.copy(
@@ -138,7 +146,11 @@ class GuideStore(
             }
 
             is SessionEvent.Speech -> {
-                if (event.epoch <= lastSpokenEpoch) return // stale or duplicate line
+                if (event.epoch <= lastSpokenEpoch) {
+                    trace.event("speech_stale", "epoch=${event.epoch} last=$lastSpokenEpoch")
+                    return
+                }
+                trace.event("speech_play", "epoch=${event.epoch}")
                 lastSpokenEpoch = event.epoch
                 stopSpeaking()
                 speak(event.text)
@@ -146,6 +158,7 @@ class GuideStore(
             }
 
             is SessionEvent.VisionResult -> {
+                trace.event("vision_result", "confirming=${event.confirming} done=${event.done} latency_ms=${event.latencyMs}")
                 mutableState.update {
                     it.copy(judging = false, latencyMs = event.latencyMs,
                         hint = event.hint.ifBlank { it.hint })
@@ -164,13 +177,18 @@ class GuideStore(
         scope.launch {
             try {
                 val image = captureFrame(currentState.imageMaxSide)
-                if (image.isNullOrBlank()) return@launch
+                if (image.isNullOrBlank()) {
+                    trace.event("frame_unavailable")
+                    return@launch
+                }
+                trace.event("frame_dispatch", "trigger=$trigger forced=$force")
                 lastSentAt = nowMs()
                 mutableState.update { it.copy(judging = true) }
                 socket?.sendFrame(image, lastSentAt, trigger)
             } catch (error: CancellationException) {
                 throw error
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                trace.failure("frame_failed", error)
                 mutableState.update { it.copy(judging = false) }
             } finally {
                 sending = false
@@ -179,6 +197,7 @@ class GuideStore(
     }
 
     override fun close() {
+        trace.event("close")
         stopSpeaking()
         scope.cancel()
         socket?.close()

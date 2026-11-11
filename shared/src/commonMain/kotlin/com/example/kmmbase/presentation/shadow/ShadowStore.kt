@@ -1,5 +1,6 @@
 package com.example.kmmbase.presentation.shadow
 
+import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
 import com.example.kmmbase.presentation.common.StoreSubscription
@@ -44,6 +45,7 @@ class ShadowStore internal constructor(
     private val normalizeEndpoint: (String) -> String,
     dispatcher: CoroutineDispatcher,
 ) : AutoCloseable {
+    private val trace = ShadowTrace("App")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ShadowState())
     private val messageChannel = Channel<UiMessage>(Channel.BUFFERED)
@@ -73,6 +75,7 @@ class ShadowStore internal constructor(
     fun mediaHeaders(): Map<String, String> = repository?.mediaHeaders() ?: emptyMap()
 
     fun dispatch(action: ShadowAction) {
+        trace.event("action", "type=${action::class.simpleName}")
         when (action) {
             is ShadowAction.Connect -> connect(action)
             ShadowAction.CloseLesson -> {
@@ -152,16 +155,21 @@ class ShadowStore internal constructor(
     }
 
     private fun run(label: String, block: suspend () -> Unit) {
+        val operationTrace = ShadowTrace("AppOperation")
+        operationTrace.event("start")
         mutableState.update { it.copy(busy = label, error = null) }
         operation = scope.launch {
             try {
                 block()
                 currentCoroutineContext().ensureActive()
+                operationTrace.event("success")
                 mutableState.update { it.copy(busy = "") }
                 messageChannel.send(UiMessage("Đã hoàn tất thao tác với SHADOW"))
             } catch (error: CancellationException) {
+                operationTrace.event("cancelled")
                 throw error
             } catch (error: Exception) {
+                operationTrace.failure("failed", error)
                 currentCoroutineContext().ensureActive()
                 mutableState.update { it.copy(busy = "", error = when (error) {
                     is IllegalArgumentException -> error.message ?: "Dữ liệu không hợp lệ."

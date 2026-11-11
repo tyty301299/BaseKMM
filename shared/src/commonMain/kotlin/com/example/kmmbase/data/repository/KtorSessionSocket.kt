@@ -1,5 +1,6 @@
 package com.example.kmmbase.data.repository
 
+import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowSessionSocket
 import io.ktor.client.HttpClient
@@ -23,6 +24,7 @@ internal class KtorSessionSocket(
     private val accessCode: String,
     private val media: (String) -> String,
 ) : ShadowSessionSocket {
+    private val trace = ShadowTrace("WS")
     private val url = origin.replaceFirst("https://", "wss://") + "/session/control"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val sink = MutableSharedFlow<SessionEvent>(replay = 0, extraBufferCapacity = 64,
@@ -38,9 +40,11 @@ internal class KtorSessionSocket(
     private suspend fun connectLoop() {
         var attempt = 0
         while (currentCoroutineContext().isActive) {
+            trace.event("connecting", "attempt=${attempt + 1}")
             sink.emit(SessionEvent.Connection(SocketStatus.CONNECTING))
             try {
                 client.wss(url, request = { header(ACCESS_HEADER, accessCode) }) {
+                    trace.event("open", "resume=${activeSkillId != null}")
                     session = this
                     attempt = 0
                     sink.emit(SessionEvent.Connection(SocketStatus.OPEN))
@@ -53,20 +57,27 @@ internal class KtorSessionSocket(
                     }
                 }
             } catch (error: CancellationException) {
+                trace.event("cancelled")
                 throw error
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                trace.failure("connection_failed", error)
                 // Fall through to the backoff below; the status event tells the UI to show a warning.
             }
             session = null
             sink.emit(SessionEvent.Connection(SocketStatus.CLOSED))
             if (!currentCoroutineContext().isActive) return
             attempt = (attempt + 1).coerceAtMost(5)
-            delay(500L * (1L shl (attempt - 1)))
+            val backoff = 500L * (1L shl (attempt - 1))
+            trace.event("closed_retry", "delay_ms=$backoff")
+            delay(backoff)
         }
     }
 
     private fun decode(raw: String): SessionEvent? {
-        val message = try { Json.parseToJsonElement(raw).jsonObject } catch (_: Exception) { return null }
+        val message = try { Json.parseToJsonElement(raw).jsonObject } catch (error: Exception) {
+            trace.failure("decode_failed", error)
+            return null
+        }
         return when (message.text("type")) {
             "session.ready" -> SessionEvent.Ready(
                 message.text("session_id"),
@@ -114,9 +125,20 @@ internal class KtorSessionSocket(
     }
 
     private suspend fun emit(payload: JsonObject) {
-        val open = session ?: return
+        val type = payload.text("type")
+        val open = session ?: run {
+            trace.event("send_skipped_closed", "type=$type")
+            return
+        }
         sendLock.withLock {
-            try { open.send(Json.encodeToString(JsonObject.serializer(), payload)) } catch (_: Exception) { }
+            try {
+                open.send(Json.encodeToString(JsonObject.serializer(), payload))
+                trace.event("sent", "type=$type")
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                trace.failure("send_failed", error)
+            }
         }
     }
 
@@ -144,6 +166,7 @@ internal class KtorSessionSocket(
     }
 
     override fun close() {
+        trace.event("close")
         pump.cancel()
         scope.cancel()
     }

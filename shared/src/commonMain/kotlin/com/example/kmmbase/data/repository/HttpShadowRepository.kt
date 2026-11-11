@@ -1,5 +1,6 @@
 package com.example.kmmbase.data.repository
 
+import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
 import com.example.kmmbase.domain.repository.ShadowSessionSocket
@@ -32,30 +33,49 @@ class HttpShadowRepository(endpoint: String, private val accessCode: String = ""
         body: JsonObject? = null,
         httpMethod: HttpMethod? = null,
     ): JsonElement {
-        val response = client.request("$origin$path") {
-            method = httpMethod ?: if (body == null) HttpMethod.Get else HttpMethod.Post
-            accept(ContentType.Application.Json)
-            if (accessCode.isNotEmpty()) header(ACCESS_HEADER, accessCode)
-            if (body != null) {
-                contentType(ContentType.Application.Json)
-                setBody(body.toString())
-            }
+        val trace = ShadowTrace("HTTP")
+        val requestMethod = httpMethod ?: if (body == null) HttpMethod.Get else HttpMethod.Post
+        val route = when {
+            path.startsWith("/api/skills/") -> "/api/skills/:id"
+            path.startsWith("/api/teach/progress/") -> "/api/teach/progress/:id"
+            else -> path
         }
-        if (!response.status.isSuccess()) {
-            val message = when (response.status.value) {
-                401, 403 -> "Mã truy cập không đúng hoặc đã hết hạn. Mở Cài đặt để nhập lại."
-                404 -> "Không tìm thấy dữ liệu. Hãy tải lại."
-                409 -> "Tủ đồ đang trống. Hãy thêm ảnh trang phục hoặc nạp tủ đồ mẫu."
-                413 -> "Ảnh quá lớn. Thử lại với ảnh nhỏ hơn."
-                429 -> "Bạn thao tác quá nhanh. Đợi một chút rồi thử lại."
-                in 300..399 -> "Máy chủ chuyển hướng. Hãy nhập địa chỉ HTTPS cuối cùng."
-                in 500..599 -> "Máy chủ đang lỗi (${response.status.value}). Thử lại sau nhé."
-                else -> "Máy chủ chưa xử lý được yêu cầu (${response.status.value}). Thử lại nhé."
+        trace.event("start", "method=${requestMethod.value} route=$route")
+        try {
+            val response = client.request("$origin$path") {
+                method = requestMethod
+                accept(ContentType.Application.Json)
+                if (accessCode.isNotEmpty()) header(ACCESS_HEADER, accessCode)
+                if (body != null) {
+                    contentType(ContentType.Application.Json)
+                    setBody(body.toString())
+                }
             }
-            throw ShadowConnectionException(message)
+            trace.event("response", "status=${response.status.value}")
+            if (!response.status.isSuccess()) {
+                val message = when (response.status.value) {
+                    401, 403 -> "Mã truy cập không đúng hoặc đã hết hạn. Mở Cài đặt để nhập lại."
+                    404 -> "Không tìm thấy dữ liệu. Hãy tải lại."
+                    409 -> "Tủ đồ đang trống. Hãy thêm ảnh trang phục hoặc nạp tủ đồ mẫu."
+                    413 -> "Ảnh quá lớn. Thử lại với ảnh nhỏ hơn."
+                    429 -> "Bạn thao tác quá nhanh. Đợi một chút rồi thử lại."
+                    in 300..399 -> "Máy chủ chuyển hướng. Hãy nhập địa chỉ HTTPS cuối cùng."
+                    in 500..599 -> "Máy chủ đang lỗi (${response.status.value}). Thử lại sau nhé."
+                    else -> "Máy chủ chưa xử lý được yêu cầu (${response.status.value}). Thử lại nhé."
+                }
+                throw ShadowConnectionException(message)
+            }
+            val text = response.bodyAsText()
+            val result = if (text.isBlank()) JsonNull else Json.parseToJsonElement(text)
+            trace.event("success")
+            return result
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            trace.event("cancelled")
+            throw error
+        } catch (error: Exception) {
+            trace.failure("failed", error)
+            throw error
         }
-        val text = response.bodyAsText()
-        return if (text.isBlank()) JsonNull else Json.parseToJsonElement(text)
     }
 
     override fun mediaUrl(path: String): String = when {
