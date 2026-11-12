@@ -18,6 +18,7 @@ class ShadowStoreTest {
         var enteredCode: String? = null
         var askCount = 0
         var suggestionResult = ShadowSuggestions(emptyList(), "mock")
+        var savedDraft: TeachDraft? = null
         var tryonCalls = 0
         var tryonIds = emptyList<String>()
         var tryonGate: CompletableDeferred<TryonResult>? = null
@@ -40,7 +41,7 @@ class ShadowStoreTest {
         override suspend fun compileSkill(request: TeachRequest) =
             TeachDraft("draft", request.title, emptyList(), "{}")
         override suspend fun teachProgress(jobId: String) = "learning"
-        override suspend fun saveSkill(draft: TeachDraft) = draft.skillId
+        override suspend fun saveSkill(draft: TeachDraft): String { savedDraft = draft; return draft.skillId }
         override suspend fun tryonConfig() = TryonConfig(false, "mock", 30)
         override suspend fun tryonPhoto(personImage: String, itemIds: List<String>): TryonResult {
             tryonCalls++
@@ -52,6 +53,55 @@ class ShadowStoreTest {
         override fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket =
             throw UnsupportedOperationException("not used in these tests")
         override fun close() { closed = true }
+    }
+
+    @Test fun preparesBuiltinGuideOnlyAfterConnectingAndExposesItForNavigation() = runTest {
+        val repo = FakeShadow()
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.PrepareBuiltinGuide("fold"))
+        assertNull(repo.savedDraft)
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.PrepareBuiltinGuide("fold"))
+        assertEquals("shadow-builtin-gap-ao-v1", repo.savedDraft?.skillId)
+        assertEquals("shadow-builtin-gap-ao-v1", store.currentState.preparedGuideId)
+        val payload = kotlinx.serialization.json.Json.parseToJsonElement(repo.savedDraft!!.raw) as kotlinx.serialization.json.JsonObject
+        val steps = payload["steps"] as kotlinx.serialization.json.JsonArray
+        val detectors = payload["detectors"] as kotlinx.serialization.json.JsonObject
+        assertEquals(4, steps.size)
+        steps.forEachIndexed { index, element ->
+            val step = element as kotlinx.serialization.json.JsonObject
+            val key = "step_${index + 1}"
+            assertEquals("\"$key\"", step["detector_key"].toString())
+            assertEquals("\"momentary_true_complete\"", step["evaluation_mode"].toString())
+            assertTrue(detectors.containsKey(key))
+            if (index < 3) assertEquals("\"step_${index + 2}\"", step["next_step_id"].toString())
+            else assertNull(step["next_step_id"])
+        }
+        store.dispatch(ShadowAction.ClearPreparedGuide)
+        assertNull(store.currentState.preparedGuideId)
+        store.close()
+    }
+
+    @Test fun preparesSeparatePantsGuideWithFourSteps() = runTest {
+        val repo = FakeShadow()
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.PrepareBuiltinGuide("pants"))
+        assertEquals("shadow-builtin-gap-quan-v1", store.currentState.preparedGuideId)
+        val payload = kotlinx.serialization.json.Json.parseToJsonElement(repo.savedDraft!!.raw) as kotlinx.serialization.json.JsonObject
+        assertEquals(4, (payload["steps"] as kotlinx.serialization.json.JsonArray).size)
+        assertTrue(repo.savedDraft!!.raw.contains("ống quần"))
+        store.close()
+    }
+
+    @Test fun rejectsUnknownBuiltinGuide() = runTest {
+        val repo = FakeShadow()
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.PrepareBuiltinGuide("unknown"))
+        assertNull(repo.savedDraft)
+        assertNull(store.currentState.preparedGuideId)
+        store.close()
     }
 
     @Test fun originsRejectCredentialsPathsAndNonHttps() {

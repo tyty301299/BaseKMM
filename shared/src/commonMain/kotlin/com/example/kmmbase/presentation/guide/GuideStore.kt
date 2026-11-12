@@ -21,6 +21,8 @@ data class GuideState(
     val spokenLine: String = "",
     val hint: String = "",
     val judging: Boolean = false,
+    val checkStatus: String = "waiting",
+    val manualAdvanceUsed: Boolean = false,
     val latencyMs: Long = 0,
     val imageMaxSide: Int = 448,
     val error: String? = null,
@@ -76,7 +78,12 @@ class GuideStore(
         when (action) {
             is GuideAction.Start -> start(action.skillId)
             GuideAction.Stop -> stop()
-            is GuideAction.Step -> scope.launch { socket?.stepManually(action.forward) }
+            is GuideAction.Step -> {
+                if (socket != null && currentState.running && currentState.connection == SocketStatus.OPEN) {
+                    mutableState.update { it.copy(manualAdvanceUsed = true) }
+                    scope.launch { socket?.stepManually(action.forward) }
+                }
+            }
             is GuideAction.ShowDebugControls ->
                 mutableState.update { it.copy(debugControls = action.visible) }
             GuideAction.DismissError -> mutableState.update { it.copy(error = null) }
@@ -86,6 +93,7 @@ class GuideStore(
     private fun start(skillId: String) {
         if (socket != null) return
         lastSpokenEpoch = -1L
+        mutableState.update { it.copy(manualAdvanceUsed = false, checkStatus = "waiting", error = null) }
         val live = socketFactory()
         socket = live
         pump = scope.launch {
@@ -113,7 +121,7 @@ class GuideStore(
             try { live?.stop() } finally { live?.close() }
         }
         mutableState.update {
-            it.copy(phase = SessionPhase.WAITING_FOR_START, step = null, spokenLine = "", hint = "", judging = false)
+            it.copy(phase = SessionPhase.WAITING_FOR_START, step = null, spokenLine = "", hint = "", judging = false, checkStatus = "waiting")
         }
     }
 
@@ -136,6 +144,8 @@ class GuideStore(
                         step = event.step, tasks = event.tasks,
                         // A new step invalidates the previous step's hint.
                         hint = if (event.step?.id != previousStep) "" else it.hint,
+                        checkStatus = if (event.step?.id != previousStep) "waiting" else it.checkStatus,
+                        judging = if (event.step?.id != previousStep) false else it.judging,
                     )
                 }
                 if (event.phase == SessionPhase.COMPLETED) {
@@ -158,15 +168,17 @@ class GuideStore(
             }
 
             is SessionEvent.VisionResult -> {
+                if (event.stale || (event.stepId.isNotBlank() && event.stepId != currentState.step?.id)) return
                 trace.event("vision_result", "confirming=${event.confirming} done=${event.done} latency_ms=${event.latencyMs}")
                 mutableState.update {
                     it.copy(judging = false, latencyMs = event.latencyMs,
-                        hint = event.hint.ifBlank { it.hint })
+                        checkStatus = if (event.confirming) "confirming" else if (event.done) "done" else "not_done",
+                        error = null, hint = event.hint.ifBlank { it.hint })
                 }
                 if (event.confirming) send("confirm", force = true)
             }
 
-            is SessionEvent.Failure -> mutableState.update { it.copy(judging = false, error = event.message) }
+            is SessionEvent.Failure -> mutableState.update { it.copy(judging = false, checkStatus = "error", error = event.message) }
         }
     }
 
@@ -179,6 +191,7 @@ class GuideStore(
                 val image = captureFrame(currentState.imageMaxSide)
                 if (image.isNullOrBlank()) {
                     trace.event("frame_unavailable")
+                    mutableState.update { it.copy(judging = false, checkStatus = "no_frame") }
                     return@launch
                 }
                 trace.event("frame_dispatch", "trigger=$trigger forced=$force")
@@ -189,7 +202,7 @@ class GuideStore(
                 throw error
             } catch (error: Exception) {
                 trace.failure("frame_failed", error)
-                mutableState.update { it.copy(judging = false) }
+                mutableState.update { it.copy(judging = false, checkStatus = "error", error = "Chưa gửi được ảnh. Hãy kiểm tra kết nối.") }
             } finally {
                 sending = false
             }

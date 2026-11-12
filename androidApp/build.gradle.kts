@@ -31,5 +31,6 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
+    implementation("com.google.mlkit:object-detection:17.0.2")
     implementation(libs.coil.compose)
 }

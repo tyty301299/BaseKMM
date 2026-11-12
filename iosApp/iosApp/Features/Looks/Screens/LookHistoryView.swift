@@ -16,7 +16,7 @@ struct LookHistoryView: View {
                 Text(language.text("ui_142")).font(.largeTitle.bold())
                 Text(language.format("saved_items_count", String(model.state.records.count + studio.state.data.skills.count))).font(.subheadline).foregroundStyle(.secondary)
                 Picker(language.text("ui_105"), selection: Binding(get: { model.state.filter }, set: { model.send(LookActionFilter(kind: $0)) })) {
-                    Text(language.text("filter_all")).tag("all"); Text(language.text("ui_169")).tag("tryon"); Text(language.text("ui_021")).tag("outfit"); Text(language.text("ui_099")).tag("skill")
+                    Text(language.text("filter_all")).tag("all"); Text(language.text("ui_169")).tag("tryon"); Text(language.text("ui_021")).tag("outfit"); Text(language.text("ui_099")).tag("skill"); Text("Đã làm").tag("guide")
                 }.pickerStyle(.menu)
                 if model.state.loading { ProgressView(language.text("ui_222")) }
                 if let error = model.state.error {
@@ -45,11 +45,17 @@ struct LookHistoryView: View {
                 ForEach(model.state.filteredRecords, id: \.id) { record in
                     Button { onRecord(record.id) } label: {
                         HStack(spacing: 16) {
-                            LookMannequin(preset: record.preset, before: record.before, flipped: record.flipped)
-                                .frame(width: 56, height: 72).background(.white.opacity(0.75), in: RoundedRectangle(cornerRadius: 10))
+                            if record.isGuide {
+                                Image(systemName: record.preset.contains("quan") ? "figure.stand" : record.preset.contains("ao") ? "tshirt" : "checkmark.circle")
+                                    .font(.title2).foregroundStyle(LookStyle.accent).frame(width: 56, height: 72)
+                                    .background(LookStyle.panel, in: RoundedRectangle(cornerRadius: 10))
+                            } else {
+                                LookMannequin(preset: record.preset, before: record.before, flipped: record.flipped)
+                                    .frame(width: 56, height: 72).background(.white.opacity(0.75), in: RoundedRectangle(cornerRadius: 10))
+                            }
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(record.title).font(.headline)
-                                Text(record.kind == "tryon" ? language.text("ui_170") : language.text("ui_023")).font(.caption).foregroundStyle(.secondary)
+                                Text(record.isGuide ? (record.kind == "guide-manual" ? "Hoàn thành · hướng dẫn mẫu" : record.kind == "guide-demo" ? "Hoàn thành · demo" : "Hoàn thành · AI") : record.kind == "tryon" ? language.text("ui_170") : language.text("ui_023")).font(.caption).foregroundStyle(.secondary)
                                 Text(Date(timeIntervalSince1970: Double(record.createdAt) / 1000), style: .date).font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer(); Image(systemName: "chevron.right")

@@ -36,7 +36,8 @@ sealed interface SessionEvent {
      * Result of judging one frame. When [confirming] is true the server already saw a "done"
      * frame and will judge the next one without its usual gap, so the client must send one now.
      */
-    data class VisionResult(val confirming: Boolean, val latencyMs: Long, val done: Boolean, val hint: String) : SessionEvent
+    data class VisionResult(val confirming: Boolean, val latencyMs: Long, val done: Boolean, val hint: String,
+        val stepId: String = "", val stale: Boolean = false) : SessionEvent
 
     data class Failure(val message: String, val code: String) : SessionEvent
 

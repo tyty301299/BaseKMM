@@ -111,11 +111,15 @@ internal class KtorSessionSocket(
             )
             "vision.result" -> {
                 val result = message["result"] as? JsonObject
-                SessionEvent.VisionResult(
+                if (message.text("error").isNotBlank()) {
+                    SessionEvent.Failure("AI chưa kiểm tra được ảnh. Kiểm tra kết nối hoặc xác nhận bước thủ công.", "vision_unavailable")
+                } else SessionEvent.VisionResult(
                     confirming = message["confirming"]?.jsonPrimitive?.booleanOrNull == true,
                     latencyMs = message["latency_ms"]?.jsonPrimitive?.longOrNull ?: 0L,
                     done = result?.get("flag")?.jsonPrimitive?.booleanOrNull == true,
                     hint = result?.text("hint").orEmpty(),
+                    stepId = message.text("step_id"),
+                    stale = message["stale"]?.jsonPrimitive?.booleanOrNull == true,
                 )
             }
             "hud.error" -> SessionEvent.Failure(

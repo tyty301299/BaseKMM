@@ -34,9 +34,10 @@ class GuideStoreTest {
         var interruptions = 0
         var clock = 10_000L
         var captures = 0
+        var cameraAvailable = true
         val store = GuideStore(
             socketFactory = { socket },
-            captureFrame = { captures++; "data:image/jpeg;base64,AAAA" },
+            captureFrame = { captures++; if (cameraAvailable) "data:image/jpeg;base64,AAAA" else null },
             speak = { spoken += it },
             stopSpeaking = { interruptions++ },
             nowMs = { clock },
@@ -45,6 +46,7 @@ class GuideStoreTest {
 
         suspend fun guiding(stepId: String = "step_1") {
             store.dispatch(GuideAction.Start("lap-gia"))
+            socket.sink.emit(SessionEvent.Connection(SocketStatus.OPEN))
             socket.sink.emit(hud(stepId))
         }
 
@@ -136,11 +138,40 @@ class GuideStoreTest {
         assertNull(harness.store.currentState.error)
     }
 
+    @Test fun oldStepResultCannotOverwriteNewStepOrTriggerConfirmation() = runTest {
+        val harness = Harness()
+        harness.guiding("step_1")
+        harness.socket.sink.emit(harness.hud("step_2"))
+        val count = harness.socket.frames.size
+        harness.socket.sink.emit(SessionEvent.VisionResult(true, 300, true, "Gợi ý cũ", stepId = "step_1"))
+        assertEquals(count, harness.socket.frames.size)
+        assertEquals("", harness.store.currentState.hint)
+        assertNotEquals("confirming", harness.store.currentState.checkStatus)
+    }
+
+    @Test fun missingCameraFrameShowsAnActionableStatus() = runTest {
+        val harness = Harness()
+        harness.cameraAvailable = false
+        harness.guiding()
+        assertEquals("no_frame", harness.store.currentState.checkStatus)
+        assertFalse(harness.store.currentState.judging)
+    }
+
+    @Test fun manualConfirmationRequiresAnOpenConnection() = runTest {
+        val harness = Harness()
+        harness.guiding()
+        harness.socket.sink.emit(SessionEvent.Connection(SocketStatus.CLOSED))
+        harness.store.dispatch(GuideAction.Step(forward = true))
+        assertTrue(harness.socket.manualSteps.isEmpty())
+        assertFalse(harness.store.currentState.manualAdvanceUsed)
+    }
+
     @Test fun debugStepsReachTheServerForTheOnStageRescueButtons() = runTest {
         val harness = Harness()
         harness.guiding()
         harness.store.dispatch(GuideAction.Step(forward = true))
         harness.store.dispatch(GuideAction.Step(forward = false))
         assertEquals(listOf(true, false), harness.socket.manualSteps)
+        assertTrue(harness.store.currentState.manualAdvanceUsed)
     }
 }

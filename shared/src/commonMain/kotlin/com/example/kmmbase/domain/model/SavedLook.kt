@@ -1,6 +1,6 @@
 package com.example.kmmbase.domain.model
 
-/** Demo metadata only: no camera photo, cloud upload or generated AI image. */
+/** Local history metadata; this record does not contain camera photos or videos. */
 data class SavedLook(
     val id: String,
     val preset: String,
@@ -10,5 +10,6 @@ data class SavedLook(
     val before: Boolean = false,
     val flipped: Boolean = false,
 ) {
-    val title: String get() = if (preset == "blouse") "Cam đào dịu nhẹ" else "Xanh rêu, nhẹ tênh"
+    val isGuide: Boolean get() = kind.startsWith("guide-")
+    val title: String get() = if (isGuide) occasion else if (preset == "blouse") "Cam đào dịu nhẹ" else "Xanh rêu, nhẹ tênh"
 }

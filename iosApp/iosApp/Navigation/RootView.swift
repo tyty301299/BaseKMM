@@ -3,6 +3,7 @@ import Shared
 
 enum Route: Hashable {
     case studio(StudioRoute)
+    case history
     case notes
     case noteEdit(noteId: String?)
 }
@@ -35,21 +36,20 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            LookHomeView(model: looks, studio: studio, shadow: shadow, tab: $tab, onCamera: { navigate(.cameraIntro) },
-                onRecord: { selectedRecord = LookRecordRoute(id: $0) },
-                onService: { openService(tab == 2 ? 0 : 1) },
-                onAdd: { navigate(.addItem) }, onItem: { id in
-                    studio.send(StudioActionOpenItem(id: id)); navigate(.item(id))
-                }, onOccasion: { navigate(.occasion) }, onTeach: {
-                    studio.send(StudioActionNewLesson.shared); navigate(.teach)
-                }, onSkill: { navigate(.skill($0)) }, onSettings: { if !looks.state.saving && !studio.busy { navigate(.settings) } })
+            LookCameraView(model: looks, onClose: {}, onHistory: { path.append(.history) },
+                onSettings: { navigate(.settings) }, onNetworkRestored: { shadow.send(ShadowActionReconnect.shared) }, container: container, shadow: shadow)
+                .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                     case .studio(let destination):
                         StudioDestination(route: destination, model: studio, looks: looks, shadow: shadow,
                             navigate: navigate, openCamera: openCamera,
-                            homeTab: { tab = $0; path = [] }, service: openService,
+                            homeTab: { tab = $0; path = $0 == 3 ? [.history] : [] }, service: openService,
                             connectionSettings: { serviceTab = 0; serviceSettings = true; showService = true })
+                    case .history:
+                        LookHistoryView(model: looks, studio: studio,
+                            onRecord: { selectedRecord = LookRecordRoute(id: $0) },
+                            onCamera: { path = [] }, onSkill: { navigate(.skill($0)) })
                     case .notes:
                         NoteListView(store: container.noteListStore()) { id in
                             path.append(.noteEdit(noteId: id))
@@ -65,8 +65,8 @@ struct RootView: View {
             LookCameraView(model: looks, onClose: { showCamera = false }, onHistory: {
                 showCamera = false
                 tab = 3
-                path = []
-            }).modifier(StudioFeedbackOverlay())
+                path = [.history]
+            }, onSettings: { showCamera = false; navigate(.settings) }, onNetworkRestored: { shadow.send(ShadowActionReconnect.shared) }, container: container, shadow: shadow).modifier(StudioFeedbackOverlay())
         }
         .sheet(isPresented: $showService) {
             NavigationStack {

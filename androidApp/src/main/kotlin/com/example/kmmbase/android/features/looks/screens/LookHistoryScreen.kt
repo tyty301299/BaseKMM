@@ -4,6 +4,8 @@ import com.example.kmmbase.android.common.LocalAppLanguage
 import com.example.kmmbase.android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,9 +30,9 @@ internal fun LookHistoryScreen(store: LookStore, studio: StudioStore, onRecord: 
         item { Text(language.text(R.string.ui_142), style = MaterialTheme.typography.headlineLarge) }
         item { Text(language.format(R.string.saved_items_count, (state.records.size + studioState.data.skills.size).toString()), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("all" to language.text(R.string.filter_all), "tryon" to language.text(R.string.ui_169), "outfit" to language.text(R.string.ui_021), "skill" to language.text(R.string.ui_099)).forEach { (key, label) ->
-                    FilterChip(selected = state.filter == key, onClick = { store.dispatch(LookAction.Filter(key)) }, label = { Text(language.systemText(label)) }, modifier = Modifier.weight(1f))
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("all" to language.text(R.string.filter_all), "tryon" to language.text(R.string.ui_169), "outfit" to language.text(R.string.ui_021), "skill" to language.text(R.string.ui_099), "guide" to "Đã làm").forEach { (key, label) ->
+                    FilterChip(selected = state.filter == key, onClick = { store.dispatch(LookAction.Filter(key)) }, label = { Text(language.systemText(label)) })
                 }
             }
         }
@@ -55,10 +57,18 @@ internal fun LookHistoryScreen(store: LookStore, studio: StudioStore, onRecord: 
         items(state.filteredRecords, key = { it.id }) { record ->
             Surface(shape = RoundedCornerShape(20.dp), color = LookPanel) {
                 Row(Modifier.fillMaxWidth().clickable { onRecord(record.id) }.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    LookMannequin(record.preset, Modifier.size(56.dp,72.dp).background(LookStudio, RoundedCornerShape(10.dp)), record.before, record.flipped)
+                    if (record.isGuide) {
+                        Box(Modifier.size(56.dp, 72.dp).background(LookStudio, RoundedCornerShape(10.dp)), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Text("✓", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else LookMannequin(record.preset, Modifier.size(56.dp,72.dp).background(LookStudio, RoundedCornerShape(10.dp)), record.before, record.flipped)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(record.title, style = MaterialTheme.typography.titleMedium)
-                        Text(if (record.kind == "tryon") language.text(R.string.ui_170) else language.text(R.string.ui_023), style = MaterialTheme.typography.labelMedium)
+                        Text(if (record.isGuide) when (record.kind) {
+                            "guide-manual" -> "Hoàn thành · hướng dẫn mẫu"
+                            "guide-demo" -> "Hoàn thành · demo"
+                            else -> "Hoàn thành · AI"
+                        } else if (record.kind == "tryon") language.text(R.string.ui_170) else language.text(R.string.ui_023), style = MaterialTheme.typography.labelMedium)
                         Text(DateFormat.getDateInstance().format(Date(record.createdAt)), style = MaterialTheme.typography.labelMedium)
                     }
                     Text("›")

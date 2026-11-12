@@ -28,9 +28,15 @@ internal fun LookDetailScreen(store: LookStore, id: String, onBack: () -> Unit, 
             val record = state.records.find { it.id == id }
             if (record != null) {
                 Text(record.title, style = MaterialTheme.typography.headlineLarge)
-                LookMannequin(record.preset, Modifier.fillMaxWidth().height(360.dp).background(LookStudio, RoundedCornerShape(28.dp)), record.before, record.flipped)
-                Text(language.format(R.string.saved_sample_occasion, (record.occasion).toString()))
-                LookButton(language.text(R.string.retry), !state.saving) { store.dispatch(LookAction.Reuse(id)); onRetry() }
+                if (record.isGuide) {
+                    Text("✓  Đã hoàn thành", color = MaterialTheme.colorScheme.primary)
+                    Text(java.text.DateFormat.getDateInstance().format(java.util.Date(record.createdAt)))
+                    Text(when (record.kind) { "guide-manual" -> "Hướng dẫn mẫu"; "guide-demo" -> "Hướng dẫn demo"; else -> "Hướng dẫn AI" })
+                } else {
+                    LookMannequin(record.preset, Modifier.fillMaxWidth().height(360.dp).background(LookStudio, RoundedCornerShape(28.dp)), record.before, record.flipped)
+                    Text(language.format(R.string.saved_sample_occasion, record.occasion))
+                    LookButton(language.text(R.string.retry), !state.saving) { store.dispatch(LookAction.Reuse(id)); onRetry() }
+                }
                 TextButton(onClick = { confirm = true }, enabled = !state.saving) { Text(language.text(R.string.ui_199), color = MaterialTheme.colorScheme.error) }
             } else if (state.loading) CircularProgressIndicator()
             else Text(language.text(R.string.ui_134))

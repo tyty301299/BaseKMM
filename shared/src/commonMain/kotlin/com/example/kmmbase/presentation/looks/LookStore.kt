@@ -22,6 +22,9 @@ class LookStore internal constructor(
     fun observeMessages(onMessage: (UiMessage) -> Unit): StoreSubscription = messages.subscribeIn(scope, onMessage)
     private var observation: Job? = null
     private var outfitDraft: SavedLook? = null
+    private val pendingGuideCompletions = ArrayDeque<LookAction.SaveGuideCompletion>()
+    private val completionIds = mutableSetOf<String>()
+    private var guideRetryRequired = false
     val state: StateFlow<LookState> = mutableState.asStateFlow()
     val currentState: LookState get() = mutableState.value
 
@@ -30,6 +33,15 @@ class LookStore internal constructor(
     fun observeState(onChange: (LookState) -> Unit): StoreSubscription = mutableState.subscribeIn(scope, onChange)
 
     fun dispatch(action: LookAction) {
+        if (action is LookAction.SaveGuideCompletion) {
+            if (action.sessionId.isBlank() || action.sessionId.length > 200 || action.skillId.isBlank() || action.skillId.length > 200 ||
+                action.title.isBlank() || action.title.length > 100 || action.source !in setOf("manual", "ai", "demo")) return
+            if (completionIds.add(action.sessionId) && currentState.records.none { it.id == action.sessionId }) {
+                pendingGuideCompletions.addLast(action)
+                drainGuideCompletions()
+            }
+            return
+        }
         if (currentState.saving) return
         when (action) {
             is LookAction.SelectPreset -> if (action.preset in setOf("coat", "blouse")) {
@@ -40,7 +52,7 @@ class LookStore internal constructor(
                 outfitDraft = null
                 mutableState.update { it.copy(occasion = action.occasion, outfitSaved = false) }
             }
-            is LookAction.Filter -> if (action.kind in setOf("all", "tryon", "outfit", "skill")) {
+            is LookAction.Filter -> if (action.kind in setOf("all", "tryon", "outfit", "skill", "guide")) {
                 mutableState.update { it.copy(filter = action.kind) }
             }
             LookAction.Compare -> mutableState.update { it.copy(before = !it.before) }
@@ -63,7 +75,8 @@ class LookStore internal constructor(
                 mutableState.update { it.copy(preset = record.preset, occasion = record.occasion,
                     before = record.before, flipped = record.flipped, capture = null, savedId = null, outfitSaved = false, error = null) }
             }
-            LookAction.Retry -> observe()
+            LookAction.Retry -> { observe(); guideRetryRequired = false; drainGuideCompletions() }
+            is LookAction.SaveGuideCompletion -> Unit
         }
     }
 
@@ -80,7 +93,17 @@ class LookStore internal constructor(
         }
     }
 
-    private fun write(success: String, block: suspend () -> Unit) {
+    private fun drainGuideCompletions() {
+        if (currentState.saving || guideRetryRequired || pendingGuideCompletions.isEmpty()) return
+        val action = pendingGuideCompletions.removeFirst()
+        val record = SavedLook(action.sessionId, action.skillId, action.title.trim(), "guide-${action.source}", now())
+        write("Đã lưu vào Lịch sử", onFailure = {
+            pendingGuideCompletions.addFirst(action)
+            guideRetryRequired = true
+        }) { repository().save(record) }
+    }
+
+    private fun write(success: String, onFailure: () -> Unit = {}, block: suspend () -> Unit) {
         mutableState.update { it.copy(saving = true, error = null) }
         scope.launch {
             try {
@@ -90,11 +113,13 @@ class LookStore internal constructor(
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
+                onFailure()
                 val message = "Không lưu được thay đổi. Dữ liệu vừa chọn vẫn được giữ; hãy thử lại."
                 mutableState.update { it.copy(error = message) }
                 messageChannel.send(UiMessage(message, true))
             } finally {
                 mutableState.update { it.copy(saving = false) }
+                drainGuideCompletions()
             }
         }
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.gestures.detectTapGestures
 import coil.compose.AsyncImage
 import com.example.kmmbase.android.common.*
+import com.example.kmmbase.android.features.looks.screens.ObjectDetectionCorners
+import com.example.kmmbase.android.features.looks.screens.BuiltinStepIllustration
 import com.example.kmmbase.di.AppContainer
 import com.example.kmmbase.domain.model.SocketStatus
 import com.example.kmmbase.presentation.guide.*
@@ -37,11 +40,21 @@ internal fun LiveGuideScreen(
     skillTitle: String,
     frames: CameraFrameSource,
     store: GuideStore,
+    onCompleted: (String, String, Boolean) -> Unit = { _, _, _ -> },
     onExit: () -> Unit,
 ) {
     val language = LocalAppLanguage.current
     val state by store.state.collectAsState()
     val granted = rememberCameraPermission()
+    val completionSessionId = rememberSaveable { java.util.UUID.randomUUID().toString() }
+    LaunchedEffect(state.completed) {
+        if (state.completed) onCompleted(completionSessionId, state.skillName.ifBlank { skillTitle }.take(100), state.manualAdvanceUsed)
+    }
+    var region by remember { mutableStateOf<GarmentRegion?>(null) }
+    val detector = remember { GarmentDetector { value, _ -> region = value } }
+    val analyzer = remember(detector) { { image: androidx.camera.core.ImageProxy, source: CameraFrameSource -> detector.analyze(image, source) } }
+    DisposableEffect(detector) { onDispose { detector.close() } }
+    LaunchedEffect(granted, skillId) { detector.setActive(granted, fashionOnly = skillId == "shadow-builtin-gap-ao-v1" || skillId == "shadow-builtin-gap-quan-v1") }
 
     LaunchedEffect(granted, skillId) {
         if (granted) store.dispatch(GuideAction.Start(skillId))
@@ -49,7 +62,7 @@ internal fun LiveGuideScreen(
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         if (granted) {
-            CameraPreview(frames, Modifier.fillMaxSize())
+            CameraPreview(frames, Modifier.fillMaxSize(), frameAnalyzer = analyzer)
         } else {
             Column(
                 Modifier.fillMaxSize().padding(32.dp),
@@ -62,6 +75,8 @@ internal fun LiveGuideScreen(
                 TextButton(onClick = onExit) { Text(language.text(R.string.back), color = Accent) }
             }
         }
+
+        region?.let { ObjectDetectionCorners(it, false) }
 
         // Long-pressing the HUD reveals the rescue controls, as on the web client.
         Column(
@@ -81,14 +96,23 @@ internal fun LiveGuideScreen(
                 }
             }
 
+            if (skillTitle.endsWith(" · Demo")) {
+                Text("DEMO · Kết quả kiểm tra giả lập", color = Color(0xFFFFB547), style = MaterialTheme.typography.labelMedium)
+            }
             val step = state.step
             if (state.completed) {
                 Text(language.text(R.string.ui_014), color = Accent, style = MaterialTheme.typography.headlineSmall)
             } else if (step != null) {
                 Text(language.format(R.string.step_progress, (step.index + 1).toString(), (step.total).toString()), color = Accent,
                     style = MaterialTheme.typography.labelLarge)
-                Text(step.instruction, color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(step.instruction, Modifier.weight(1f), color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                    if (skillId in setOf("shadow-builtin-goi-qua-v1", "shadow-builtin-gap-ao-v1", "shadow-builtin-gap-quan-v1")) {
+                        BuiltinStepIllustration(skillId == "shadow-builtin-goi-qua-v1", step.index,
+                            Modifier.size(width = 112.dp, height = 92.dp), isPants = skillId == "shadow-builtin-gap-quan-v1")
+                    }
+                }
                 if (step.tip.isNotBlank()) {
                     Text(step.tip, color = Color(0xFFD8DCCF), style = MaterialTheme.typography.bodyMedium)
                 }
@@ -123,11 +147,13 @@ internal fun LiveGuideScreen(
             state.error?.let {
                 Text(language.systemText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
-            if (state.debugControls) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = { store.dispatch(GuideAction.Step(forward = false)) }) { Text("◀") }
-                    OutlinedButton(onClick = { store.dispatch(GuideAction.Step(forward = true)) }) { Text("▶") }
+            if (state.running) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if ((state.step?.index ?: 0) > 0) OutlinedButton(onClick = { store.dispatch(GuideAction.Step(forward = false)) }, enabled = state.connection == SocketStatus.OPEN) { Text("Bước trước") }
+                    Button(onClick = { store.dispatch(GuideAction.Step(forward = true)) }, enabled = state.connection == SocketStatus.OPEN,
+                        modifier = Modifier.weight(1f)) { Text("Tôi đã xong bước này") }
                 }
+                Text("Chỉ bấm khi đã làm xong; AI vẫn tự kiểm tra.", color = Color.LightGray, style = MaterialTheme.typography.labelSmall)
             }
             if (state.completed) {
                 Button(onClick = { store.dispatch(GuideAction.Stop); onExit() },
@@ -145,7 +171,11 @@ private fun StatusRow(state: GuideState) {
     val (color, label) = when {
         state.connection == SocketStatus.CLOSED -> Color(0xFFFFB547) to language.text(R.string.ui_214)
         state.connection == SocketStatus.CONNECTING -> Color(0xFFFFB547) to language.text(R.string.connecting)
-        state.judging -> Accent to language.text(R.string.ui_152)
+        state.checkStatus == "no_frame" -> Color(0xFFFFB547) to "Chưa lấy được ảnh camera"
+        state.checkStatus == "error" -> Color(0xFFFFB547) to "Không kiểm tra được ảnh"
+        state.checkStatus == "confirming" -> Accent to "Đang xác nhận · giữ nguyên vài giây"
+        state.checkStatus == "not_done" -> Color(0xFFFFB547) to "Chưa xác nhận · giữ rõ vật trong khung"
+        state.judging -> Accent to "AI đang kiểm tra…"
         state.running -> Color(0xFF7BD88F) to language.text(R.string.ui_227)
         else -> Color(0xFFADB8A4) to language.text(R.string.ui_155)
     }
