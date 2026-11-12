@@ -14,12 +14,18 @@ struct LookDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 if let record = model.state.records.first(where: { $0.id == recordID }) {
                     Text(record.title).font(.largeTitle.bold())
-                    LookMannequin(preset: record.preset, before: record.before, flipped: record.flipped)
-                        .frame(height: 360).frame(maxWidth: .infinity)
-                        .background(Color(red: 0.81, green: 0.83, blue: 0.77), in: RoundedRectangle(cornerRadius: 28))
-                    Text(language.format("saved_sample_occasion", String(record.occasion)))
-                    LookPrimaryButton(title: language.text("retry"), disabled: model.state.saving) {
-                        model.send(LookActionReuse(id: recordID)); onRetry()
+                    if record.isGuide {
+                        Label("Đã hoàn thành", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                        Text(Date(timeIntervalSince1970: Double(record.createdAt) / 1000), style: .date)
+                        Text(record.kind == "guide-manual" ? "Hướng dẫn mẫu" : record.kind == "guide-demo" ? "Hướng dẫn demo" : "Hướng dẫn AI").foregroundStyle(.secondary)
+                    } else {
+                        LookMannequin(preset: record.preset, before: record.before, flipped: record.flipped)
+                            .frame(height: 360).frame(maxWidth: .infinity)
+                            .background(Color(red: 0.81, green: 0.83, blue: 0.77), in: RoundedRectangle(cornerRadius: 28))
+                        Text(language.format("saved_sample_occasion", String(record.occasion)))
+                        LookPrimaryButton(title: language.text("retry"), disabled: model.state.saving) {
+                            model.send(LookActionReuse(id: recordID)); onRetry()
+                        }
                     }
                     Button(language.text("ui_199"), role: .destructive) { confirmDelete = true }
                         .frame(minHeight: 44).disabled(model.state.saving)

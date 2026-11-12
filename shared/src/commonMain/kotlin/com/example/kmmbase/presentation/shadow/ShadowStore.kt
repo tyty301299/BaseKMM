@@ -17,6 +17,8 @@ data class ShadowState(
     val busy: String = "",
     val error: String? = null,
     val skills: List<ShadowSkill> = emptyList(),
+    val preparedGuideId: String? = null,
+    val preparedGuideTitle: String = "",
     val wardrobe: List<WardrobeItem> = emptyList(),
     val lesson: ShadowLesson? = null,
     val answer: ShadowAnswer? = null,
@@ -33,6 +35,8 @@ sealed interface ShadowAction {
     data class Connect(val endpoint: String, val code: String) : ShadowAction
     data object Reconnect : ShadowAction
     data object Refresh : ShadowAction
+    data class PrepareBuiltinGuide(val kind: String) : ShadowAction
+    data object ClearPreparedGuide : ShadowAction
     data class OpenLesson(val id: String) : ShadowAction
     data object CloseLesson : ShadowAction
     data object ClearAnswer : ShadowAction
@@ -85,6 +89,7 @@ class ShadowStore internal constructor(
         trace.event("action", "type=${action::class.simpleName}")
         when (action) {
             is ShadowAction.Connect -> connect(action)
+            ShadowAction.ClearPreparedGuide -> mutableState.update { it.copy(preparedGuideId = null, preparedGuideTitle = "") }
             ShadowAction.Reconnect -> if (currentState.busy.isEmpty()) lastConnection?.let(::connect)
             ShadowAction.CancelTryon -> {
                 if (currentState.tryingOn) {
@@ -123,6 +128,16 @@ class ShadowStore internal constructor(
                     }
                     ShadowAction.ClearAnswer -> mutableState.update { it.copy(answer = null, answerLabel = "", error = null) }
                     ShadowAction.Refresh -> run("Đang tải dữ liệu…") { refresh(repo) }
+                    is ShadowAction.PrepareBuiltinGuide -> {
+                        if (action.kind !in setOf("gift", "fold", "pants")) return
+                        val guide = builtinGuide(action.kind)
+                        mutableState.update { it.copy(preparedGuideId = null, preparedGuideTitle = "") }
+                        run("Đang chuẩn bị hướng dẫn…") {
+                            if (currentState.skills.none { it.id == guide.skillId }) repo.saveSkill(guide)
+                            currentCoroutineContext().ensureActive()
+                            mutableState.update { it.copy(preparedGuideId = guide.skillId, preparedGuideTitle = guide.title) }
+                        }
+                    }
                     is ShadowAction.OpenLesson -> run("Đang mở kỹ năng…") {
                         val lesson = repo.lesson(action.id)
                         currentCoroutineContext().ensureActive()

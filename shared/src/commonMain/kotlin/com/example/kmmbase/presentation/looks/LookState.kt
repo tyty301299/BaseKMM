@@ -16,5 +16,5 @@ data class LookState(
     val saving: Boolean = false,
     val error: String? = null,
 ) {
-    val filteredRecords: List<SavedLook> get() = records.filter { filter == "all" || it.kind == filter }
+    val filteredRecords: List<SavedLook> get() = records.filter { filter == "all" || (filter == "guide" && it.isGuide) || it.kind == filter }
 }

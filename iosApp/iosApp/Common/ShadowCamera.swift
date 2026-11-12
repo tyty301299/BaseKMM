@@ -11,6 +11,8 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
     private let lock = NSLock()
     private var latest: CVPixelBuffer?
     private var configured = false
+    private var frameHandler: ((CVPixelBuffer, Bool) -> Void)?
+    private var isFront = false
 
     var captureSession: AVCaptureSession { session }
 
@@ -29,10 +31,54 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
         }
     }
 
+    func setFrameHandler(_ handler: ((CVPixelBuffer, Bool) -> Void)?) {
+        queue.async { [weak self] in self?.frameHandler = handler }
+    }
+
+    func flip(front: Bool) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            let position: AVCaptureDevice.Position = front ? .front : .back
+            guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+                  let input = try? AVCaptureDeviceInput(device: device) else { return }
+            self.session.beginConfiguration()
+            let old = self.session.inputs
+            old.forEach { self.session.removeInput($0) }
+            if self.session.canAddInput(input) { self.session.addInput(input) }
+            else { old.forEach { if self.session.canAddInput($0) { self.session.addInput($0) } } }
+            self.session.commitConfiguration()
+            self.isFront = (self.session.inputs.first as? AVCaptureDeviceInput)?.device.position == .front
+        }
+    }
+
+    func focus(at point: CGPoint) {
+        queue.async { [weak self] in
+            guard let device = (self?.session.inputs.first as? AVCaptureDeviceInput)?.device,
+                  (try? device.lockForConfiguration()) != nil else { return }
+            if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.autoFocus) {
+                device.focusPointOfInterest = point; device.focusMode = .autoFocus
+            }
+            if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.autoExpose) {
+                device.exposurePointOfInterest = point; device.exposureMode = .autoExpose
+            }
+            device.unlockForConfiguration()
+        }
+    }
+
+    func setTorch(_ enabled: Bool) {
+        queue.async { [weak self] in
+            guard let device = (self?.session.inputs.first as? AVCaptureDeviceInput)?.device,
+                  device.hasTorch, (try? device.lockForConfiguration()) != nil else { return }
+            device.torchMode = enabled ? .on : .off
+            device.unlockForConfiguration()
+        }
+    }
+
     private func configure(front: Bool) {
         session.beginConfiguration()
         session.sessionPreset = .high
         let position: AVCaptureDevice.Position = front ? .front : .back
+        isFront = front
         if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
            let input = try? AVCaptureDeviceInput(device: device),
            session.canAddInput(input) {
@@ -52,6 +98,7 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
         lock.lock()
         latest = buffer
         lock.unlock()
+        frameHandler?(buffer, isFront)
     }
 
     /// Returns the newest frame as a `data:image/jpeg;base64,...` URL, downscaled to `maxSide`.
@@ -138,6 +185,8 @@ struct CameraPreview: UIViewRepresentable {
         let view = PreviewView()
         view.layer.session = camera.captureSession
         view.layer.videoGravity = .resizeAspectFill
+        view.camera = camera
+        view.addGestureRecognizer(UITapGestureRecognizer(target: view, action: #selector(PreviewView.focus(_:))))
         return view
     }
 
@@ -147,5 +196,9 @@ struct CameraPreview: UIViewRepresentable {
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
         // swiftlint:disable:next force_cast
         override var layer: AVCaptureVideoPreviewLayer { super.layer as! AVCaptureVideoPreviewLayer }
+        weak var camera: ShadowCamera?
+        @objc func focus(_ gesture: UITapGestureRecognizer) {
+            camera?.focus(at: layer.captureDevicePointConverted(fromLayerPoint: gesture.location(in: self)))
+        }
     }
 }

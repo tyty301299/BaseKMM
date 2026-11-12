@@ -8,18 +8,23 @@ struct LiveGuideView: View {
     let skillId: String
     let skillTitle: String
     let onExit: () -> Void
+    let onCompleted: (String, String, Bool) -> Void
 
     @StateObject private var model: GuideModel
     @State private var cameraGranted = false
+    @State private var completionSessionID = UUID().uuidString
+    @StateObject private var objectDetector = GarmentDetector()
 
     init(skillId: String,
          skillTitle: String,
          container: AppContainer,
          shadow: ShadowStore,
+         onCompleted: @escaping (String, String, Bool) -> Void = { _, _, _ in },
          onExit: @escaping () -> Void) {
         self.skillId = skillId
         self.skillTitle = skillTitle
         self.onExit = onExit
+        self.onCompleted = onCompleted
         _model = StateObject(wrappedValue: GuideModel(container: container, shadow: shadow))
     }
 
@@ -37,6 +42,15 @@ struct LiveGuideView: View {
                 .padding(32)
             }
 
+            if let box = objectDetector.box {
+                GeometryReader { geometry in
+                    let rect = objectDetector.displayRect(box, in: geometry.size)
+                    ObjectCorners().stroke(Color(red: 0.54, green: 0.97, blue: 0.17), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                        .shadow(color: .green.opacity(0.65), radius: 7)
+                        .frame(width: max(0, rect.width), height: max(0, rect.height))
+                        .position(x: rect.midX, y: rect.midY).allowsHitTesting(false)
+                }.ignoresSafeArea().accessibilityHidden(true)
+            }
             VStack {
                 hud
                 Spacer()
@@ -44,12 +58,17 @@ struct LiveGuideView: View {
             }
         }
         .onAppear {
+            objectDetector.setEnabled(true, garmentOnly: skillId == "shadow-builtin-gap-ao-v1" || skillId == "shadow-builtin-gap-quan-v1")
+            model.camera.setFrameHandler { [weak objectDetector] buffer, front in objectDetector?.offer(buffer, front: front) }
             ShadowCamera.requestAccess { granted in
                 cameraGranted = granted
                 if granted { model.start(skillId: skillId) }
             }
         }
-        .onDisappear { model.close() }
+        .onChange(of: model.state.completed) { complete in
+            if complete { onCompleted(completionSessionID, model.state.skillName.isEmpty ? skillTitle : model.state.skillName, model.state.manualAdvanceUsed) }
+        }
+        .onDisappear { model.camera.setFrameHandler(nil); objectDetector.setEnabled(false); model.close() }
     }
 
     private var hud: some View {
@@ -61,12 +80,21 @@ struct LiveGuideView: View {
                 Button(language.text("ui_158"), action: leave).tint(ShadowStyle.accent)
             }
 
+            if skillTitle.hasSuffix(" · Demo") {
+                Text("DEMO · Kết quả kiểm tra giả lập").font(.caption.bold()).foregroundStyle(.orange)
+            }
             if model.state.completed {
                 Text(language.text("ui_014")).font(.title2.bold()).foregroundStyle(ShadowStyle.accent)
             } else if let step = model.state.step {
                 Text(language.format("step_progress", String(step.index + 1), String(step.total)))
                     .font(.caption.bold()).foregroundStyle(ShadowStyle.accent)
-                Text(step.instruction).font(.title3.bold()).foregroundStyle(.white)
+                HStack(alignment: .center, spacing: 12) {
+                    Text(step.instruction).font(.title3.bold()).foregroundStyle(.white).frame(maxWidth: .infinity, alignment: .leading)
+                    if ["shadow-builtin-goi-qua-v1", "shadow-builtin-gap-ao-v1", "shadow-builtin-gap-quan-v1"].contains(skillId) {
+                        BuiltinStepIllustration(isGift: skillId == "shadow-builtin-goi-qua-v1", step: Int(step.index), isPants: skillId == "shadow-builtin-gap-quan-v1")
+                            .frame(width: 112, height: 92)
+                    }
+                }
                 if !step.tip.isEmpty {
                     Text(step.tip).font(.subheadline).foregroundStyle(.white.opacity(0.8))
                 }
@@ -101,7 +129,7 @@ struct LiveGuideView: View {
     }
 
     private var statusColor: Color {
-        if model.state.connection != SocketStatus.open { return .orange }
+        if model.state.connection != SocketStatus.open || ["no_frame", "error", "not_done"].contains(model.state.checkStatus) { return .orange }
         if model.state.judging { return ShadowStyle.accent }
         return model.state.running ? .green : .gray
     }
@@ -109,7 +137,11 @@ struct LiveGuideView: View {
     private var statusLabel: String {
         if model.state.connection == SocketStatus.closed { return language.text("ui_214") }
         if model.state.connection == SocketStatus.connecting { return language.text("connecting") }
-        if model.state.judging { return language.text("ui_152") }
+        if model.state.checkStatus == "no_frame" { return "Chưa lấy được ảnh camera" }
+        if model.state.checkStatus == "error" { return "Không kiểm tra được ảnh" }
+        if model.state.checkStatus == "confirming" { return "Đang xác nhận · giữ nguyên vài giây" }
+        if model.state.checkStatus == "not_done" { return "Chưa xác nhận · giữ rõ vật trong khung" }
+        if model.state.judging { return "AI đang kiểm tra…" }
         return model.state.running ? language.text("ui_227") : language.text("ui_155")
     }
 
@@ -124,11 +156,16 @@ struct LiveGuideView: View {
             if let error = model.state.error {
                 Text(language.systemText(error)).font(.subheadline).foregroundStyle(.red)
             }
-            if model.state.debugControls {
+            if model.state.running {
                 HStack(spacing: 12) {
-                    Button("◀") { model.step(forward: false) }.buttonStyle(.bordered)
-                    Button("▶") { model.step(forward: true) }.buttonStyle(.bordered)
-                }
+                    if (model.state.step?.index ?? 0) > 0 {
+                        Button("Bước trước") { model.step(forward: false) }.buttonStyle(.bordered)
+                    }
+                    Button("Tôi đã xong bước này") { model.step(forward: true) }
+                        .frame(maxWidth: .infinity).buttonStyle(.borderedProminent)
+                }.disabled(model.state.connection != SocketStatus.open)
+                Text("Chỉ bấm khi đã làm xong; AI vẫn tự kiểm tra.")
+                    .font(.caption2).foregroundStyle(.white.opacity(0.7))
             }
             if model.state.completed {
                 Button(action: leave) {

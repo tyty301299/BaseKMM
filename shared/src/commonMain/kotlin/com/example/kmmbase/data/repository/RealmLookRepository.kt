@@ -17,8 +17,12 @@ internal class RealmLookRepository(private val realm: Realm) : LookRepository {
         } }
 
     override suspend fun save(look: SavedLook) {
-        require(look.id.isNotBlank() && look.preset in setOf("coat", "blouse"))
-        require(look.kind in setOf("tryon", "outfit") && look.occasion.length in 1..100)
+        require(look.id.isNotBlank() && look.occasion.length in 1..100)
+        when (look.kind) {
+            "tryon", "outfit" -> require(look.preset in setOf("coat", "blouse"))
+            "guide-manual", "guide-ai", "guide-demo" -> require(look.preset.length in 1..200)
+            else -> error("Unsupported history type")
+        }
         realm.write {
             copyToRealm(SavedLookEntity().apply {
                 id = look.id

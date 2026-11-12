@@ -14,6 +14,11 @@ import androidx.navigation.compose.*
 import androidx.navigation.toRoute
 import com.example.kmmbase.android.common.rememberStore
 import com.example.kmmbase.android.features.home.HomeScreen
+import com.example.kmmbase.android.common.CameraFrameSource
+import com.example.kmmbase.android.features.guide.LiveGuideScreen
+import com.example.kmmbase.android.features.guide.rememberGuideStore
+import com.example.kmmbase.android.features.teach.LiveTeachScreen
+import com.example.kmmbase.android.features.teach.rememberTeachStore
 import com.example.kmmbase.android.features.notes.NoteEditScreen
 import com.example.kmmbase.android.features.notes.NoteListScreen
 import com.example.kmmbase.android.features.looks.screens.*
@@ -25,6 +30,8 @@ import com.example.kmmbase.presentation.studio.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.Serializable
 
+@Serializable internal data object TeachCameraRoute
+@Serializable internal data class GuideCameraRoute(val id: String, val title: String)
 @Serializable internal data object CameraRoute
 @Serializable internal data object HistoryRoute
 @Serializable internal data class ServiceRoute(val initialTab: Int, val settings: Boolean = false)
@@ -60,6 +67,14 @@ internal fun AppNavHost(container: AppContainer) {
             snackbars.showSnackbar(language.systemText(message.text), withDismissAction = true, duration = SnackbarDuration.Short)
         }
     }
+    LaunchedEffect(remoteState.preparedGuideId) {
+        val id = remoteState.preparedGuideId
+        if (id != null) {
+            val title = remoteState.preparedGuideTitle + if (remoteState.modeLabel == "AI") "" else " · Demo"
+            remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.ClearPreparedGuide)
+            nav.navigate(GuideCameraRoute(id, title))
+        }
+    }
     LaunchedEffect(studio, nav) {
         studio.effects.collect { effect ->
             when (effect) {
@@ -86,11 +101,11 @@ internal fun AppNavHost(container: AppContainer) {
             looks.dispatch(LookAction.Retake); nav.navigate(CameraRoute)
         }
     }
-    val home: (Int) -> Unit = { homeSelection = it; nav.popBackStack<HomeRoute>(inclusive = false) }
+    val home: (Int) -> Unit = { homeSelection = it; nav.popBackStack<CameraRoute>(inclusive = false) }
     CompositionLocalProvider(LocalLookDark provides state.data.settings.dark, LocalLookGlass provides state.data.settings.glass) {
         LookTheme {
             Box(Modifier.fillMaxSize()) {
-                NavHost(navController = nav, startDestination = HomeRoute) {
+                NavHost(navController = nav, startDestination = CameraRoute) {
                     composable<HomeRoute> {
                         LookHomeScreen(looks, studio, remoteState, homeSelection, { go(StudioPageKey.CAMERA_INTRO) },
                             { nav.navigate(LookDetailRoute(it)) }, service,
@@ -106,15 +121,35 @@ internal fun AppNavHost(container: AppContainer) {
                     }
                     composable<CameraRoute> {
                         CompositionLocalProvider(LocalLookDark provides true) {
-                            LookCameraScreen(looks, { nav.popBackStack() }, {
-                                nav.navigate(HistoryRoute) { popUpTo<CameraRoute> { inclusive = true } }
-                            })
+                            LookCameraScreen(looks, remoteState.skills, remoteState.connected, remoteState.modeLabel,
+                                { nav.navigate(HistoryRoute) }, { go(StudioPageKey.SETTINGS) },
+                                { remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Reconnect) },
+                                { nav.navigate(TeachCameraRoute) }, { id, title -> nav.navigate(GuideCameraRoute(id, title)) },
+                                { kind -> remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.PrepareBuiltinGuide(kind)) })
                         }
+                    }
+                    composable<TeachCameraRoute> {
+                        val frames = remember { CameraFrameSource() }
+                        val teachStore = rememberTeachStore(container, remote, frames)
+                        LiveTeachScreen(frames, teachStore, onDone = {
+                            remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Refresh)
+                            nav.popBackStack()
+                        }, onExit = { nav.popBackStack() })
+                    }
+                    composable<GuideCameraRoute> { entry ->
+                        val route = entry.toRoute<GuideCameraRoute>()
+                        val frames = remember { CameraFrameSource() }
+                        val guideStore = rememberGuideStore(container, remote, frames)
+                        LiveGuideScreen(route.id, route.title, frames, guideStore,
+                            onCompleted = { sessionId, title, manuallyAdvanced ->
+                                looks.dispatch(LookAction.SaveGuideCompletion(sessionId, route.id, title,
+                                    if (manuallyAdvanced) "manual" else if (route.title.endsWith(" · Demo")) "demo" else "ai"))
+                            }) { nav.popBackStack() }
                     }
                     composable<HistoryRoute> {
                         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                             TextButton(onClick = { nav.popBackStack() }) { Text(language.text(R.string.back)) }
-                            LookHistoryScreen(looks, studio, { nav.navigate(LookDetailRoute(it)) }, { go(StudioPageKey.CAMERA_INTRO) }, skill)
+                            LookHistoryScreen(looks, studio, { nav.navigate(LookDetailRoute(it)) }, { nav.popBackStack<CameraRoute>(false) }, skill)
                         }
                     }
                     composable<LookDetailRoute> { entry ->

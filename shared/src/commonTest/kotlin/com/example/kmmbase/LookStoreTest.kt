@@ -112,6 +112,49 @@ class LookStoreTest {
         reopened.close()
     }
 
+    @Test fun completedGuidesAreStoredOnceAndSurviveReopening() = runTest(dispatcher) {
+        val repo = FakeLooks()
+        val first = store(repo)
+        val shirt = LookAction.SaveGuideCompletion("session-shirt", "shadow-builtin-gap-ao-v1", "Gấp áo", "manual")
+        val pants = LookAction.SaveGuideCompletion("session-pants", "shadow-builtin-gap-quan-v1", "Gấp quần", "ai")
+        first.dispatch(shirt); first.dispatch(shirt); first.dispatch(pants)
+        assertEquals(2, repo.saves)
+        first.close()
+        val reopened = store(repo)
+        reopened.dispatch(LookAction.Filter("guide"))
+        assertEquals(setOf("Gấp áo", "Gấp quần"), reopened.currentState.filteredRecords.map { it.title }.toSet())
+        assertEquals(setOf("guide-manual", "guide-ai"), reopened.currentState.filteredRecords.map { it.kind }.toSet())
+        reopened.dispatch(LookAction.Delete("session-shirt"))
+        assertEquals("Gấp quần", reopened.currentState.filteredRecords.single().title)
+        reopened.close()
+    }
+
+    @Test fun completedGuideIsQueuedDuringAnotherSave() = runTest(dispatcher) {
+        val repo = FakeLooks().apply { gate = CompletableDeferred() }
+        val store = store(repo)
+        store.dispatch(LookAction.SaveOutfit)
+        store.dispatch(LookAction.SaveGuideCompletion("session", "fold", "Gấp áo", "manual"))
+        assertTrue(store.currentState.saving)
+        repo.gate!!.complete(Unit)
+        assertEquals(setOf("outfit", "guide-manual"), repo.records.value.map { it.kind }.toSet())
+        store.close()
+    }
+
+    @Test fun failedGuideSaveCanRetryWithoutDuplicatingHistory() = runTest(dispatcher) {
+        val repo = FakeLooks().apply { failWrite = true }
+        val store = store(repo)
+        val completed = LookAction.SaveGuideCompletion("session", "pants", "Gấp quần", "ai")
+        store.dispatch(completed)
+        assertNotNull(store.currentState.error)
+        assertTrue(repo.records.value.isEmpty())
+        repo.failWrite = false
+        store.dispatch(LookAction.Retry)
+        store.dispatch(completed)
+        assertEquals("Gấp quần", repo.records.value.single().title)
+        assertEquals(1, repo.saves)
+        store.close()
+    }
+
     @Test fun failedOpenCanRecoverAndUnknownPresetsAreRejected() = runTest(dispatcher) {
         val repo = FakeLooks()
         var fail = true

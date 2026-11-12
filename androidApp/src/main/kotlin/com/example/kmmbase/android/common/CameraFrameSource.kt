@@ -22,12 +22,16 @@ class CameraFrameSource : FrameSource {
     private val latest = AtomicReference<Bitmap?>(null)
 
     /** Called from CameraX's analyzer thread for every frame. */
+    @Synchronized
     fun offer(image: ImageProxy) {
         val bitmap = image.toBitmap(image.imageInfo.rotationDegrees)
         latest.getAndSet(bitmap)?.takeIf { it != bitmap }?.recycle()
     }
 
-    override suspend fun capture(maxSide: Int): String? {
+    override suspend fun capture(maxSide: Int): String? = captureFrame(maxSide)
+
+    @Synchronized
+    private fun captureFrame(maxSide: Int): String? {
         val source = latest.get() ?: return null
         val scaled = source.scaledTo(maxSide)
         val stream = ByteArrayOutputStream()
@@ -37,6 +41,7 @@ class CameraFrameSource : FrameSource {
         return "data:image/jpeg;base64,$encoded"
     }
 
+    @Synchronized
     fun clear() {
         latest.getAndSet(null)?.recycle()
     }
