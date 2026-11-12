@@ -59,7 +59,7 @@ SwiftUI / Compose ── Action ──▶ Store ──▶ Repository ──▶ m
 ```
 
 Logic dùng chung nằm trong `shared`, kể cả phần khó: nhịp gửi khung hình, `confirming`, `speech_epoch`.
-Mỗi nền tảng chỉ cung cấp camera và giọng nói qua hai interface nhỏ trong `shared/.../platform/Speech.kt`:
+Mỗi nền tảng chỉ cung cấp camera và giọng nói qua các contract trong `shared/.../platform/`: `Speaker.kt`, `SpeechListener.kt`, `FrameSource.kt`:
 
 | Việc | Android | iOS |
 |---|---|---|
@@ -70,12 +70,14 @@ Mỗi nền tảng chỉ cung cấp camera và giọng nói qua hai interface nh
 `AppContainer.guideStore(...)` và `teachStore(...)` dựng store ở phía Kotlin, nên Swift không phải chạm vào
 dispatcher hay lambda `suspend`.
 
-Backend **không nhận video**. Màn Dạy lấy khung hình mỗi ~2 giây và ngay sau mỗi câu nói (câu nói thường kết thúc
+Luồng camera trực tiếp của màn Dạy lấy khung hình mỗi ~2 giây và ngay sau mỗi câu nói (câu nói thường kết thúc
 đúng lúc nhìn thấy kết quả), kèm transcript có mốc thời gian. Tối đa 64 khung hình; khi vượt, `TeachStore` tỉa bớt
 phần giữa và **giữ khung đầu và khung cuối**, vì trạng thái kết thúc là thứ bộ biên dịch cần nhất.
 
 Nếu thiết bị không nhận được giọng nói tiếng Việt, màn Dạy hiện cảnh báo và người dạy **gõ ghi chú** — backend vẫn
 biên dịch được kỹ năng từ ghi chú cộng khung hình.
+
+Luồng **quay/chọn video gốc** đã được nối trên Android/iOS và BE source. Cần deploy BE mới, bật `SHADOW_VIDEO_TEACH_ENABLED=1` và có ffmpeg/ffprobe. Video tối đa 180 giây/32 MB; xem [VIDEO_TEACH.md](VIDEO_TEACH.md) cho API, khôi phục tác vụ và giới hạn.
 
 ## Build và chạy
 
@@ -126,6 +128,15 @@ SHADOW_ACCESS_CODE=<mã> ./gradlew :shared:testAndroidHostTest --tests '*LiveSer
   `live.available: false` (thiếu `DECART_API_KEY`).
 - Giới hạn tần suất: tối đa 3 WebSocket cùng lúc trên một IP, 30 tin nhắn/giây. Cả nhóm test chung một mạng có thể
   bị đóng kết nối với mã 1008 — biết trước để không nhầm là lỗi app.
+
+## Hướng dẫn gói quà — kiểm tra đầu ra 12/11/2026
+
+- Android/iOS: **Gói quà → Hướng dẫn gói quà** mở luồng camera/BE; **Tự chuyển bước** là lựa chọn thủ công riêng. Hiện nguyên liệu cần chuẩn bị, trạng thái chuẩn bị và lỗi kết nối ngay tại đường vào.
+- Khi bắt đầu, app đọc lời nhắc chuẩn bị và đặt camera. Màn hướng dẫn có **Nghe lại bước này**; hành động này không chuyển bước, không đánh dấu đã hoàn thành và không làm mất bộ lọc speech epoch.
+- Kiểm tra trên server thật thấy thiếu `shadow-builtin-goi-qua-v1`. Đã đăng ký bằng cùng `builtinGuide("gift")` và `HttpShadowRepository.saveSkill` mà app dùng khi bấm bắt đầu. Không sửa BE hoặc ghi đè kỹ năng có sẵn trong lượt kiểm tra.
+- Test hợp đồng thật nhận `hud.state` ở trạng thái GUIDING, bước đầu/index 0, tổng 4 bước, nội dung **“Đặt hộp lên giữa mặt trái của giấy gói.”** và sự kiện `speech` đọc cùng nội dung. Không gửi ảnh camera; kết quả này chỉ chứng minh đăng ký kỹ năng và đầu ra hướng dẫn, không chứng minh AI chấm thao tác đúng.
+- Chạy lại riêng kiểm tra này: `SHADOW_VERIFY_GIFT=1 ./gradlew :shared:testAndroidHostTest --tests '*giftGuidePublishesFirstStepAndSpeech'`. Test có thể đăng ký kỹ năng app nếu thiếu; không tạo phiên Vidu. Những test server khác vẫn cần opt-in riêng.
+- Chưa nghiệm thu gói hộp thật từ đầu đến cuối trên điện thoại, chất lượng giọng đọc và tự chuyển bước bằng thị giác.
 
 
 ## Truy vết app native

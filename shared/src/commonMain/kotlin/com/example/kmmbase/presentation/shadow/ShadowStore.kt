@@ -1,5 +1,6 @@
 package com.example.kmmbase.presentation.shadow
 
+import com.example.kmmbase.domain.usecase.builtinGuide
 import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
@@ -9,43 +10,6 @@ import com.example.kmmbase.presentation.common.UiMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-
-data class ShadowState(
-    val endpoint: String = "",
-    val connected: Boolean = false,
-    val modeLabel: String = "Chưa kết nối",
-    val busy: String = "",
-    val error: String? = null,
-    val skills: List<ShadowSkill> = emptyList(),
-    val preparedGuideId: String? = null,
-    val preparedGuideTitle: String = "",
-    val wardrobe: List<WardrobeItem> = emptyList(),
-    val lesson: ShadowLesson? = null,
-    val answer: ShadowAnswer? = null,
-    val answerLabel: String = "",
-    val answerQuestion: String = "",
-    val suggestions: ShadowSuggestions? = null,
-    val suggestionsLabel: String = "",
-    val suggestionsEvent: String = "",
-    val tryon: TryonResult? = null,
-    val tryingOn: Boolean = false,
-)
-
-sealed interface ShadowAction {
-    data class Connect(val endpoint: String, val code: String) : ShadowAction
-    data object Reconnect : ShadowAction
-    data object Refresh : ShadowAction
-    data class PrepareBuiltinGuide(val kind: String) : ShadowAction
-    data object ClearPreparedGuide : ShadowAction
-    data class OpenLesson(val id: String) : ShadowAction
-    data object CloseLesson : ShadowAction
-    data object ClearAnswer : ShadowAction
-    data class Ask(val stepId: String, val question: String) : ShadowAction
-    data class Suggest(val event: String, val notes: String) : ShadowAction
-    data class StylePerson(val image: String, val event: String, val notes: String) : ShadowAction
-    data object CancelTryon : ShadowAction
-    data object ClearTryon : ShadowAction
-}
 
 /** Weather context for styling; the demo is in Hanoi. */
 internal const val DEFAULT_CITY = "Hà Nội"
@@ -83,6 +47,8 @@ class ShadowStore internal constructor(
      * Headers an image loader needs for server media. Kept off [ShadowState] so the access code is
      * never captured in UI snapshots or saved instance state.
      */
+    fun mediaHeadersFor(url: String): Map<String, String> = repository?.mediaHeadersFor(url) ?: emptyMap()
+
     fun mediaHeaders(): Map<String, String> = repository?.mediaHeaders() ?: emptyMap()
 
     fun dispatch(action: ShadowAction) {

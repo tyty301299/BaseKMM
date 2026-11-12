@@ -1,0 +1,10 @@
+package com.example.kmmbase.domain.repository
+
+import com.example.kmmbase.domain.model.*
+
+interface WardrobeRepository {
+    suspend fun wardrobe(): List<WardrobeItem>
+    suspend fun suggest(event: String, notes: String, city: String): ShadowSuggestions
+    suspend fun rules(): List<ShadowRule>
+    suspend fun addRule(text: String, taughtBy: String)
+}

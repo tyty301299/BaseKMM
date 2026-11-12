@@ -21,30 +21,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class NoteEditState(
-    val title: String = "",
-    val body: String = "",
-    val isExisting: Boolean = false,
-    val isLoading: Boolean = false,
-    val isSaving: Boolean = false,
-    val error: AppError? = null,
-) {
-    val canSave: Boolean
-        get() = !isLoading && !isSaving && error != AppError.NOT_FOUND && title.isNotBlank()
-}
-
-sealed interface NoteEditAction {
-    data class TitleChanged(val value: String) : NoteEditAction
-    data class BodyChanged(val value: String) : NoteEditAction
-    data object Save : NoteEditAction
-    data object Delete : NoteEditAction
-    data object Retry : NoteEditAction
-}
-
-sealed interface NoteEditEffect {
-    data object Finished : NoteEditEffect
-}
-
 class NoteEditStore internal constructor(
     private val existingId: String?,
     private val notes: suspend () -> NoteRepository,

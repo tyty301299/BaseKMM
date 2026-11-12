@@ -1,8 +1,8 @@
 package com.example.kmmbase.di
 
-import com.example.kmmbase.data.repository.DefaultGreetingRepository
-import com.example.kmmbase.data.repository.HttpShadowRepository
-import com.example.kmmbase.data.repository.normalizeShadowOrigin
+import com.example.kmmbase.data.repository.greeting.DefaultGreetingRepository
+import com.example.kmmbase.domain.repository.LiveVideoEngine
+import com.example.kmmbase.presentation.livetryon.LiveTryOnStore
 import com.example.kmmbase.presentation.shadow.ShadowStore
 import com.example.kmmbase.domain.usecase.GetGreetingUseCase
 import com.example.kmmbase.domain.repository.GreetingRepository
@@ -22,15 +22,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 // Constructor injection: thay repository thật bằng fake khi test.
-class AppContainer(repository: GreetingRepository) {
-    constructor() : this(DefaultGreetingRepository())
+class AppContainer(repository: GreetingRepository, private val services: AppServices) {
+    constructor(repository: GreetingRepository) : this(repository, DefaultAppServices())
+    constructor() : this(DefaultGreetingRepository(), DefaultAppServices())
     val getGreeting = GetGreetingUseCase(repository)
 
     fun shadowStore() = ShadowStore(
-        { endpoint, code -> HttpShadowRepository(endpoint, code) },
-        ::normalizeShadowOrigin,
+        services::shadow,
+        services::normalizeEndpoint,
         Dispatchers.Main.immediate,
     )
+
+    fun liveTryOnStore(shadow: ShadowStore, engine: LiveVideoEngine): LiveTryOnStore {
+        require(shadow.currentState.connected) { "Chưa kết nối SHADOW." }
+        return LiveTryOnStore(
+            services.liveTryOn(shadow.currentState.endpoint, shadow.mediaHeaders()),
+            engine, shadow.currentState.wardrobe, Dispatchers.Main.immediate,
+        )
+    }
 
     /**
      * Guide and teach stores are built here so the platform only has to supply camera, voice and a
@@ -54,6 +63,13 @@ class AppContainer(repository: GreetingRepository) {
         dispatcher = Dispatchers.Main.immediate,
     )
 
+    @OptIn(ExperimentalUuidApi::class)
+    fun teachStoreWithVideo(shadow: ShadowStore, camera: FrameSource, persistence: com.example.kmmbase.platform.TeachJobPersistence) = TeachStore(
+        repository = shadow::connectedRepository, captureFrame = { camera.capture(it) }, nowMs = ::nowMillis,
+        newId = { Uuid.random().toString().replace("-", "").take(20) }, dispatcher = Dispatchers.Main.immediate,
+        videoPersistence = persistence,
+    )
+
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     fun lookStore() = LookStore(
         { openLocalData().looks },
@@ -74,11 +90,11 @@ class AppContainer(repository: GreetingRepository) {
     private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
     // Open only when needed; greeting-only screens do not allocate a database.
-    private val localDataDelegate = lazy { LocalDataContainer.openDefault() }
+    private val localDataDelegate = lazy { services.openLocalData() }
 
     // Realm.open blocks, so the first open must stay off the main thread.
     @Throws(Exception::class)
-    suspend fun openLocalData(): LocalDataContainer =
+    suspend fun openLocalData(): com.example.kmmbase.domain.repository.LocalRepositories =
         withContext(Dispatchers.Default) { localDataDelegate.value }
 
     // Each screen owns its store and closes it when the screen goes away.

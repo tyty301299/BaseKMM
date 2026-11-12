@@ -70,7 +70,11 @@ struct RootView: View {
         }
         .sheet(isPresented: $showService) {
             NavigationStack {
-                HomeView(container: container, initialTab: serviceTab, initialSettings: serviceSettings, existingModel: shadow)
+                HomeView(container: container, initialTab: serviceTab, initialSettings: serviceSettings, existingModel: shadow,
+                         onGuideCompleted: { session, skill, title, manual in
+                             looks.send(LookActionSaveGuideCompletion(sessionId: session, skillId: skill, title: title,
+                                 source: manual ? "manual" : (title.hasSuffix(" · Demo") ? "demo" : "ai")))
+                         })
                     .toolbar { ToolbarItem(placement: .navigationBarLeading) { Button(language.text("close")) { showService = false } } }
             }
         }

@@ -4,6 +4,7 @@
 > Chọn **Phối đồ cho hôm nay** để nhập ảnh người hoặc chọn một khung hình từ video, lấy bộ đồ gợi ý và tạo ảnh mặc thử. **SHADOW trực tuyến** có **Dạy** (camera + giọng nói) và **Hướng dẫn** (camera + WebSocket).
 > Settings có trạng thái kết nối/reconnect và ngôn ngữ Việt/English. Các luồng mẫu local được ghi rõ; video nhập vào chỉ tạo ảnh từ khung hình, chưa xuất video thử đồ.
 > Xem [giao thức, kiến trúc, cách build và những gì chưa kiểm tra](docs/SHADOW_MOBILE.md).
+> **Thử áo live native (Android/iOS):** Camera → Thay đồ → Thử áo trực tiếp. Dùng Agora/Vidu, có DTO và Clean Architecture dùng chung; xem [cấu trúc và trạng thái kiểm chứng](docs/NATIVE_LIVE_TRYON.md). Server hiện báo live chưa khả dụng, chưa nghiệm thu trên máy thật.
 > Các màn mẫu cũ vẫn còn làm dự phòng: [SHADOW_NATIVE_UI.md](docs/SHADOW_NATIVE_UI.md).
 > **Chưa chạy trên điện thoại thật** — camera, TTS/STT tiếng Việt mới chỉ qua biên dịch và simulator.
 > Các kết quả template ở cuối README không áp dụng cho phần SHADOW.
@@ -37,43 +38,22 @@ Khi xem README trên GitHub, link file HTML phía trên mở mã nguồn. Workfl
 
 Job `build` vẫn xuất artifact HTML nếu bước deploy bị chặn do Pages chưa bật. Tải `shadow-html-demo`, giải nén và mở `index.html`. Link web chỉ hoạt động sau khi deploy thành công; camera/AI trong demo vẫn là mô phỏng. Các lần deploy từ hai nhánh dùng chung một site, lần deploy thành công gần nhất sẽ được hiển thị.
 
+Xem [toàn bộ sơ đồ App–BE–AI, model và checklist test chức năng](docs/APP_BE_ALL_FLOWS.md).
+
+Luồng [học từ video gốc](docs/VIDEO_TEACH.md) đã có source Android/iOS/BE: upload, xử lý, mở lại bản nháp, sửa/verify và lưu. Cần deploy BE mới và nghiệm thu AI trên máy thật.
+
 ## Cây thư mục
 
-```text
-KmmBase/
-├── shared/src/
-│   ├── commonMain/kotlin/com/example/kmmbase/
-│   │   ├── domain/                  # Không phụ thuộc tầng nào khác
-│   │   │   ├── model/               # Note, AppError
-│   │   │   ├── repository/          # Interface repository
-│   │   │   └── usecase/             # Quy tắc nghiệp vụ
-│   │   ├── data/
-│   │   │   ├── local/               # Realm entity, cấu hình database
-│   │   │   └── repository/          # Implementation của repository
-│   │   ├── presentation/
-│   │   │   ├── common/              # StoreSubscription cho Swift
-│   │   │   └── notes/               # State, Action, Effect, Store theo màn hình
-│   │   └── di/                      # AppContainer, LocalDataContainer
-│   ├── commonTest/                  # Test chạy trên Android và iOS
-│   └── iosTest/                     # Test Realm trên iOS
-├── androidApp/src/main/kotlin/com/example/kmmbase/android/
-│   ├── app/                         # Application, MainActivity
-│   ├── navigation/                  # Route và AppNavHost
-│   ├── common/                      # Giữ Store trong ViewModel, text lỗi
-│   └── features/
-│       ├── home/
-│       └── notes/
-├── iosApp/iosApp/
-│   ├── App/                         # Điểm vào của app
-│   ├── Navigation/                  # Route và RootView
-│   ├── Common/                      # Text lỗi
-│   └── Features/
-│       ├── Home/
-│       └── Notes/
-└── gradle/libs.versions.toml        # Phiên bản dependency
-```
+Xem [cấu trúc folder, DTO, Clean Architecture và cách thay provider](docs/ARCHITECTURE.md).
 
-Thêm màn hình mới: tạo `presentation/<tên>/` trong `shared`, `features/<tên>/` trên Android và `Features/<Tên>/` trên iOS. File Swift mới phải được thêm vào target `iosApp` trong Xcode.
+- `shared/domain`: model, repository interface và use case.
+- `shared/data`: DTO, mapper, remote API/socket, local entity và repository implementation theo chức năng.
+- `shared/presentation/<feature>`: State, Action, Effect và Store.
+- `shared/di`: cấu hình dịch vụ; `shared/platform`: hợp đồng camera/giọng nói.
+- Android: `features/<feature>/presentation`, `platform/<capability>`, `di`.
+- iOS: `Features/<Feature>/Presentation`, `Platform/<Capability>`, `DI`; Model tách khỏi View của Guide/Teach.
+
+Thêm Swift file vào target Xcode. Chạy `python3 tools/check_architecture.py` để kiểm tra chiều phụ thuộc, package và source membership.
 
 ## Kiến trúc
 

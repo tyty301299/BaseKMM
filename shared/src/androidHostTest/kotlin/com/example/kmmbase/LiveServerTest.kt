@@ -1,10 +1,14 @@
 package com.example.kmmbase
 
-import com.example.kmmbase.data.repository.HttpShadowRepository
+import com.example.kmmbase.data.repository.shadow.HttpShadowRepository
 import com.example.kmmbase.domain.model.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import com.example.kmmbase.domain.usecase.builtinGuide
 import kotlin.test.*
 
 /**
@@ -89,6 +93,43 @@ class LiveServerTest {
                 assertTrue(outfit.items.isNotEmpty())
                 assertTrue(outfit.items.all { it.imageUrl.startsWith("https://") },
                     "outfit items must resolve to absolute image URLs")
+            }
+        }
+    }
+
+    /** Explicit opt-in: installs the same missing app-owned skill as the app's Start button. */
+    @Test fun giftGuidePublishesFirstStepAndSpeech() {
+        if (System.getenv("SHADOW_VERIFY_GIFT") != "1") return
+        runBlocking {
+            HttpShadowRepository(origin, code ?: DEFAULT_SHADOW_ACCESS_CODE).use { repo ->
+                val gift = builtinGuide("gift")
+                if (repo.skills().none { it.id == gift.skillId }) repo.saveSkill(gift)
+                repo.openSession().use { socket ->
+                    val step = CompletableDeferred<SessionEvent.Hud>()
+                    val speech = CompletableDeferred<SessionEvent.Speech>()
+                    val observer = launch(start = CoroutineStart.UNDISPATCHED) {
+                        socket.events.collect { event ->
+                            if (event is SessionEvent.Hud && event.phase == SessionPhase.GUIDING && event.step != null) step.complete(event)
+                            if (event is SessionEvent.Speech && event.kind == "enter") speech.complete(event)
+                        }
+                    }
+                    try {
+                        socket.start(gift.skillId)
+                        withTimeout(20_000) {
+                            val first = step.await()
+                            val spoken = speech.await()
+                            assertEquals(0, first.step?.index)
+                            assertEquals(4, first.step?.total)
+                            assertTrue(first.step?.instruction?.contains("hộp") == true)
+                            assertTrue(spoken.text.isNotBlank())
+                            println("GIFT OUTPUT: step=${first.step?.index}, total=${first.step?.total}, instruction=${first.step?.instruction}")
+                            println("GIFT SPEECH: ${spoken.text}")
+                        }
+                    } finally {
+                        socket.stop()
+                        observer.cancel()
+                    }
+                }
             }
         }
     }

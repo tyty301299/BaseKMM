@@ -1,7 +1,12 @@
 package com.example.kmmbase
 
 import com.example.kmmbase.data.local.*
-import com.example.kmmbase.data.repository.*
+import com.example.kmmbase.data.repository.shadow.*
+import com.example.kmmbase.data.repository.livetryon.*
+import com.example.kmmbase.data.repository.greeting.*
+import com.example.kmmbase.data.repository.notes.*
+import com.example.kmmbase.data.repository.looks.*
+import com.example.kmmbase.data.repository.studio.*
 import com.example.kmmbase.domain.model.*
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration

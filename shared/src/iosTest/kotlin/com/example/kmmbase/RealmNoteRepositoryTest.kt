@@ -1,6 +1,6 @@
 package com.example.kmmbase
 
-import com.example.kmmbase.data.repository.RealmNoteRepository
+import com.example.kmmbase.data.repository.notes.RealmNoteRepository
 import com.example.kmmbase.data.local.RealmDatabase
 import com.example.kmmbase.domain.model.Note
 import io.realm.kotlin.Realm

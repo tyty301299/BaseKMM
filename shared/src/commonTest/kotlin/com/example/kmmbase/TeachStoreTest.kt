@@ -4,7 +4,7 @@ import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
 import com.example.kmmbase.domain.repository.ShadowSessionSocket
 import com.example.kmmbase.presentation.teach.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -15,8 +15,12 @@ import kotlin.test.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class TeachStoreTest {
     private class FakeRepo : ShadowRepository {
+        var compileGate: CompletableDeferred<Unit>? = null
+        var saveGate: CompletableDeferred<Unit>? = null
+        var compileCalls = 0
+        var saveCalls = 0
         var compiled: TeachRequest? = null
-        var savedRaw: String? = null
+        var savedDraft: TeachDraft? = null
         var draftRaw = """{"id":"pha-tra","display_name":"Pha trà","steps":[
             {"id":"step_1","instruction":"Rót nước","tip":"Nước nóng","detector_key":"step_1"},
             {"id":"step_2","instruction":"Cho trà","tip":"","detector_key":"step_2"}]}"""
@@ -32,6 +36,8 @@ class TeachStoreTest {
         override suspend fun rules() = emptyList<ShadowRule>()
         override suspend fun addRule(text: String, taughtBy: String) = Unit
         override suspend fun compileSkill(request: TeachRequest): TeachDraft {
+            compileCalls++
+            compileGate?.await()
             compiled = request
             val root = Json.parseToJsonElement(draftRaw).jsonObject
             return TeachDraft(
@@ -48,9 +54,13 @@ class TeachStoreTest {
                 draftRaw,
             )
         }
+        override suspend fun verifyStep(draft: TeachDraft, stepIndex: Int, referenceFrame: Int?) = draft.copy(
+            checks = listOf(TeachStepCheck(draft.steps[stepIndex].id, "ok", "Verified test fixture")))
         override suspend fun teachProgress(jobId: String) = "verifying"
         override suspend fun saveSkill(draft: TeachDraft): String {
-            savedRaw = draft.raw
+            saveCalls++
+            saveGate?.await()
+            savedDraft = draft
             return draft.skillId
         }
         override suspend fun tryonConfig() = TryonConfig(false, "mock", 30)
@@ -131,7 +141,7 @@ class TeachStoreTest {
         teach.close()
     }
 
-    @Test fun editedInstructionsAreFoldedIntoTheSavedSkillJson() = runTest {
+    @Test fun editedInstructionsArePassedToRepositoryAsDomainValues() = runTest {
         val repo = FakeRepo()
         val teach = store(repo, { 0 })
         teach.dispatch(TeachAction.StartRecording)
@@ -141,15 +151,15 @@ class TeachStoreTest {
         teach.dispatch(TeachAction.Compile)
 
         teach.dispatch(TeachAction.EditStep(0, "Rót nước sôi vào cốc"))
+        assertFalse(teach.currentState.canSave, "Edited detectors must be checked again")
+        teach.dispatch(TeachAction.VerifyStep(0))
         teach.dispatch(TeachAction.Save)
 
-        val saved = Json.parseToJsonElement(assertNotNull(repo.savedRaw)).jsonObject
-        val steps = saved["steps"]!!.jsonArray
-        assertEquals("Rót nước sôi vào cốc", steps[0].jsonObject["instruction"]!!.jsonPrimitive.content)
-        assertEquals("Cho trà", steps[1].jsonObject["instruction"]!!.jsonPrimitive.content)
-        // Fields the app never edits must survive the round trip untouched.
-        assertEquals("step_1", steps[0].jsonObject["detector_key"]!!.jsonPrimitive.content)
-        assertEquals("Nước nóng", steps[0].jsonObject["tip"]!!.jsonPrimitive.content)
+        val saved = assertNotNull(repo.savedDraft)
+        assertEquals("Rót nước sôi vào cốc", saved.steps[0].instruction)
+        assertEquals("Cho trà", saved.steps[1].instruction)
+        // Presentation forwards opaque server metadata unchanged; Data performs wire mapping.
+        assertEquals(repo.draftRaw, saved.raw)
         assertEquals(TeachPhase.SAVED, teach.currentState.phase)
         teach.close()
     }
@@ -177,4 +187,85 @@ class TeachStoreTest {
         assertEquals(TeachPhase.IDLE, teach.currentState.phase)
         teach.close()
     }
+    @Test fun duplicateCompileAndSaveAreIgnored() = runTest {
+        val repo = FakeRepo().apply { compileGate = CompletableDeferred(); saveGate = CompletableDeferred() }
+        val teach = store(repo, { 0 })
+        teach.dispatch(TeachAction.StartRecording)
+        teach.dispatch(TeachAction.StopRecording)
+        teach.dispatch(TeachAction.Title("Test"))
+        teach.dispatch(TeachAction.Notes("Test"))
+        teach.dispatch(TeachAction.Compile)
+        teach.dispatch(TeachAction.Compile)
+        assertEquals(1, repo.compileCalls)
+        repo.compileGate!!.complete(Unit)
+        teach.dispatch(TeachAction.Save)
+        teach.dispatch(TeachAction.Save)
+        assertEquals(1, repo.saveCalls)
+        assertTrue(teach.currentState.saving)
+        repo.saveGate!!.complete(Unit)
+        assertEquals(TeachPhase.SAVED, teach.currentState.phase)
+        assertFalse(teach.currentState.saving)
+        teach.close()
+    }
+
+    @Test fun resetCancelsPendingSaveAndDoesNotPublishSavedState() = runTest {
+        val repo = FakeRepo().apply { saveGate = CompletableDeferred() }
+        val teach = store(repo, { 0 })
+        teach.dispatch(TeachAction.StartRecording)
+        teach.dispatch(TeachAction.StopRecording)
+        teach.dispatch(TeachAction.Title("Test"))
+        teach.dispatch(TeachAction.Notes("Test"))
+        teach.dispatch(TeachAction.Compile)
+        teach.dispatch(TeachAction.Save)
+        teach.dispatch(TeachAction.Reset)
+        repo.saveGate!!.complete(Unit)
+        assertEquals(TeachPhase.IDLE, teach.currentState.phase)
+        assertNull(teach.currentState.savedSkillId)
+        assertFalse(teach.currentState.saving)
+        teach.close()
+    }
+
+    @Test fun lateFrameFromResetRecordingCannotContaminateNewRecording() = runTest {
+        val gate = CompletableDeferred<String?>()
+        var captures = 0
+        val teach = TeachStore({ FakeRepo() }, {
+            captures++
+            if (captures == 1) withContext(NonCancellable) { gate.await() } else "new-frame"
+        }, { 0L }, { "new-job" }, UnconfinedTestDispatcher(testScheduler))
+        teach.dispatch(TeachAction.StartRecording)
+        teach.dispatch(TeachAction.Reset)
+        teach.dispatch(TeachAction.StartRecording)
+        assertEquals(1, teach.currentState.frameCount)
+        gate.complete("old-frame")
+        assertEquals(1, teach.currentState.frameCount)
+        teach.close()
+    }
+
+    @Test fun transcriptOutsideRecordingAndActionsAfterCloseAreIgnored() = runTest {
+        val teach = store(FakeRepo(), { 0 })
+        teach.dispatch(TeachAction.Sentence(0.0, 1.0, "late"))
+        teach.dispatch(TeachAction.PartialSentence("late"))
+        assertTrue(teach.currentState.lines.isEmpty())
+        assertEquals("", teach.currentState.liveTranscript)
+        teach.close()
+        teach.dispatch(TeachAction.StartRecording)
+        assertEquals(TeachPhase.IDLE, teach.currentState.phase)
+    }
+
+    @Test fun cannotCompileWhileRecordingOrSaveAnEmptyInstruction() = runTest {
+        val repo = FakeRepo()
+        val teach = store(repo, { 0 })
+        teach.dispatch(TeachAction.StartRecording)
+        teach.dispatch(TeachAction.Title("Test"))
+        teach.dispatch(TeachAction.Notes("Test"))
+        teach.dispatch(TeachAction.Compile)
+        assertEquals(0, repo.compileCalls)
+        teach.dispatch(TeachAction.StopRecording)
+        teach.dispatch(TeachAction.Compile)
+        teach.dispatch(TeachAction.EditStep(0, "  "))
+        teach.dispatch(TeachAction.Save)
+        assertEquals(0, repo.saveCalls)
+        teach.close()
+    }
+
 }

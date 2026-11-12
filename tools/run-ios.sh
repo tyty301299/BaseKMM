@@ -33,7 +33,7 @@ xcrun xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
     -configuration Debug -sdk iphonesimulator \
     -destination "platform=iOS Simulator,id=$device_id" \
     -derivedDataPath .toolchains/DerivedData \
-    ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+    ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build
 
 device_list=$(xcrun simctl list devices -j)
 device_state=$(printf '%s' "$device_list" | python3 -c '

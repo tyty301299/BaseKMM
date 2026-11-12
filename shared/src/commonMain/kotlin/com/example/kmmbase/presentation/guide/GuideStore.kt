@@ -12,34 +12,6 @@ import kotlinx.coroutines.flow.*
 private const val PERIODIC_MS = 1_500L
 private const val MIN_GAP_MS = 1_200L
 
-data class GuideState(
-    val connection: SocketStatus = SocketStatus.CONNECTING,
-    val phase: SessionPhase = SessionPhase.WAITING_FOR_START,
-    val skillName: String = "",
-    val step: SessionStep? = null,
-    val tasks: List<SessionTask> = emptyList(),
-    val spokenLine: String = "",
-    val hint: String = "",
-    val judging: Boolean = false,
-    val checkStatus: String = "waiting",
-    val manualAdvanceUsed: Boolean = false,
-    val latencyMs: Long = 0,
-    val imageMaxSide: Int = 448,
-    val error: String? = null,
-    val debugControls: Boolean = false,
-) {
-    val completed: Boolean get() = phase == SessionPhase.COMPLETED
-    val running: Boolean get() = phase == SessionPhase.GUIDING
-}
-
-sealed interface GuideAction {
-    data class Start(val skillId: String) : GuideAction
-    data object Stop : GuideAction
-    data class Step(val forward: Boolean) : GuideAction
-    data class ShowDebugControls(val visible: Boolean) : GuideAction
-    data object DismissError : GuideAction
-}
-
 /**
  * Drives one guide session: paces camera frames, and speaks lines through [speak].
  *
@@ -72,16 +44,30 @@ class GuideStore(
     private var lastSentAt = 0L
     private var lastSpokenEpoch = -1L
     private var sending = false
+    private var sessionScope: CoroutineScope? = null
+    private var frameJob: Job? = null
+    private var closed = false
 
     fun dispatch(action: GuideAction) {
+        if (closed) return
         trace.event("action", "type=${action::class.simpleName}")
         when (action) {
             is GuideAction.Start -> start(action.skillId)
             GuideAction.Stop -> stop()
+            is GuideAction.SpeechAvailable -> mutableState.update { it.copy(speechAvailable = action.value) }
+            GuideAction.RepeatInstruction -> {
+                val instruction = currentState.step?.instruction?.takeIf { currentState.running && it.isNotBlank() }
+                if (instruction != null) {
+                    stopSpeaking()
+                    speak(instruction)
+                    mutableState.update { it.copy(spokenLine = instruction) }
+                }
+            }
             is GuideAction.Step -> {
                 if (socket != null && currentState.running && currentState.connection == SocketStatus.OPEN) {
                     mutableState.update { it.copy(manualAdvanceUsed = true) }
-                    scope.launch { socket?.stepManually(action.forward) }
+                    val live = socket
+                    sessionScope?.launch { live?.stepManually(action.forward) }
                 }
             }
             is GuideAction.ShowDebugControls ->
@@ -93,17 +79,29 @@ class GuideStore(
     private fun start(skillId: String) {
         if (socket != null) return
         lastSpokenEpoch = -1L
-        mutableState.update { it.copy(manualAdvanceUsed = false, checkStatus = "waiting", error = null) }
-        val live = socketFactory()
+        lastSentAt = 0L
+        mutableState.value = GuideState(speechAvailable = currentState.speechAvailable)
+        if (skillId == "shadow-builtin-goi-qua-v1") {
+            val preparation = "Chuẩn bị hộp quà, giấy gói, băng dính và ruy băng. Đặt điện thoại cố định để camera nhìn rõ hộp và hai tay."
+            mutableState.update { it.copy(spokenLine = preparation) }
+            stopSpeaking()
+            speak(preparation)
+        }
+        val live = try { socketFactory() } catch (_: Exception) {
+            mutableState.update { it.copy(connection = SocketStatus.CLOSED, error = "Chưa kết nối được hướng dẫn. Hãy thử lại.", checkStatus = "error") }
+            return
+        }
         socket = live
-        pump = scope.launch {
+        val work = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
+        sessionScope = work
+        pump = work.launch {
             live.events.collect { event -> handle(event) }
         }
-        scope.launch {
+        work.launch {
             // The socket may still be connecting; start() is replayed by the socket once it opens.
             live.start(skillId)
         }
-        ticker = scope.launch {
+        ticker = work.launch {
             while (isActive) {
                 delay(250)
                 if (currentState.running && nowMs() - lastSentAt >= PERIODIC_MS) send("interval")
@@ -113,15 +111,17 @@ class GuideStore(
 
     private fun stop() {
         stopSpeaking()
+        sessionScope?.cancel(); sessionScope = null
+        frameJob = null
+        sending = false
         ticker?.cancel(); ticker = null
         val live = socket
         socket = null
         pump?.cancel(); pump = null
-        scope.launch {
-            try { live?.stop() } finally { live?.close() }
-        }
+        // Closing the control socket destroys the backend session, even if this screen's scope is cancelled next.
+        live?.close()
         mutableState.update {
-            it.copy(phase = SessionPhase.WAITING_FOR_START, step = null, spokenLine = "", hint = "", judging = false, checkStatus = "waiting")
+            it.copy(connection = SocketStatus.CLOSED, phase = SessionPhase.WAITING_FOR_START, step = null, spokenLine = "", hint = "", judging = false, checkStatus = "waiting")
         }
     }
 
@@ -150,6 +150,7 @@ class GuideStore(
                 }
                 if (event.phase == SessionPhase.COMPLETED) {
                     ticker?.cancel(); ticker = null
+                    frameJob?.cancel(); frameJob = null; sending = false
                 } else if (event.phase == SessionPhase.GUIDING && event.step?.id != previousStep) {
                     send("interval", force = true)
                 }
@@ -183,12 +184,17 @@ class GuideStore(
     }
 
     private fun send(trigger: String, force: Boolean = false) {
-        if (sending || !currentState.running) return
+        if (sending || !currentState.running || currentState.connection != SocketStatus.OPEN) return
+        val live = socket ?: return
+        val work = sessionScope ?: return
+        val stepId = currentState.step?.id
         if (!force && nowMs() - lastSentAt < MIN_GAP_MS) return
         sending = true
-        scope.launch {
+        frameJob = work.launch {
             try {
                 val image = captureFrame(currentState.imageMaxSide)
+                currentCoroutineContext().ensureActive()
+                if (socket !== live || !currentState.running || currentState.step?.id != stepId) return@launch
                 if (image.isNullOrBlank()) {
                     trace.event("frame_unavailable")
                     mutableState.update { it.copy(judging = false, checkStatus = "no_frame") }
@@ -197,22 +203,23 @@ class GuideStore(
                 trace.event("frame_dispatch", "trigger=$trigger forced=$force")
                 lastSentAt = nowMs()
                 mutableState.update { it.copy(judging = true) }
-                socket?.sendFrame(image, lastSentAt, trigger)
+                live.sendFrame(image, lastSentAt, trigger)
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
                 trace.failure("frame_failed", error)
                 mutableState.update { it.copy(judging = false, checkStatus = "error", error = "Chưa gửi được ảnh. Hãy kiểm tra kết nối.") }
             } finally {
-                sending = false
+                if (socket === live) sending = false
             }
         }
     }
 
     override fun close() {
+        if (closed) return
+        closed = true
         trace.event("close")
-        stopSpeaking()
+        stop()
         scope.cancel()
-        socket?.close()
     }
 }

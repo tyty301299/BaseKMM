@@ -3,9 +3,9 @@ package com.example.kmmbase.android.navigation
 import com.example.kmmbase.android.common.LocalAppLanguage
 import com.example.kmmbase.android.R
 import androidx.compose.runtime.*
-import com.example.kmmbase.android.features.studio.screens.*
-import com.example.kmmbase.android.features.studio.components.StudioPage
-import com.example.kmmbase.android.features.looks.screens.LookOutfitContent
+import com.example.kmmbase.android.features.studio.presentation.screens.*
+import com.example.kmmbase.android.features.studio.presentation.components.StudioPage
+import com.example.kmmbase.android.features.looks.presentation.screens.LookOutfitContent
 import com.example.kmmbase.presentation.looks.*
 import com.example.kmmbase.presentation.studio.*
 
