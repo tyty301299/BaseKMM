@@ -2,8 +2,8 @@ package com.example.kmmbase
 
 import com.example.kmmbase.data.local.NoteEntity
 import com.example.kmmbase.data.local.RealmDatabase
-import com.example.kmmbase.data.repository.RealmLookRepository
-import com.example.kmmbase.data.repository.RealmNoteRepository
+import com.example.kmmbase.data.repository.looks.RealmLookRepository
+import com.example.kmmbase.data.repository.notes.RealmNoteRepository
 import com.example.kmmbase.domain.model.Note
 import com.example.kmmbase.domain.model.SavedLook
 import io.realm.kotlin.Realm

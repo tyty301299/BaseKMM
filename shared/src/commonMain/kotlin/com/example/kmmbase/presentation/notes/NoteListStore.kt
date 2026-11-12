@@ -17,17 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class NoteListState(
-    val notes: List<Note> = emptyList(),
-    val isLoading: Boolean = true,
-    val error: AppError? = null,
-)
-
-sealed interface NoteListAction {
-    data object Retry : NoteListAction
-    data class Delete(val id: String) : NoteListAction
-}
-
 class NoteListStore internal constructor(
     private val notes: suspend () -> NoteRepository,
     dispatcher: CoroutineDispatcher,

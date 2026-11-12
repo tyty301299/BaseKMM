@@ -23,6 +23,7 @@ android {
 kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":shared"))
+    implementation("io.agora.rtc:full-rtc-basic:4.5.2")
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.material3)
     implementation(libs.activity.compose)

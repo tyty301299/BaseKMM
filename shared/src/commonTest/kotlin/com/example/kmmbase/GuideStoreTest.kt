@@ -72,6 +72,30 @@ class GuideStoreTest {
         assertEquals("confirm", harness.socket.frames.last().first)
     }
 
+    @Test fun giftGuideImmediatelyExplainsPreparationBeforeServerStepArrives() = runTest {
+        val harness = Harness()
+        harness.store.dispatch(GuideAction.Start("shadow-builtin-goi-qua-v1"))
+        assertTrue(harness.spoken.single().contains("Chuẩn bị hộp quà"))
+        assertEquals(harness.spoken.single(), harness.store.currentState.spokenLine)
+        assertFalse(harness.store.currentState.completed)
+        harness.store.close()
+    }
+
+    @Test fun repeatInstructionSpeaksCurrentStepWithoutAdvancingOrChangingSpeechEpoch() = runTest {
+        val harness = Harness()
+        harness.guiding()
+        harness.socket.sink.emit(SessionEvent.Speech("Đặt đế", epoch = 5, kind = "enter"))
+        harness.store.dispatch(GuideAction.RepeatInstruction)
+        assertEquals(listOf("Đặt đế", "Đặt đế"), harness.spoken)
+        assertTrue(harness.socket.manualSteps.isEmpty())
+        assertFalse(harness.store.currentState.manualAdvanceUsed)
+        harness.socket.sink.emit(SessionEvent.Speech("Câu cũ", epoch = 5, kind = "enter"))
+        assertEquals(2, harness.spoken.size)
+        harness.socket.sink.emit(SessionEvent.Speech("Câu mới", epoch = 6, kind = "hint"))
+        assertEquals("Câu mới", harness.spoken.last())
+        harness.store.close()
+    }
+
     @Test fun staleSpeechEpochsAreDroppedAndNewerOnesInterrupt() = runTest {
         val harness = Harness()
         harness.guiding()

@@ -1,0 +1,52 @@
+[
+  {
+    "path": "backend/main.py",
+    "before_sha256": "3bfa109b80265ad38597584afbbbc90a6e0192d4f55663efeca5457610aede63",
+    "after_sha256": "f5b2b9a278fee068ba08579404ce587471a11bbd58836e718359562d941e34b4"
+  },
+  {
+    "path": "backend/security.py",
+    "before_sha256": "93a9c29623a4f5f72fc45c22d379281c7cd451eab51455cdf4e311546139247e",
+    "after_sha256": "94c667fc65b954d1d32274b10a04cec6706e936f9da08286109c0bcce8fe2f1e"
+  },
+  {
+    "path": "Dockerfile",
+    "before_sha256": "82a40730ed0497cba3dfb915d80814808cd7113cfb19cc0e1b2072026a0f986c",
+    "after_sha256": "7bd905df613c9cb97a78242f7bb65fd73fd0c8a786b56a69fbe4d6c797c6e728"
+  },
+  {
+    "path": "compose.yaml",
+    "before_sha256": "ade57daa12e886011ba8fcbb56c8ae7be2bb91e3d2369057f2abce32314c755d",
+    "after_sha256": "83f4c622a9659deff3a5ef9918724e2c527f23a1781d20e6313f2b6c1767cef4"
+  },
+  {
+    "path": "backend/tests/test_video_teach.py",
+    "before_sha256": null,
+    "after_sha256": "61bd3b9810184c8ef58242083887a9c4e003bad37a27c7d6ca4ba3a5ecff042b"
+  },
+  {
+    "path": "backend/teach_video/__init__.py",
+    "before_sha256": null,
+    "after_sha256": "c8dad2d222f9236c45b9bdaeab02d6fb1688c135704dfb5ce0f7f149b0eca90e"
+  },
+  {
+    "path": "backend/teach_video/api.py",
+    "before_sha256": null,
+    "after_sha256": "5a5f63cf6df224510d80d7b84329bf0bc44b1501dee598a31092d0add164f1a6"
+  },
+  {
+    "path": "backend/teach_video/detector.py",
+    "before_sha256": null,
+    "after_sha256": "81e5afc956f733269531b65b82c23be65f6163c0081ac283998ab350c676735f"
+  },
+  {
+    "path": "backend/teach_video/processor.py",
+    "before_sha256": null,
+    "after_sha256": "35aed941271f302a29ace517905b3bb5e460dbb2c1763ff0fe4a5dcc27c4960c"
+  },
+  {
+    "path": "backend/teach_video/storage.py",
+    "before_sha256": null,
+    "after_sha256": "c5a408d83c2c70519e43c9255e0543aa0939e7625298b9365821f354f4db87b0"
+  }
+]

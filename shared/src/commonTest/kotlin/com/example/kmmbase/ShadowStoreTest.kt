@@ -1,6 +1,7 @@
 package com.example.kmmbase
 
-import com.example.kmmbase.data.repository.normalizeShadowOrigin
+import com.example.kmmbase.data.mapper.shadow.toDto
+import com.example.kmmbase.data.remote.shadow.normalizeShadowOrigin
 import com.example.kmmbase.domain.model.*
 import com.example.kmmbase.domain.repository.ShadowRepository
 import com.example.kmmbase.presentation.shadow.*
@@ -64,7 +65,7 @@ class ShadowStoreTest {
         store.dispatch(ShadowAction.PrepareBuiltinGuide("fold"))
         assertEquals("shadow-builtin-gap-ao-v1", repo.savedDraft?.skillId)
         assertEquals("shadow-builtin-gap-ao-v1", store.currentState.preparedGuideId)
-        val payload = kotlinx.serialization.json.Json.parseToJsonElement(repo.savedDraft!!.raw) as kotlinx.serialization.json.JsonObject
+        val payload = kotlinx.serialization.json.Json.parseToJsonElement(repo.savedDraft!!.toDto().raw) as kotlinx.serialization.json.JsonObject
         val steps = payload["steps"] as kotlinx.serialization.json.JsonArray
         val detectors = payload["detectors"] as kotlinx.serialization.json.JsonObject
         assertEquals(4, steps.size)
@@ -88,9 +89,9 @@ class ShadowStoreTest {
         store.dispatch(ShadowAction.Connect("https://one.example", ""))
         store.dispatch(ShadowAction.PrepareBuiltinGuide("pants"))
         assertEquals("shadow-builtin-gap-quan-v1", store.currentState.preparedGuideId)
-        val payload = kotlinx.serialization.json.Json.parseToJsonElement(repo.savedDraft!!.raw) as kotlinx.serialization.json.JsonObject
+        val payload = kotlinx.serialization.json.Json.parseToJsonElement(repo.savedDraft!!.toDto().raw) as kotlinx.serialization.json.JsonObject
         assertEquals(4, (payload["steps"] as kotlinx.serialization.json.JsonArray).size)
-        assertTrue(repo.savedDraft!!.raw.contains("ống quần"))
+        assertTrue(repo.savedDraft!!.toDto().raw.contains("ống quần"))
         store.close()
     }
 

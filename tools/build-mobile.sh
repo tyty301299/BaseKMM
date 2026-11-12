@@ -8,7 +8,7 @@ case "${1:-}" in
         export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
         exec /usr/bin/xcrun xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath .toolchains/DerivedData CODE_SIGNING_ALLOWED=NO build
+            -derivedDataPath .toolchains/DerivedData CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- build
         ;;
     *) echo "Usage: ./tools/build-mobile.sh android|ios" >&2; exit 2 ;;
 esac
