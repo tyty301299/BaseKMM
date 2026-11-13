@@ -12,6 +12,7 @@ internal interface ShadowApi : AutoCloseable {
     suspend fun deleteSkill(id: String)
 
     suspend fun wardrobe(): List<WardrobeItemDto>
+    suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItemDto
     suspend fun suggest(event: String, notes: String, city: String): ShadowSuggestionsDto
     suspend fun rules(): List<ShadowRuleDto>
     suspend fun addRule(text: String, taughtBy: String)

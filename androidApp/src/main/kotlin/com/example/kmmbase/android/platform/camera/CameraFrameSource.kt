@@ -11,6 +11,9 @@ import androidx.camera.core.ImageProxy
 import com.example.kmmbase.platform.FrameSource
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicReference
+import android.os.SystemClock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private const val JPEG_QUALITY = 70
 
@@ -20,15 +23,25 @@ private const val JPEG_QUALITY = 70
  */
 class CameraFrameSource : FrameSource {
     private val latest = AtomicReference<Bitmap?>(null)
+    private var generation = 0L
+    private var lastFrameNs = 0L
 
     /** Called from CameraX's analyzer thread for every frame. */
-    @Synchronized
     fun offer(image: ImageProxy) {
-        val bitmap = image.toBitmap(image.imageInfo.rotationDegrees)
-        latest.getAndSet(bitmap)?.takeIf { it != bitmap }?.recycle()
+        // Preview stays at camera speed; the assistant only needs a few stills per second.
+        val token = synchronized(this) {
+            val now = SystemClock.elapsedRealtimeNanos()
+            if (now - lastFrameNs < 250_000_000L) null else { lastFrameNs = now; generation }
+        }
+        if (token == null) { image.close(); return }
+        val bitmap = try { image.toBitmap(image.imageInfo.rotationDegrees) } finally { image.close() }
+        synchronized(this) {
+            if (token != generation) bitmap.recycle()
+            else latest.getAndSet(bitmap)?.takeIf { it != bitmap }?.recycle()
+        }
     }
 
-    override suspend fun capture(maxSide: Int): String? = captureFrame(maxSide)
+    override suspend fun capture(maxSide: Int): String? = withContext(Dispatchers.Default) { captureFrame(maxSide) }
 
     @Synchronized
     private fun captureFrame(maxSide: Int): String? {
@@ -43,6 +56,8 @@ class CameraFrameSource : FrameSource {
 
     @Synchronized
     fun clear() {
+        generation++
+        lastFrameNs = 0L
         latest.getAndSet(null)?.recycle()
     }
 }
@@ -74,7 +89,6 @@ private fun ImageProxy.toBitmap(rotationDegrees: Int): Bitmap {
         val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     }
-    close()
     if (decoded == null) return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
     if (rotationDegrees == 0) return decoded
     val rotated = Bitmap.createBitmap(

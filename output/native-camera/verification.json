@@ -1,0 +1,15 @@
+{
+  "shared_tests": 91,
+  "shared_failures": 0,
+  "backend_crud_tests": 2,
+  "android_build": "passed",
+  "ios_simulator_build": "passed",
+  "upload_test_mode": "mock; isolated data; no AI calls",
+  "phone_camera_test": "not tested on physical devices",
+  "json_decoding": "background dispatcher on Android/iOS",
+  "main_wardrobe_items": 262,
+  "camera_preview": "TextureView, assistant stills capped at 4 fps",
+  "voice_engines": "initialized on demand",
+  "test_backend": "stopped after isolated upload verification",
+  "android_emulator_note": "Cold start remained slow on this emulator; upload flow passed. Last ANR observed before the final preview and on-demand voice changes."
+}

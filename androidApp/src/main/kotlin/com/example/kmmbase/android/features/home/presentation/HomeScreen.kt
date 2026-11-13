@@ -27,6 +27,7 @@ import com.example.kmmbase.android.features.looks.presentation.components.LookTh
 import com.example.kmmbase.android.features.looks.presentation.components.LookBackground
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -67,6 +68,7 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
     // Access codes stay in memory; never saved to preferences or instance state.
     var accessCode by remember { mutableStateOf(if (endpoint == DEFAULT_SHADOW_ORIGIN) DEFAULT_SHADOW_ACCESS_CODE else "") }
     var tab by rememberSaveable { mutableStateOf(initialTab) }
+    var addingItem by rememberSaveable { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(initialSettings) }
     var event by rememberSaveable { mutableStateOf("Đi làm") }
     var notes by rememberSaveable { mutableStateOf("") }
@@ -124,9 +126,10 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
     LaunchedEffect(Unit) {
         if (!state.connected && state.busy.isEmpty()) {
             store.dispatch(ShadowAction.Connect(endpoint, accessCode))
-        }
+        } else if (state.busy.isEmpty()) store.dispatch(ShadowAction.Refresh)
     }
     LookTheme {
+        if (addingItem) com.example.kmmbase.android.features.wardrobe.presentation.AddWardrobeItemDialog(store) { addingItem = false }
         val guide = guideSkill
         if (guide != null) {
             val frames = remember { CameraFrameSource() }
@@ -248,6 +251,15 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
                                 HorizontalDivider()
                             }
                         } else {
+                            Text("Tủ đồ của bạn", style = MaterialTheme.typography.headlineLarge)
+                            Text("Thêm trang phục từ điện thoại, dùng chung tủ đồ với website.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Button(onClick = { store.dispatch(ShadowAction.ClearWardrobeUpload); addingItem = true },
+                                enabled = state.connected && !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                                Text("+ Thêm đồ từ điện thoại")
+                            }
+                            SectionTitle(language.format(R.string.wardrobe_count_short, (state.wardrobe.size).toString()), state.connected && !busy) { store.dispatch(ShadowAction.Refresh) }
+                            if (state.wardrobe.isEmpty()) Text(language.text(R.string.wardrobe_empty))
+                            WardrobeGrid(state.wardrobe, mediaHeaders)
                             Text(language.text(R.string.person_photo_title), style = MaterialTheme.typography.headlineSmall)
                             Text(language.text(R.string.person_photo_detail), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             personJPEG?.let { bytes ->
@@ -267,13 +279,6 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
                             }
                             if (readingPhoto) LinearProgressIndicator(Modifier.fillMaxWidth())
                             if (photoError) Text(language.text(R.string.photo_invalid), color = MaterialTheme.colorScheme.error)
-                            Text(language.text(R.string.wardrobe_heading), style = MaterialTheme.typography.headlineLarge)
-                            Text(language.text(R.string.wardrobe_description))
-                            WebButton(language.text(R.string.manage_wardrobe), language.text(R.string.manage_wardrobe_detail),
-                                state.connected && !busy) { openWeb("wardrobe") }
-                            SectionTitle(language.format(R.string.wardrobe_count_short, (state.wardrobe.size).toString()), state.connected && !busy) { store.dispatch(ShadowAction.Refresh) }
-                            if (state.wardrobe.isEmpty()) Text(language.text(R.string.wardrobe_empty))
-                            WardrobeGrid(state.wardrobe, mediaHeaders)
                             Text(language.text(R.string.occasion_prompt), style = MaterialTheme.typography.titleMedium)
                             // Vertically flowing choices also fit narrow screens and large system text.
                             listOf("Đi làm", "Đi chơi", "Hẹn hò").forEach { choice ->
@@ -370,7 +375,19 @@ private fun LessonContent(state: ShadowState, store: ShadowStore, onGuide: () ->
 private fun WardrobeGrid(items: List<WardrobeItem>, headers: Map<String, String>) {
     val language = LocalAppLanguage.current
     val context = LocalContext.current
-    items.chunked(3).forEach { row ->
+    // This screen already scrolls vertically: bound composition and image loading per page.
+    val pageSize = 24
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val lastPage = ((items.size - 1).coerceAtLeast(0)) / pageSize
+    val currentPage = page.coerceAtMost(lastPage)
+    if (items.size > pageSize) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween) {
+        TextButton(onClick = { page = currentPage - 1 }, enabled = currentPage > 0) { Text("Trước") }
+        Text("${currentPage * pageSize + 1}–${minOf((currentPage + 1) * pageSize, items.size)} / ${items.size}",
+            style = MaterialTheme.typography.labelMedium)
+        TextButton(onClick = { page = currentPage + 1 }, enabled = currentPage < lastPage) { Text("Tiếp") }
+    }
+    items.drop(currentPage * pageSize).take(pageSize).chunked(3).forEach { row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEach { item ->
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {

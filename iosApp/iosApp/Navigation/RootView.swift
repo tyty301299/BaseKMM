@@ -36,8 +36,8 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            LookCameraView(model: looks, onClose: {}, onHistory: { path.append(.history) },
-                onSettings: { navigate(.settings) }, onNetworkRestored: { shadow.send(ShadowActionReconnect.shared) }, container: container, shadow: shadow)
+            ShadowCameraScreen(container: container, shadow: shadow, cameraVisible: !showService,
+                onWardrobe: { openService(1) }, onLessons: { openService(0) })
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Route.self) { route in
                     switch route {
@@ -82,7 +82,7 @@ struct RootView: View {
             guard !showedServiceOnLaunch else { return }
             showedServiceOnLaunch = true
             let endpoint = UserDefaults.standard.string(forKey: "shadow.endpoint") ?? ShadowDefaultsKt.DEFAULT_SHADOW_ORIGIN
-            let code = endpoint == ShadowDefaultsKt.DEFAULT_SHADOW_ORIGIN ? ShadowDefaultsKt.DEFAULT_SHADOW_ACCESS_CODE : ""
+            let code = UserDefaults.standard.string(forKey: "shadow.access_code") ?? ""
             shadow.send(ShadowActionConnect(endpoint: endpoint, code: code))
         }
         .sheet(item: $selectedRecord, onDismiss: {

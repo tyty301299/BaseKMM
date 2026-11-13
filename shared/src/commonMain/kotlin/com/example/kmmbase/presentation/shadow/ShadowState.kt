@@ -12,6 +12,7 @@ data class ShadowState(
     val preparedGuideId: String? = null,
     val preparedGuideTitle: String = "",
     val wardrobe: List<WardrobeItem> = emptyList(),
+    val wardrobeAddedId: String? = null,
     val lesson: ShadowLesson? = null,
     val answer: ShadowAnswer? = null,
     val answerLabel: String = "",

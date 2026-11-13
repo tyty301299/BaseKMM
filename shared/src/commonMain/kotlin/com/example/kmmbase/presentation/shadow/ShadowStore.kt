@@ -57,6 +57,7 @@ class ShadowStore internal constructor(
             is ShadowAction.Connect -> connect(action)
             ShadowAction.ClearPreparedGuide -> mutableState.update { it.copy(preparedGuideId = null, preparedGuideTitle = "") }
             ShadowAction.Reconnect -> if (currentState.busy.isEmpty()) lastConnection?.let(::connect)
+            ShadowAction.ClearWardrobeUpload -> mutableState.update { it.copy(wardrobeAddedId = null, error = null) }
             ShadowAction.CancelTryon -> {
                 if (currentState.tryingOn) {
                     operation?.cancel()
@@ -71,6 +72,20 @@ class ShadowStore internal constructor(
                 val repo = repository ?: return
                 if (!currentState.connected || currentState.busy.isNotEmpty()) return
                 when (action) {
+                    is ShadowAction.AddWardrobeItem -> {
+                        val name = action.name.trim()
+                        if (name.isEmpty() || name.length > 80 || action.category !in setOf("top", "bottom", "outerwear", "dress", "shoes", "accessory") ||
+                            !action.image.startsWith("data:image/jpeg;base64,") || action.image.length !in 24..8_000_000) {
+                            mutableState.update { it.copy(error = "Chọn ảnh trang phục, nhập tên và loại đồ hợp lệ.") }
+                            return
+                        }
+                        mutableState.update { it.copy(wardrobeAddedId = null) }
+                        run("Đang thêm đồ vào tủ…") {
+                            val item = repo.addWardrobeItem(action.image, name, action.category)
+                            currentCoroutineContext().ensureActive()
+                            mutableState.update { it.copy(wardrobe = listOf(item) + it.wardrobe.filterNot { old -> old.id == item.id }, wardrobeAddedId = item.id) }
+                        }
+                    }
                     ShadowAction.ClearTryon -> mutableState.update { it.copy(tryon = null) }
                     is ShadowAction.StylePerson -> {
                         if (!action.image.startsWith("data:image/jpeg;base64,") || action.image.length > 8_000_000 ||

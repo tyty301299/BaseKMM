@@ -9,10 +9,11 @@ fun normalizeShadowOrigin(value: String): String {
     val url = try { Url(value.trim()) } catch (_: Exception) {
         throw IllegalArgumentException("Địa chỉ máy chủ không hợp lệ.")
     }
-    require(url.protocol == URLProtocol.HTTPS && url.host.isNotBlank() &&
+    val local = url.host.lowercase() in setOf("localhost", "127.0.0.1", "::1", "[::1]")
+    require((url.protocol == URLProtocol.HTTPS || url.protocol == URLProtocol.HTTP && local) && url.host.isNotBlank() &&
         url.user == null && url.password == null && url.encodedPath in listOf("", "/") &&
         url.parameters.isEmpty() && url.fragment.isEmpty()) {
-        "Nhập địa chỉ gốc HTTPS, ví dụ https://shadow.example.com, không kèm đường dẫn hoặc mã truy cập."
+        "Nhập địa chỉ HTTPS hoặc http://localhost:8001 khi chạy local, không kèm đường dẫn hoặc mã truy cập."
     }
     return url.toString().trimEnd('/')
 }

@@ -6642,13 +6642,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add clothing photos on the web, then refresh to start styling."
+            "value" : "Your wardrobe is empty. Add clothing from your phone to get started."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thêm ảnh trang phục của bạn trên bản web, rồi tải lại để bắt đầu phối đồ."
+            "value" : "Chưa có món đồ nào. Bấm Thêm đồ từ điện thoại để bắt đầu."
           }
         }
       }

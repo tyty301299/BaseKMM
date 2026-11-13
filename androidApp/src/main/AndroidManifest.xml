@@ -9,7 +9,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
-    <application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:name=".app.KmmBaseApplication" android:label="SHADOW" android:supportsRtl="true" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    <application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:name=".app.KmmBaseApplication" android:label="SHADOW" android:supportsRtl="true" android:networkSecurityConfig="@xml/shadow_network_security" android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity android:name=".app.MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

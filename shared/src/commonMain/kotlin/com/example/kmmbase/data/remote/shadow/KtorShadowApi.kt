@@ -15,6 +15,8 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import kotlinx.serialization.json.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The access code travels in the `x-shadow-access` header rather than a cookie: native clients have
@@ -37,7 +39,7 @@ internal class KtorShadowApi(endpoint: String, private val accessCode: String = 
         body: JsonObject? = null,
         httpMethod: HttpMethod? = null,
         jobToken: String? = null,
-    ): JsonElement {
+    ): JsonElement = withContext(Dispatchers.Default) {
         val trace = ShadowTrace("HTTP")
         val requestMethod = httpMethod ?: if (body == null) HttpMethod.Get else HttpMethod.Post
         val route = when {
@@ -74,7 +76,7 @@ internal class KtorShadowApi(endpoint: String, private val accessCode: String = 
             val text = response.bodyAsText()
             val result = if (text.isBlank()) JsonNull else Json.parseToJsonElement(text)
             trace.event("success")
-            return result
+            return@withContext result
         } catch (error: kotlinx.coroutines.CancellationException) {
             trace.event("cancelled")
             throw error
@@ -142,9 +144,15 @@ internal class KtorShadowApi(endpoint: String, private val accessCode: String = 
         send("/api/skills/${id.encodeURLPathPart()}", httpMethod = HttpMethod.Delete)
     }
 
-    override suspend fun wardrobe(): List<WardrobeItemDto> = send("/api/wardrobe/items").jsonArray.map {
-        it.jsonObject.toWardrobeItem(::mediaUrl)
+    // Decoding and mapping the wardrobe must not compete with camera/UI work on Main.
+    override suspend fun wardrobe(): List<WardrobeItemDto> = withContext(Dispatchers.Default) {
+        send("/api/wardrobe/items").jsonArray.map { it.jsonObject.toWardrobeItem(::mediaUrl) }
     }
+
+    override suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItemDto =
+        send("/api/wardrobe/items", buildJsonObject {
+            put("image", image); put("name", name); put("category", category)
+        }).jsonObject.toWardrobeItem(::mediaUrl)
 
     override suspend fun suggest(event: String, notes: String, city: String): ShadowSuggestionsDto {
         val row = send("/api/stylist/suggest", buildJsonObject {

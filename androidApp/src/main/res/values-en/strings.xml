@@ -34,7 +34,7 @@
     <string name="wardrobe_description">Suggestions from your wardrobe for your next occasion.</string>
     <string name="manage_wardrobe">Add photos &amp; manage wardrobe</string>
     <string name="manage_wardrobe_detail">Open the web app · add clothing photos, edit labels and try on</string>
-    <string name="wardrobe_empty">Add clothing photos on the web, then refresh to start styling.</string>
+    <string name="wardrobe_empty">Your wardrobe is empty. Add clothing from your phone to get started.</string>
     <string name="occasion_prompt">Where are you going?</string>
     <string name="occasion">Occasion</string>
     <string name="work">Work</string>

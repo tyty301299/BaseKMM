@@ -31,6 +31,7 @@ class TeachStoreTest {
         override suspend fun ask(skillId: String, stepId: String, question: String) = ShadowAnswer("", "ai")
         override suspend fun deleteSkill(id: String) = Unit
         override suspend fun wardrobe() = emptyList<WardrobeItem>()
+        override suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItem = error("unused")
         override suspend fun suggest(event: String, notes: String, city: String) =
             ShadowSuggestions(emptyList(), "ai")
         override suspend fun rules() = emptyList<ShadowRule>()

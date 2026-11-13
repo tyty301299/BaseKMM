@@ -34,7 +34,7 @@
     <string name="wardrobe_description">Gợi ý từ những món đồ có trong tủ của bạn, phù hợp với dịp sắp tới.</string>
     <string name="manage_wardrobe">Thêm ảnh &amp; quản lý tủ đồ</string>
     <string name="manage_wardrobe_detail">Mở bản web · thêm ảnh đồ thật, chỉnh nhãn và mặc thử</string>
-    <string name="wardrobe_empty">Thêm ảnh trang phục của bạn trên bản web, rồi tải lại để bắt đầu phối đồ.</string>
+    <string name="wardrobe_empty">Chưa có món đồ nào. Bấm Thêm đồ từ điện thoại để bắt đầu.</string>
     <string name="occasion_prompt">Bạn sắp đi đâu?</string>
     <string name="occasion">Dịp sử dụng</string>
     <string name="work">Đi làm</string>

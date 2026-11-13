@@ -27,6 +27,18 @@ class AppContainer(repository: GreetingRepository, private val services: AppServ
     constructor() : this(DefaultGreetingRepository(), DefaultAppServices())
     val getGreeting = GetGreetingUseCase(repository)
 
+    @Throws(IllegalArgumentException::class)
+    fun normalizeEndpoint(endpoint: String): String = services.normalizeEndpoint(endpoint)
+
+    fun conversationStore(shadow: ShadowStore) = com.example.kmmbase.presentation.conversation.ConversationStore(
+        repositoryFactory = {
+            if (shadow.currentState.connected)
+                com.example.kmmbase.data.repository.conversation.HttpConversationRepository(shadow.currentState.endpoint, shadow.mediaHeaders())
+            else null
+        },
+        dispatcher = Dispatchers.Main.immediate,
+    )
+
     fun shadowStore() = ShadowStore(
         services::shadow,
         services::normalizeEndpoint,
