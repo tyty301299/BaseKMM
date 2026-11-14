@@ -95,6 +95,10 @@ final class LiveHTTPFixture: URLProtocol {
             require(error.message.contains("giới hạn mở phiên"), "Local session quota must be distinct from temporary service load")
             require(!error.message.contains("DO_NOT_DISPLAY"), "Quota errors must not expose upstream details")
         }
+        let depleted = "Your prepayment credits are depleted. DO_NOT_DISPLAY_SECRET_TOKEN"
+        require(LiveFailure.connectionClosed(Data(depleted.utf8)).message.contains("nạp tín dụng"), "WebSocket billing failure explains why voice cannot start")
+        require(LiveFailure.provider(["error": ["code": 429, "message": depleted]]).message.contains("nạp tín dụng"), "In-band billing failures use the same safe message")
+        require(!LiveFailure.connectionClosed(Data("DO_NOT_DISPLAY_SECRET_TOKEN".utf8)).message.contains("DO_NOT_DISPLAY"), "Unknown socket reasons stay private")
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [LiveHTTPFixture.self]
         let http = URLSession(configuration: config)

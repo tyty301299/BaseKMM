@@ -22,7 +22,7 @@ struct LiveFailure: LocalizedError {
     var errorDescription: String? { message }
     static func provider(_ value: [String: Any], status: Int = 0) -> LiveFailure {
         let detail = value["detail"] as? [String: Any] ?? value["error"] as? [String: Any] ?? value
-        let code = detail["code"] as? String ?? ""
+        let code = detail["code"] as? String ?? accountCode(detail["message"] as? String ?? "") ?? ""
         let message: String
         switch code {
         case "insufficient_credits", "billing_required": message = "Dịch vụ trò chuyện chưa đủ tín dụng. Vui lòng nạp tín dụng rồi mở lại Live."
@@ -38,6 +38,20 @@ struct LiveFailure: LocalizedError {
         }
         // Never surface raw provider messages, close reasons, token URLs or NSError descriptions.
         return LiveFailure(message: message)
+    }
+
+    private static func accountCode(_ text: String) -> String? {
+        let text = String(text.prefix(4096)).lowercased()
+        if ["credits are depleted", "insufficient credits", "insufficient credit balance", "insufficient funds", "not enough credits", "balance is insufficient"].contains(where: text.contains) {
+            return "insufficient_credits"
+        }
+        if text.contains("billing") && ["not enabled", "disabled", "enable billing"].contains(where: text.contains) { return "billing_required" }
+        return nil
+    }
+
+    static func connectionClosed(_ reason: Data?) -> LiveFailure {
+        let text = reason.flatMap { String(data: $0.prefix(4096), encoding: .utf8) } ?? ""
+        return provider(["code": accountCode(text) ?? "provider_unavailable"])
     }
 }
 
@@ -66,10 +80,15 @@ private final class URLSessionLiveSocket: LiveSocket {
     }
     func send(_ text: String) async throws { try await task.send(.string(text)) }
     func receive() async throws -> Data {
-        switch try await task.receive() {
-        case .data(let data): return data
-        case .string(let text): return Data(text.utf8)
-        @unknown default: throw LiveFailure(message: "Dữ liệu hội thoại chưa hợp lệ.")
+        do {
+            switch try await task.receive() {
+            case .data(let data): return data
+            case .string(let text): return Data(text.utf8)
+            @unknown default: throw LiveFailure(message: "Dữ liệu hội thoại chưa hợp lệ.")
+            }
+        } catch {
+            if task.closeReason != nil { throw LiveFailure.connectionClosed(task.closeReason) }
+            throw error
         }
     }
     func close() { task.cancel(with: .normalClosure, reason: nil) }
