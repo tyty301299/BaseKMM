@@ -11,13 +11,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-/** Weather context for styling; the demo is in Hanoi. */
-internal const val DEFAULT_CITY = "Hà Nội"
-
 class ShadowStore internal constructor(
     private val repositoryFactory: (String, String) -> ShadowRepository,
     private val normalizeEndpoint: (String) -> String,
     dispatcher: CoroutineDispatcher,
+    private val locationProvider: () -> StylingLocation? = { null },
 ) : AutoCloseable {
     private val trace = ShadowTrace("App")
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -93,7 +91,7 @@ class ShadowStore internal constructor(
                         mutableState.update { it.copy(tryon = null, tryingOn = true) }
                         run("Đang phối từ tủ đồ của bạn…") {
                             try {
-                                val suggestions = repo.suggest(action.event.trim(), action.notes.trim(), DEFAULT_CITY)
+                                val suggestions = repo.suggest(action.event.trim(), action.notes.trim(), locationProvider())
                                 currentCoroutineContext().ensureActive()
                                 val outfit = suggestions.outfits.firstOrNull { it.items.isNotEmpty() }
                                     ?: throw IllegalArgumentException("Chưa có bộ đồ phù hợp để mặc thử. Hãy thêm trang phục hoặc đổi dịp.")
@@ -139,7 +137,7 @@ class ShadowStore internal constructor(
                         if (action.event.isBlank() || action.event.length > 200 || action.notes.length > 300) return
                         mutableState.update { it.copy(suggestions = null, suggestionsLabel = "") }
                         run("Đang phối từ tủ đồ của bạn…") {
-                            val result = repo.suggest(action.event.trim(), action.notes.trim(), DEFAULT_CITY)
+                            val result = repo.suggest(action.event.trim(), action.notes.trim(), locationProvider())
                             currentCoroutineContext().ensureActive()
                             mutableState.update { it.copy(suggestions = result, suggestionsLabel = shadowSourceLabel(result.source), suggestionsEvent = action.event.trim()) }
                         }

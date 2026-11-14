@@ -67,6 +67,7 @@ internal fun ShadowCameraScreen(container: AppContainer, shadow: ShadowStore,
     onWardrobe: () -> Unit, onLessons: () -> Unit, onAction: (ConversationLink) -> Unit,
     onConnectionChanged: (String, String) -> Unit) {
     val context = LocalContext.current
+    val gps = com.example.kmmbase.android.platform.location.rememberStylingLocation(container)
     val window = (context as? Activity)?.window
     DisposableEffect(window) {
         val bars = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
@@ -186,6 +187,7 @@ internal fun ShadowCameraScreen(container: AppContainer, shadow: ShadowStore,
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                TextButton(onClick = gps.request, contentPadding = PaddingValues(horizontal = 0.dp)) { Text(gps.label, color = CameraAccent, fontSize = 11.sp) }
                 Box(Modifier.size(6.dp).background(if (remote.connected) CameraAccent else Color.Gray, CircleShape))
                 Text(if (remote.connected) "Đã kết nối" else if (remote.busy.isNotEmpty()) "Đang kết nối…" else "Chưa kết nối", color = Color.White.copy(alpha = .7f), fontSize = 11.sp)
             }

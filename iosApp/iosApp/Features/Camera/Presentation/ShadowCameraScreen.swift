@@ -1,11 +1,13 @@
 import SwiftUI
 import AVFoundation
+import CoreLocation
 import Shared
 
 /// SwiftUI camera chrome backed by the shared conversation store and native capture/speech.
 struct ShadowCameraScreen: View {
     private let container: AppContainer
     @ObservedObject private var shadow: ShadowModel
+    @StateObject private var gps = ForegroundStylingLocation()
     @StateObject private var model: NativeCameraChatModel
     let onWardrobe: () -> Void
     let onLessons: () -> Void
@@ -57,6 +59,7 @@ struct ShadowCameraScreen: View {
                     Button("Bài đã học", action: onLessons)
                 }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
                 HStack(spacing: 6) {
+                    Button(gps.label) { gps.request(container) }.font(.system(size: 11)).foregroundStyle(accent)
                     Circle().fill(shadow.state.connected ? accent : .gray).frame(width: 6, height: 6)
                     Text(shadow.state.connected ? "Đã kết nối" : shadow.state.busy.isEmpty ? "Chưa kết nối" : "Đang kết nối…")
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
@@ -122,13 +125,14 @@ struct ShadowCameraScreen: View {
             }.padding(.top, 100).padding(.trailing, 14)
         }
         .preferredColorScheme(.dark)
-        .onAppear { if cameraVisible { model.start() } }
-        .onDisappear { model.stop() }
+        .onAppear { gps.refresh(container); if cameraVisible { model.start() } }
+        .onDisappear { model.stop(); gps.stop() }
         .onChange(of: shadow.state.endpoint) { _ in model.clear() }
         .onChange(of: cameraVisible) { visible in
             if visible && scenePhase == .active && !settings { model.start() } else { model.stop() }
         }
         .onChange(of: scenePhase) { phase in
+            if phase == .active { gps.refresh(container) } else { gps.stop() }
             if phase == .active && cameraVisible && !settings { model.start() }
             else { model.stop() }
         }
@@ -272,4 +276,56 @@ private final class NativeCameraChatModel: ObservableObject {
     func cancel() { store.cancel(); speaker.stop() }
     func clear() { store.clear(); text = ""; spokenTurn = false }
     deinit { subscription?.cancel(); listener?.shutdown(); speaker.shutdown(); camera.stop(); store.close() }
+}
+
+/// One-shot foreground fixes; coordinates are never saved to preferences.
+@MainActor
+private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
+    @Published var label = "Bật GPS"
+    private let manager = CLLocationManager()
+    private var container: AppContainer?
+    private var timeout: Task<Void, Never>?
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyKilometer
+    }
+    func refresh(_ container: AppContainer) {
+        self.container = container
+        guard UIApplication.shared.applicationState == .active else { return }
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            label = "Đang lấy GPS…"
+            manager.requestLocation()
+            timeout?.cancel()
+            timeout = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                guard !Task.isCancelled else { return }
+                self?.stop(); self?.container?.clearLocation(); self?.label = "Thử lại GPS"
+            }
+        default:
+            container.clearLocation(); label = "Bật GPS"
+        }
+    }
+    func request(_ container: AppContainer) {
+        self.container = container
+        if manager.authorizationStatus == .notDetermined { manager.requestWhenInUseAuthorization() }
+        else if manager.authorizationStatus == .denied || manager.authorizationStatus == .restricted {
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+        } else { refresh(container) }
+    }
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        if let container { refresh(container) }
+    }
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard UIApplication.shared.applicationState == .active,
+              let fix = locations.last, fix.horizontalAccuracy >= 0, abs(fix.timestamp.timeIntervalSinceNow) < 600 else { return }
+        stop()
+        container?.updateLocation(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
+        label = "GPS ✓"
+    }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        stop(); container?.clearLocation(); label = "Thử lại GPS"
+    }
+    func stop() { timeout?.cancel(); timeout = nil; manager.stopUpdatingLocation() }
 }

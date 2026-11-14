@@ -1,5 +1,6 @@
 package com.example.kmmbase.data.remote.shadow
 
+import com.example.kmmbase.domain.model.StylingLocation
 import com.example.kmmbase.data.dto.shadow.*
 import com.example.kmmbase.domain.repository.ShadowSessionSocket
 
@@ -13,7 +14,7 @@ internal interface ShadowApi : AutoCloseable {
 
     suspend fun wardrobe(): List<WardrobeItemDto>
     suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItemDto
-    suspend fun suggest(event: String, notes: String, city: String): ShadowSuggestionsDto
+    suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestionsDto
     suspend fun rules(): List<ShadowRuleDto>
     suspend fun addRule(text: String, taughtBy: String)
 

@@ -18,6 +18,7 @@ class ShadowStoreTest {
         var accessRequired = false
         var enteredCode: String? = null
         var askCount = 0
+        var suggestedLocation: StylingLocation? = null
         var suggestionResult = ShadowSuggestions(emptyList(), "mock")
         var savedDraft: TeachDraft? = null
         var tryonCalls = 0
@@ -44,8 +45,9 @@ class ShadowStoreTest {
             uploadCalls++; uploadImage = image; uploadName = name; uploadCategory = category
             return uploadGate?.await() ?: WardrobeItem("phone-1", name, category, false, "https://one.example/wardrobe-media/images/phone-1.jpg")
         }
-        override suspend fun suggest(event: String, notes: String, city: String) =
-            suggestionResult
+        override suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestions {
+            suggestedLocation = location; return suggestionResult
+        }
         override suspend fun rules() = emptyList<ShadowRule>()
         override suspend fun addRule(text: String, taughtBy: String) = Unit
         override suspend fun compileSkill(request: TeachRequest) =
@@ -63,6 +65,19 @@ class ShadowStoreTest {
         override fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket =
             throw UnsupportedOperationException("not used in these tests")
         override fun close() { closed = true }
+    }
+
+    @Test fun stylistUsesDeviceCoordinatesAndDoesNotDefaultToHanoi() = runTest {
+        val repo = FakeShadow()
+        var gps: StylingLocation? = StylingLocation(10.8, 106.6)
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler), locationProvider = { gps })
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.Suggest("Đi làm ngày mai", ""))
+        assertEquals(gps, repo.suggestedLocation)
+        gps = null
+        store.dispatch(ShadowAction.Suggest("Mùa hè", ""))
+        assertNull(repo.suggestedLocation)
+        store.close()
     }
 
     @Test fun phoneUploadSavesToConnectedServerAndImmediatelyUpdatesWardrobe() = runTest {

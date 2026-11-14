@@ -32,7 +32,7 @@ class TeachStoreTest {
         override suspend fun deleteSkill(id: String) = Unit
         override suspend fun wardrobe() = emptyList<WardrobeItem>()
         override suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItem = error("unused")
-        override suspend fun suggest(event: String, notes: String, city: String) =
+        override suspend fun suggest(event: String, notes: String, location: StylingLocation?) =
             ShadowSuggestions(emptyList(), "ai")
         override suspend fun rules() = emptyList<ShadowRule>()
         override suspend fun addRule(text: String, taughtBy: String) = Unit

@@ -1,6 +1,7 @@
 package com.example.kmmbase.presentation.conversation
 
 import com.example.kmmbase.domain.repository.*
+import com.example.kmmbase.domain.model.StylingLocation
 import com.example.kmmbase.presentation.common.StoreSubscription
 import com.example.kmmbase.presentation.common.subscribeIn
 import kotlinx.coroutines.*
@@ -17,6 +18,7 @@ data class ConversationState(
 class ConversationStore internal constructor(
     private val repositoryFactory: () -> ConversationRepository?,
     dispatcher: CoroutineDispatcher,
+    private val locationProvider: () -> StylingLocation? = { null },
 ) : AutoCloseable {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ConversationState())
@@ -37,7 +39,7 @@ class ConversationStore internal constructor(
             var repository: ConversationRepository? = null
             try {
                 repository = repositoryFactory() ?: error("Chưa kết nối máy chủ. Kiểm tra Base URL trong Cài đặt.")
-                repository.converse(prompt, history, image?.takeIf { it.startsWith("data:image/jpeg;base64,") && it.length <= 500_000 }) { event ->
+                repository.converse(prompt, history, image?.takeIf { it.startsWith("data:image/jpeg;base64,") && it.length <= 500_000 }, locationProvider()) { event ->
                     when (event) {
                         is ConversationEvent.Text -> mutableState.update { it.copy(reply = it.reply + event.text) }
                         is ConversationEvent.Action -> mutableState.update { it.copy(links = (it.links + event.link).distinct()) }

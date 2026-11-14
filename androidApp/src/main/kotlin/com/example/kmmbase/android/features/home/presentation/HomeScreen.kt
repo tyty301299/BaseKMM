@@ -309,7 +309,7 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
                             state.suggestions?.let { result ->
                                 Text(language.format(R.string.suggestions_for, (state.suggestionsEvent).toString()), style = MaterialTheme.typography.titleMedium)
                                 Text(language.systemText(state.suggestionsLabel), color = ShadowAccent)
-                                result.weather?.takeIf { it.available }?.let {
+                                result.weather?.takeIf { it.summary.isNotBlank() }?.let {
                                     Text(it.summary, color = Color(0xFF9FD4FF))
                                 }
                                 if (result.rulesUsed.isNotEmpty()) {

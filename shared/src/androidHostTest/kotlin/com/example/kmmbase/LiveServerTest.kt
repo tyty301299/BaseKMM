@@ -85,7 +85,7 @@ class LiveServerTest {
         if (code.isNullOrBlank()) return
         runBlocking {
             repository().use { repo ->
-                val result = repo.suggest("Đám cưới", "", "Hà Nội")
+                val result = repo.suggest("Đám cưới", "", com.example.kmmbase.domain.model.StylingLocation(21.0285, 105.8542))
                 assertTrue(result.outfits.isNotEmpty(), "stylist should return outfits")
                 assertTrue(result.source.isNotBlank())
                 val outfit = result.outfits.first()

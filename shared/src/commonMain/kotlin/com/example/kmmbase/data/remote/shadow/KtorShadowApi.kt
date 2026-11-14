@@ -1,5 +1,6 @@
 package com.example.kmmbase.data.remote.shadow
 
+import com.example.kmmbase.domain.model.StylingLocation
 import com.example.kmmbase.platform.ShadowTrace
 import com.example.kmmbase.domain.model.ShadowConnectionException
 import com.example.kmmbase.data.dto.shadow.*
@@ -154,16 +155,16 @@ internal class KtorShadowApi(endpoint: String, private val accessCode: String = 
             put("image", image); put("name", name); put("category", category)
         }).jsonObject.toWardrobeItem(::mediaUrl)
 
-    override suspend fun suggest(event: String, notes: String, city: String): ShadowSuggestionsDto {
+    override suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestionsDto {
         val row = send("/api/stylist/suggest", buildJsonObject {
             put("event", event)
             put("notes", notes)
-            if (city.isNotBlank()) put("city", city)
+            if (location != null) { put("lat", location.lat); put("lon", location.lon) }
         }).jsonObject
         val weather = (row["weather"] as? JsonObject)?.let {
             ShadowWeatherDto(
                 it["available"]?.jsonPrimitive?.booleanOrNull == true,
-                it.text("city"), it.text("summary_vi"),
+                it.text("city"), it.text("summary_vi").ifBlank { it.text("message") },
                 it["t_min"]?.jsonPrimitive?.doubleOrNull,
                 it["t_max"]?.jsonPrimitive?.doubleOrNull,
                 it["rain_prob"]?.jsonPrimitive?.intOrNull,

@@ -26,6 +26,17 @@ class AppContainer(repository: GreetingRepository, private val services: AppServ
     constructor(repository: GreetingRepository) : this(repository, DefaultAppServices())
     constructor() : this(DefaultGreetingRepository(), DefaultAppServices())
     val getGreeting = GetGreetingUseCase(repository)
+    private var location: com.example.kmmbase.domain.model.StylingLocation? = null
+    private var locationUpdatedAt = 0L
+
+    fun updateLocation(lat: Double, lon: Double) {
+        if (!lat.isFinite() || !lon.isFinite() || lat !in -90.0..90.0 || lon !in -180.0..180.0) return
+        location = com.example.kmmbase.domain.model.StylingLocation(lat, lon)
+        locationUpdatedAt = nowMillis()
+    }
+
+    fun clearLocation() { location = null }
+    private fun currentLocation() = location?.takeIf { nowMillis() - locationUpdatedAt < 10 * 60_000 }
 
     @Throws(IllegalArgumentException::class)
     fun normalizeEndpoint(endpoint: String): String = services.normalizeEndpoint(endpoint)
@@ -37,12 +48,14 @@ class AppContainer(repository: GreetingRepository, private val services: AppServ
             else null
         },
         dispatcher = Dispatchers.Main.immediate,
+        locationProvider = ::currentLocation,
     )
 
     fun shadowStore() = ShadowStore(
         services::shadow,
         services::normalizeEndpoint,
         Dispatchers.Main.immediate,
+        locationProvider = ::currentLocation,
     )
 
     fun liveTryOnStore(shadow: ShadowStore, engine: LiveVideoEngine): LiveTryOnStore {

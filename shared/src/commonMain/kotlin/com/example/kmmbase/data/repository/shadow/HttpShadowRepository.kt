@@ -16,7 +16,7 @@ class HttpShadowRepository internal constructor(private val api: ShadowApi) : Sh
     override suspend fun deleteSkill(id: String) = api.deleteSkill(id)
     override suspend fun wardrobe() = api.wardrobe().map { it.toDomain() }
     override suspend fun addWardrobeItem(image: String, name: String, category: String) = api.addWardrobeItem(image, name, category).toDomain()
-    override suspend fun suggest(event: String, notes: String, city: String) = api.suggest(event, notes, city).toDomain()
+    override suspend fun suggest(event: String, notes: String, location: StylingLocation?) = api.suggest(event, notes, location).toDomain()
     override suspend fun rules() = api.rules().map { it.toDomain() }
     override suspend fun addRule(text: String, taughtBy: String) = api.addRule(text, taughtBy)
     override suspend fun uploadVideo(source: com.example.kmmbase.domain.repository.TeachVideoSource, title: String, teacher: String, notes: String) =

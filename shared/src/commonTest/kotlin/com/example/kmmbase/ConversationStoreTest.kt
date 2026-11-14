@@ -1,5 +1,6 @@
 package com.example.kmmbase
 
+import com.example.kmmbase.domain.model.StylingLocation
 import com.example.kmmbase.domain.repository.*
 import com.example.kmmbase.presentation.conversation.ConversationStore
 import kotlinx.coroutines.CompletableDeferred
@@ -13,12 +14,13 @@ class ConversationStoreTest {
         var closed = false
         var text = ""
         var image: String? = null
+        var location: StylingLocation? = null
         var history = emptyList<ConversationTurn>()
         var fail = false
         var hold = false
         val started = CompletableDeferred<Unit>()
-        override suspend fun converse(text: String, history: List<ConversationTurn>, image: String?, onEvent: (ConversationEvent) -> Unit) {
-            this.text = text; this.history = history; this.image = image; started.complete(Unit)
+        override suspend fun converse(text: String, history: List<ConversationTurn>, image: String?, location: StylingLocation?, onEvent: (ConversationEvent) -> Unit) {
+            this.text = text; this.history = history; this.image = image; this.location = location; started.complete(Unit)
             if (hold) awaitCancellation()
             if (fail) error("Phản hồi bị gián đoạn. Bạn thử lại nhé.")
             onEvent(ConversationEvent.Text("Tủ đồ "))
@@ -27,6 +29,22 @@ class ConversationStoreTest {
             onEvent(ConversationEvent.Done)
         }
         override fun close() { closed = true }
+    }
+
+    @Test fun eachTurnUsesLatestGpsAndPermissionRemovalClearsIt() = runTest {
+        val repo = FakeConversation()
+        var gps: StylingLocation? = null
+        val store = ConversationStore({ repo }, StandardTestDispatcher(testScheduler), locationProvider = { gps })
+        try {
+            store.send("Phối đồ mùa hè", null); runCurrent()
+            assertNull(repo.location)
+            gps = StylingLocation(10.8, 106.6)
+            store.send("Ngày mai mặc gì?", null); runCurrent()
+            assertEquals(gps, repo.location)
+            gps = null
+            store.send("Nếu trời lạnh?", null); runCurrent()
+            assertNull(repo.location)
+        } finally { store.close() }
     }
 
     @Test fun streamsTextAndActionsAndSendsBoundedHistory() = runTest {

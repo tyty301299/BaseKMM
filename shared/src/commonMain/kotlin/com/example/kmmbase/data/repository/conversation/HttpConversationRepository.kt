@@ -1,5 +1,6 @@
 package com.example.kmmbase.data.repository.conversation
 
+import com.example.kmmbase.domain.model.StylingLocation
 import com.example.kmmbase.data.remote.shadow.normalizeShadowOrigin
 import com.example.kmmbase.domain.repository.*
 import io.ktor.client.HttpClient
@@ -22,13 +23,14 @@ class HttpConversationRepository(endpoint: String, private val headers: Map<Stri
         }
     }
 
-    override suspend fun converse(text: String, history: List<ConversationTurn>, image: String?, onEvent: (ConversationEvent) -> Unit) {
+    override suspend fun converse(text: String, history: List<ConversationTurn>, image: String?, location: StylingLocation?, onEvent: (ConversationEvent) -> Unit) {
         val payload = buildJsonObject {
             put("text", text)
             put("history", buildJsonArray { history.takeLast(6).forEach { turn ->
                 add(buildJsonObject { put("role", turn.role); put("text", turn.text.take(500)) })
             } })
             if (image != null) put("image", image)
+            if (location != null) put("location", buildJsonObject { put("lat", location.lat); put("lon", location.lon) })
         }
         client.preparePost("$origin/api/conversation") {
             this@HttpConversationRepository.headers.forEach { (name, value) -> header(name, value) }

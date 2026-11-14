@@ -54,3 +54,13 @@ Kiểm tra shared bao gồm lưu món mới, cập nhật danh sách, dữ liệ
 Việc đọc JSON và ánh xạ danh sách tủ đồ chạy trên dispatcher nền trong adapter Ktor, tránh khóa luồng UI lúc tải catalog lớn. Android phân trang 24 món để giới hạn số ảnh được dựng cùng lúc.
 
 Android dùng TextureView cho preview camera và lấy tối đa 4 khung hình/giây cho trợ lý; việc chuyển ảnh và nén JPEG không chạy trên luồng UI.
+
+## GPS và bối cảnh phối đồ
+
+Camera có nút **Bật GPS**. Android xin quyền vị trí khi đang dùng ứng dụng (chấp nhận vị trí gần đúng); iOS dùng `CLLocationManager.requestLocation()` và quyền When In Use. Nếu đã từ chối, nút dẫn tới cài đặt ứng dụng. Không lấy vị trí trong nền, không lưu tọa độ vào preferences. Khi quay lại ứng dụng, vị trí được cập nhật; dữ liệu trong container hết hạn sau 10 phút.
+
+Chat native gửi `location: {lat, lon}` đến `/api/conversation`. Phối đồ và phối trước khi thử ảnh gửi `lat`, `lon` đến `/api/stylist/suggest`; đã bỏ thành phố Hà Nội cố định. Cả hai dùng cùng vị trí trong `AppContainer`. Nếu chưa có GPS, ứng dụng vẫn gửi yêu cầu không có vị trí để backend tư vấn theo mùa/điều kiện được nói rõ.
+
+Ví dụ thử bằng chữ hoặc giọng nói: “Hôm nay mặc gì?”, “Ngày mai đi làm mặc gì?”, “Phối đồ mùa hè”, “Nếu trời lạnh khoảng 15 độ C”, rồi hỏi tiếp “Còn ngày mai?”. Backend phân biệt dự báo thật với điều kiện giả định. Màn tủ đồ hiển thị cả thông báo chưa có dự báo, không giấu lỗi thời tiết.
+
+Kiểm tra 14/11/2026: 93 kiểm thử shared pass; APK Android build thành công và đã cài trên emulator của dự án. Kotlin iOS X64 framework build thành công và toàn bộ Swift sources typecheck thành công với framework mới. Xcode build app bị lỗi môi trường lúc khởi chạy (exit 132, FSEvents/launchd không sẵn sàng); emulator Android ban đầu báo System UI không phản hồi, sau đó đã mở được camera, hiện hộp quyền vị trí và báo GPS ✓ khi nhận tọa độ thử nghiệm. Chưa xác nhận bản cài iOS mới hoặc toàn bộ luồng nhập câu hỏi trên emulator trong lượt này do trình giả lập chập chờn. Không gọi model trả phí; API local đã xác nhận mùa hè, 15°C và ngày mai theo GPS. Base URL vẫn `http://localhost:8001`.

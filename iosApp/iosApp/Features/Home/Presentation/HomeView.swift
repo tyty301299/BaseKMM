@@ -383,7 +383,7 @@ struct HomeView: View {
             if let result = model.state.suggestions {
                 Text(language.format("suggestions_for", String(model.state.suggestionsEvent))).font(.headline)
                 Text(language.systemText(model.state.suggestionsLabel)).font(.caption.bold()).foregroundStyle(ShadowStyle.accent)
-                if let weather = result.weather, weather.available {
+                if let weather = result.weather, !weather.summary.isEmpty {
                     Text(weather.summary).font(.subheadline).foregroundStyle(.cyan)
                 }
                 if !result.rulesUsed.isEmpty {
