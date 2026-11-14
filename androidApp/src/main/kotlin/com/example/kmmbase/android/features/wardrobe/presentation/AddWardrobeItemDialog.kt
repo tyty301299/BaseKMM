@@ -39,6 +39,9 @@ internal fun AddWardrobeItemDialog(store: ShadowStore, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("top") }
+    var gender by rememberSaveable { mutableStateOf("unknown") }
+    var genderMenu by remember { mutableStateOf(false) }
+    val genders = listOf("men" to "Nam", "women" to "Nữ", "unisex" to "Unisex", "unknown" to "Chưa xác định")
     var menu by remember { mutableStateOf(false) }
     var uri by rememberSaveable { mutableStateOf<String?>(null) }
     var capturePath by rememberSaveable { mutableStateOf<String?>(null) }
@@ -115,6 +118,14 @@ internal fun AddWardrobeItemDialog(store: ShadowStore, onDismiss: () -> Unit) {
                             categories.forEach { (key, label) -> DropdownMenuItem(text = { Text(label) }, onClick = { category = key; menu = false }) }
                         }
                     }
+                    Box {
+                        OutlinedButton(onClick = { genderMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                            Text("Nhóm đồ: ${genders.first { it.first == gender }.second}  ▾")
+                        }
+                        DropdownMenu(expanded = genderMenu, onDismissRequest = { genderMenu = false }) {
+                            genders.forEach { (key, label) -> DropdownMenuItem(text = { Text(label) }, onClick = { gender = key; genderMenu = false }) }
+                        }
+                    }
                     (photoError ?: state.error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     if (busy) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -123,7 +134,7 @@ internal fun AddWardrobeItemDialog(store: ShadowStore, onDismiss: () -> Unit) {
                 }
                 Button(onClick = {
                     val bytes = jpeg ?: return@Button
-                    store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP), name, category))
+                    store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP), name, category, gender))
                 }, enabled = jpeg != null && name.isNotBlank() && !busy && !reading && state.connected,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Lưu vào tủ đồ") }
             }

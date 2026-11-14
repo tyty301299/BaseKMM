@@ -73,6 +73,8 @@ class ShadowDataContractTest {
         val item = row.toWardrobeItem { it }.toDomain()
         assertEquals(listOf("white", "blue"), item.colors)
         assertFalse(item.demo)
+        assertEquals("unknown", item.gender)
+        assertEquals("women", Json.parseToJsonElement("""{"id":"shirt","name":"Áo","gender":"women"}""").jsonObject.toWardrobeItem { it }.toDomain().gender)
         assertEquals("", item.imageUrl)
         assertFailsWith<IllegalArgumentException> {
             Json.parseToJsonElement("""{"name":"Missing ID"}""").jsonObject.toWardrobeItem { it }

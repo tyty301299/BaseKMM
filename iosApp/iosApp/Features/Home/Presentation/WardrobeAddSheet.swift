@@ -8,6 +8,7 @@ struct WardrobeAddSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var category = "top"
+    @State private var gender = "unknown"
     @State private var selection: PhotosPickerItem?
     @State private var jpeg: Data?
     @State private var reading = false
@@ -50,12 +51,18 @@ struct WardrobeAddSheet: View {
                     Picker("Loại đồ", selection: $category) {
                         ForEach(categories, id: \.0) { value in Text(value.1).tag(value.0) }
                     }.disabled(busy)
+                    Picker("Nhóm đồ", selection: $gender) {
+                        Text("Nam").tag("men")
+                        Text("Nữ").tag("women")
+                        Text("Unisex").tag("unisex")
+                        Text("Chưa xác định").tag("unknown")
+                    }.disabled(busy)
                 }
                 if let error = photoError ?? model.state.error { Text(error).foregroundStyle(.red) }
                 if busy { ProgressView("Đang thêm đồ vào tủ…") }
                 Button {
                     guard let jpeg else { return }
-                    model.send(ShadowActionAddWardrobeItem(image: "data:image/jpeg;base64," + jpeg.base64EncodedString(), name: name, category: category))
+                    model.send(ShadowActionAddWardrobeItem(image: "data:image/jpeg;base64," + jpeg.base64EncodedString(), name: name, category: category, gender: gender))
                 } label: {
                     Text("Lưu vào tủ đồ").font(.headline).frame(maxWidth: .infinity, minHeight: 36)
                 }.listRowBackground(accent).foregroundStyle(.black)

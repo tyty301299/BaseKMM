@@ -72,16 +72,24 @@ class ShadowStore internal constructor(
                 when (action) {
                     is ShadowAction.AddWardrobeItem -> {
                         val name = action.name.trim()
-                        if (name.isEmpty() || name.length > 80 || action.category !in setOf("top", "bottom", "outerwear", "dress", "shoes", "accessory") ||
+                        if (name.isEmpty() || name.length > 80 || action.gender !in setOf("men", "women", "unisex", "unknown") || action.category !in setOf("top", "bottom", "outerwear", "dress", "shoes", "accessory") ||
                             !action.image.startsWith("data:image/jpeg;base64,") || action.image.length !in 24..8_000_000) {
                             mutableState.update { it.copy(error = "Chọn ảnh trang phục, nhập tên và loại đồ hợp lệ.") }
                             return
                         }
                         mutableState.update { it.copy(wardrobeAddedId = null) }
                         run("Đang thêm đồ vào tủ…") {
-                            val item = repo.addWardrobeItem(action.image, name, action.category)
+                            val item = repo.addWardrobeItem(action.image, name, action.category, action.gender)
                             currentCoroutineContext().ensureActive()
                             mutableState.update { it.copy(wardrobe = listOf(item) + it.wardrobe.filterNot { old -> old.id == item.id }, wardrobeAddedId = item.id) }
+                        }
+                    }
+                    is ShadowAction.UpdateWardrobeGender -> {
+                        if (action.gender !in setOf("men", "women", "unisex", "unknown") || currentState.wardrobe.none { it.id == action.id }) return
+                        run("Đang lưu nhãn đồ…") {
+                            val item = repo.updateWardrobeGender(action.id, action.gender)
+                            currentCoroutineContext().ensureActive()
+                            mutableState.update { it.copy(wardrobe = it.wardrobe.map { old -> if (old.id == item.id) item else old }) }
                         }
                     }
                     ShadowAction.ClearTryon -> mutableState.update { it.copy(tryon = null) }

@@ -150,10 +150,14 @@ internal class KtorShadowApi(endpoint: String, private val accessCode: String = 
         send("/api/wardrobe/items").jsonArray.map { it.jsonObject.toWardrobeItem(::mediaUrl) }
     }
 
-    override suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItemDto =
+    override suspend fun addWardrobeItem(image: String, name: String, category: String, gender: String): WardrobeItemDto =
         send("/api/wardrobe/items", buildJsonObject {
-            put("image", image); put("name", name); put("category", category)
+            put("image", image); put("name", name); put("category", category); put("gender", gender)
         }).jsonObject.toWardrobeItem(::mediaUrl)
+
+    override suspend fun updateWardrobeGender(id: String, gender: String): WardrobeItemDto =
+        send("/api/wardrobe/items/${id.encodeURLPathPart()}", buildJsonObject { put("gender", gender) },
+            httpMethod = HttpMethod.Put).jsonObject.toWardrobeItem(::mediaUrl)
 
     override suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestionsDto {
         val row = send("/api/stylist/suggest", buildJsonObject {

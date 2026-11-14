@@ -8,4 +8,5 @@ data class WardrobeItem(
     val imageUrl: String = "",
     val colorHex: String = "",
     val colors: List<String> = emptyList(),
+    val gender: String = "unknown",
 )

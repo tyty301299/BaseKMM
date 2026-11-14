@@ -24,10 +24,17 @@ spoken request, preserving requested seasons/dates; clearing GPS sends null to
 invalidate a previous location. Outfit suggestions render above the transcript.
 Saved skills can start in the camera and respond to next, previous, repeat and stop.
 
-The web-specific video fitting renderer and lesson recording/editing are not
-ported into this native audio change. Those tool calls return an explicit
-unavailable result, so the assistant cannot truthfully claim it has changed clothes
-or saved a lesson. Existing wardrobe and lesson screens remain accessible.
+Teaching now records the Live user transcript and frames from the shared camera.
+`finish_and_save` compiles and saves after one explicit spoken request; finishing
+without a save request opens a native draft preview. Saving during compilation is
+queued, failed compilation retains the demonstration, and cancellation invalidates
+late results. Draft images use the existing backend media promotion flow. Draft
+preview, renaming and saving work in camera; detailed step edits still use the
+existing review screen. Video fitting still uses a web-specific renderer and
+returns an explicit unavailable result on native iOS.
+
+`bash tools/test-native-lessons.sh` checks recording, review-only flow, one-command
+saving, queued saves, media promotion, cancellation and retry with fake HTTP.
 
 Validation: `bash tools/test-native-live.sh` runs the real session coordinator
 against fake audio/socket/HTTP boundaries: streaming, partial transcripts,

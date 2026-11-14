@@ -115,6 +115,7 @@ final class NativeLiveSession {
     private var audioPlaying = false
     private var maxSeconds = 300
     private var initialHistory: [[String: String]] = []
+    private var notices: [[String: Any]] = []
 
     init(audio: LiveAudioStreaming, http: URLSession = .shared, socketFactory: ((URL) -> LiveSocket)? = nil) {
         self.audio = audio
@@ -192,11 +193,24 @@ final class NativeLiveSession {
         setStatus(.listening, "Đã dừng phản hồi. Bạn cứ nói tiếp nhé.")
     }
 
+    func notifyTaskResult(_ execution: [String: Any]) {
+        guard snapshot.connected else { return }
+        notices.append(execution); notices = Array(notices.suffix(3)); flushNotice()
+    }
+    private func flushNotice() {
+        guard awaitingTurn, !audioPlaying, snapshot.status == .listening, !notices.isEmpty,
+              let data = try? JSONSerialization.data(withJSONObject: notices.removeFirst()),
+              let text = String(data: data, encoding: .utf8) else { return }
+        beginTurn()
+        enqueue(["realtimeInput": ["text": "[SHADOW_TASK_RESULT] " + text]])
+        setStatus(.thinking, "Đã nhận kết quả bài học.")
+    }
+
     func stop(notify: Bool = true) {
         generation += 1
         receiveTask?.cancel(); sendTask?.cancel(); setupTimeout?.cancel(); limitTask?.cancel(); videoTask?.cancel()
         receiveTask = nil; sendTask = nil; setupTimeout = nil; limitTask = nil; videoTask = nil
-        cancelTools(); completed.removeAll(); outbound.removeAll(); pendingBytes = 0
+        cancelTools(); completed.removeAll(); outbound.removeAll(); notices.removeAll(); pendingBytes = 0
         socket?.close(); socket = nil; audio.stop()
         toolSessionID = ""; headers = [:]; origin = nil
         awaitingTurn = true; typedTurnPending = false; discardOutput = false; audioPlaying = false
@@ -207,6 +221,7 @@ final class NativeLiveSession {
 
     private func setStatus(_ status: LiveConnectionStatus, _ detail: String = "") {
         snapshot.status = status; snapshot.detail = detail; onChange(snapshot)
+        if status == .listening { flushNotice() }
     }
     private func fail(_ error: Error) {
         let message = (error as? LiveFailure)?.message ?? "Kết nối Live đã ngắt. Bấm micro để thử lại; bạn vẫn có thể nhập câu hỏi."

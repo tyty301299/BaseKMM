@@ -8,4 +8,5 @@ internal data class WardrobeItemDto(
     val imageUrl: String = "",
     val colorHex: String = "",
     val colors: List<String> = emptyList(),
+    val gender: String = "unknown",
 )

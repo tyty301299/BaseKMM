@@ -31,5 +31,5 @@ internal fun JsonObject.steps(media: (String) -> String): List<ShadowStepDto> = 
 internal fun JsonObject.toWardrobeItem(media: (String) -> String) = WardrobeItemDto(
     required("id"), required("name"), text("category"),
     get("demo")?.jsonPrimitive?.booleanOrNull == true,
-    media(text("image_url")), text("color_hex"), strings("colors"),
+    media(text("image_url")), text("color_hex"), strings("colors"), text("gender").ifBlank { "unknown" },
 )

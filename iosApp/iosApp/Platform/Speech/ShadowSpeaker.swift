@@ -18,7 +18,9 @@ final class ShadowSpeaker: NSObject, Speaker {
 
     func speak(text: String) {
         guard !text.isEmpty, available else { return }
-        let utterance = AVSpeechUtterance(string: text)
+        // Pronounce the brand as Sky while retaining SKI in the visible transcript.
+        let spoken = text.replacingOccurrences(of: #"\bSKI\b"#, with: "Sky", options: .regularExpression)
+        let utterance = AVSpeechUtterance(string: spoken)
         utterance.voice = voice
         synthesizer.speak(utterance)
     }

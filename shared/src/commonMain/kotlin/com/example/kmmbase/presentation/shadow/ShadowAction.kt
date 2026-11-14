@@ -4,7 +4,8 @@ sealed interface ShadowAction {
     data class Connect(val endpoint: String, val code: String) : ShadowAction
     data object Reconnect : ShadowAction
     data object Refresh : ShadowAction
-    data class AddWardrobeItem(val image: String, val name: String, val category: String) : ShadowAction
+    data class AddWardrobeItem(val image: String, val name: String, val category: String, val gender: String = "unknown") : ShadowAction
+    data class UpdateWardrobeGender(val id: String, val gender: String) : ShadowAction
     data object ClearWardrobeUpload : ShadowAction
     data class PrepareBuiltinGuide(val kind: String) : ShadowAction
     data object ClearPreparedGuide : ShadowAction

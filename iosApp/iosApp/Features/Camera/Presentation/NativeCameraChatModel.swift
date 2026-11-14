@@ -29,6 +29,7 @@ final class NativeCameraChatModel: ObservableObject {
     var getLocation: () -> [String: Double]? = { nil }
     let camera = NativeServices.makeCamera()
     private let session = NativeServices.makeLiveSession()
+    let teaching = NativeLessonSession()
     private let store: ConversationStore
     private var subscription: StoreSubscription?
     private var active = false
@@ -58,7 +59,31 @@ final class NativeCameraChatModel: ObservableObject {
         subscription = store.observeState { [weak self] in self?.state = $0 }
         session.onChange = { [weak self] snapshot in
             self?.live = snapshot
+            self?.teaching.observe(snapshot.messages)
             if snapshot.status == .failed { self?.wantsLive = false }
+            if snapshot.status == .idle || snapshot.status == .failed { self?.teaching.suspend() }
+        }
+        teaching.capture = { [weak self] in
+            guard let self, self.active, self.cameraGranted, self.cameraEnabled else { return nil }
+            return self.camera.capture(maxSide: 512)
+        }
+        teaching.onChange = { [weak self] in self?.objectWillChange.send() }
+        teaching.notify = { [weak self] in self?.session.notifyTaskResult($0) }
+        teaching.request = { [weak self] method, path, body in
+            guard let self, self.active, let url = URL(string: path, relativeTo: URL(string: self.endpoint))?.absoluteURL else {
+                throw LiveFailure(message: "Camera đã đóng.")
+            }
+            var request = URLRequest(url: url, timeoutInterval: 180)
+            request.httpMethod = method; request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            self.headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            try Task.checkCancellation()
+            guard let code = (response as? HTTPURLResponse)?.statusCode, (200..<300).contains(code),
+                  let result = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw LiveFailure(message: "Chưa xử lý được bài học. Nội dung vẫn còn để thử lại.")
+            }
+            return result
         }
         session.getFrame = { [weak self] in
             guard let self, self.active, self.cameraGranted, self.cameraEnabled else { return nil }
@@ -76,7 +101,7 @@ final class NativeCameraChatModel: ObservableObject {
     func configure(endpoint: String, headers: [String: String], connected: Bool) {
         if self.endpoint != endpoint || self.headers != headers {
             let wasActive = active
-            stop(); session.clear(); store.clear(); liveLinks = []; outfitItems = []; showsOutfit = false; clearLesson()
+            stop(); session.clear(); store.clear(); teaching.reset(); liveLinks = []; outfitItems = []; showsOutfit = false; clearLesson()
             self.endpoint = endpoint; self.headers = headers; wantsLive = true
             active = wasActive
             if active && cameraGranted && cameraEnabled { camera.start(front: front) }
@@ -101,16 +126,16 @@ final class NativeCameraChatModel: ObservableObject {
     func stop() {
         epoch += 1; active = false
         startTask?.cancel(); startTask = nil
-        session.stop(); camera.stop(); store.cancel()
+        teaching.suspend(); session.stop(); camera.stop(); store.cancel()
     }
     func toggleCamera() {
         cameraEnabled.toggle()
-        if cameraEnabled && active { start() } else { camera.stop() }
+        if cameraEnabled && active { start() } else { teaching.suspend(); camera.stop() }
     }
     func flip() { front.toggle(); if active && cameraEnabled { camera.flip(front: front) } }
     func toggleMic() {
         if listening || startTask != nil {
-            wantsLive = false; epoch += 1; startTask?.cancel(); startTask = nil; session.stop()
+            wantsLive = false; epoch += 1; startTask?.cancel(); startTask = nil; teaching.suspend(); session.stop()
         } else { wantsLive = true; notice = nil; connectLive() }
     }
     private func connectLive() {
@@ -140,7 +165,9 @@ final class NativeCameraChatModel: ObservableObject {
         store.send(text: prompt, image: image)
     }
     func cancel() { if live.connected { session.cancelResponse() } else { store.cancel() } }
-    func clear() { stop(); session.clear(); store.clear(); text = ""; wantsLive = true; clearLesson(); outfitItems = []; showsOutfit = false }
+    func clear() { stop(); session.clear(); store.clear(); teaching.reset(); text = ""; wantsLive = true; clearLesson(); outfitItems = []; showsOutfit = false }
+
+    func saveTeaching() { _ = teaching.control(["command": "save", "revision": teaching.revision], messages: live.messages) }
 
     func imageHeaders(_ value: String) -> [String: String] {
         guard let url = URL(string: value), let base = URL(string: endpoint), url.scheme == base.scheme, url.host == base.host, url.port == base.port else { return [:] }
@@ -163,6 +190,7 @@ final class NativeCameraChatModel: ObservableObject {
         }
     }
     private func taskContext() -> [String: Any] {
+        if teaching.hasWork { return ["current_task": teaching.mode, "task_title": teaching.title, "lesson_state": teaching.snapshot] }
         var value: [String: Any] = ["current_task": lesson == nil ? "chat" : "guiding", "suggested_item_ids": outfitItems.prefix(3).map(\.id)]
         if lesson != nil { value["lesson_state"] = lessonSnapshot(); value["task_title"] = lessonTitle }
         return value
@@ -190,8 +218,15 @@ final class NativeCameraChatModel: ObservableObject {
     }
     private func controlLesson(_ control: [String: Any]) async -> [String: Any] {
         guard let command = control["command"] as? String else { return ["error": "Thiếu thao tác bài học."] }
-        if command == "stop" { clearLesson(); return ["status": "stopped"] }
+        if command == "stop" { teaching.reset(); clearLesson(); return ["status": "stopped"] }
+        if !["start_guidance", "next", "previous", "repeat"].contains(command) {
+            let result = teaching.control(control, messages: live.messages)
+            if command == "start_teaching", result["error"] == nil { clearLesson() }
+            return result
+        }
         if command == "start_guidance" {
+            guard !teaching.hasWork else { return ["error": "Hãy lưu hoặc hủy bài dạy đang ghi trước khi bắt đầu hướng dẫn."] }
+            teaching.reset()
             guard let id = control["skill_id"] as? String, !id.isEmpty,
                   id.range(of: "^[A-Za-z0-9_-]+$", options: .regularExpression) != nil,
                   let url = URL(string: "/api/skills/\(id)", relativeTo: URL(string: endpoint))?.absoluteURL else { return ["error": "Cần chọn bài học đã lưu."] }
@@ -206,8 +241,6 @@ final class NativeCameraChatModel: ObservableObject {
                       let steps = value["steps"] as? [[String: Any]], !steps.isEmpty else { return ["error": "Chưa mở được bài học."] }
                 lesson = value; lessonID = id; lessonIndex = 0
             } catch { return ["error": "Chưa tải được bài học. Bạn thử lại nhé."] }
-        } else if !["next", "previous", "repeat"].contains(command) {
-            return ["status": "unavailable", "error": "Ghi hoặc chỉnh sửa bài dạy chưa được nối vào Live native. Không báo đã ghi hay lưu bài."]
         }
         guard let lesson, let steps = lesson["steps"] as? [[String: Any]], !steps.isEmpty else { return ["error": "Chưa có bài hướng dẫn đang mở."] }
         if command == "next" { lessonIndex = min(steps.count, lessonIndex + 1) }

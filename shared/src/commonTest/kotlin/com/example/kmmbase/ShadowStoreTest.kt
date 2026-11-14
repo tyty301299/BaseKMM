@@ -30,6 +30,7 @@ class ShadowStoreTest {
         var uploadImage = ""
         var uploadName = ""
         var uploadCategory = ""
+        var uploadGender = ""
         var uploadGate: CompletableDeferred<WardrobeItem>? = null
         override suspend fun health() = ShadowHealth("mock", accessRequired)
         override suspend fun authenticate(code: String) { enteredCode = code }
@@ -41,9 +42,10 @@ class ShadowStoreTest {
         }
         override suspend fun deleteSkill(id: String) = Unit
         override suspend fun wardrobe() = emptyList<WardrobeItem>()
-        override suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItem {
-            uploadCalls++; uploadImage = image; uploadName = name; uploadCategory = category
-            return uploadGate?.await() ?: WardrobeItem("phone-1", name, category, false, "https://one.example/wardrobe-media/images/phone-1.jpg")
+        override suspend fun updateWardrobeGender(id: String, gender: String): WardrobeItem = WardrobeItem(id, "Áo", "top", false, gender = gender)
+        override suspend fun addWardrobeItem(image: String, name: String, category: String, gender: String): WardrobeItem {
+            uploadCalls++; uploadImage = image; uploadName = name; uploadCategory = category; uploadGender = gender
+            return uploadGate?.await() ?: WardrobeItem("phone-1", name, category, false, "https://one.example/wardrobe-media/images/phone-1.jpg", gender = gender)
         }
         override suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestions {
             suggestedLocation = location; return suggestionResult
@@ -84,14 +86,18 @@ class ShadowStoreTest {
         val repo = FakeShadow()
         val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
         store.dispatch(ShadowAction.Connect("https://one.example", ""))
-        store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64,YQ==", "  Áo của tôi  ", "top"))
+        store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64,YQ==", "  Áo của tôi  ", "top", "women"))
         assertEquals(1, repo.uploadCalls)
         assertEquals("Áo của tôi", repo.uploadName)
         assertEquals("top", repo.uploadCategory)
+        assertEquals("women", repo.uploadGender)
+        assertEquals("women", store.currentState.wardrobe.single().gender)
         assertEquals("data:image/jpeg;base64,YQ==", repo.uploadImage)
         assertEquals("phone-1", store.currentState.wardrobe.single().id)
         assertEquals("phone-1", store.currentState.wardrobeAddedId)
         assertEquals("", store.currentState.busy)
+        store.dispatch(ShadowAction.UpdateWardrobeGender("phone-1", "unisex"))
+        assertEquals("unisex", store.currentState.wardrobe.single().gender)
         store.dispatch(ShadowAction.ClearWardrobeUpload)
         assertNull(store.currentState.wardrobeAddedId)
         store.close()

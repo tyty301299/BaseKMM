@@ -347,6 +347,14 @@ struct HomeView: View {
                     VStack(spacing: 4) {
                         RemoteImage(url: item.imageUrl, headers: model.mediaHeaders, height: 110)
                         Text(item.name).font(.caption2).lineLimit(2)
+                        Menu {
+                            ForEach([("men", "Nam"), ("women", "Nữ"), ("unisex", "Unisex"), ("unknown", "Chưa xác định")], id: \.0) { group in
+                                Button(group.1) { model.send(ShadowActionUpdateWardrobeGender(id: item.id, gender: group.0)) }
+                            }
+                        } label: {
+                            Label(["men": "Nam", "women": "Nữ", "unisex": "Unisex"][item.gender] ?? "Chưa xác định", systemImage: "tag")
+                                .font(.caption2)
+                        }.disabled(!model.state.connected || busy)
                     }
                 }
             }

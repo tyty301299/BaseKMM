@@ -84,6 +84,21 @@ struct ShadowCameraScreen: View {
                     }.padding(12).background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
                         .foregroundStyle(.white).padding(.trailing, 42).padding(.bottom, 10)
                 }
+                if model.teaching.hasWork || model.teaching.status == "saved" {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(model.teaching.title).font(.caption).foregroundStyle(accent)
+                        Text(model.teaching.message).font(.subheadline)
+                        if model.teaching.draft != nil {
+                            ScrollView {
+                                Text(model.teaching.steps.enumerated().map { "\($0.offset + 1). \($0.element["instruction"] as? String ?? "")" }.joined(separator: "\n"))
+                                    .font(.caption).frame(maxWidth: .infinity, alignment: .leading)
+                            }.frame(maxHeight: 150)
+                            Button("Lưu bài", action: model.saveTeaching).disabled(model.teaching.status == "saving")
+                        }
+                    }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16)).foregroundStyle(.white)
+                        .padding(.trailing, 42).padding(.bottom, 10)
+                }
                 if !model.lessonInstruction.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("\(model.lessonTitle) · \(model.lessonStep)/\(model.lessonSteps)").font(.caption).foregroundStyle(accent)

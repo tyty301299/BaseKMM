@@ -259,7 +259,7 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
                             }
                             SectionTitle(language.format(R.string.wardrobe_count_short, (state.wardrobe.size).toString()), state.connected && !busy) { store.dispatch(ShadowAction.Refresh) }
                             if (state.wardrobe.isEmpty()) Text(language.text(R.string.wardrobe_empty))
-                            WardrobeGrid(state.wardrobe, mediaHeaders)
+                            WardrobeGrid(state.wardrobe, mediaHeaders, state.connected && !busy) { id, gender -> store.dispatch(ShadowAction.UpdateWardrobeGender(id, gender)) }
                             Text(language.text(R.string.person_photo_title), style = MaterialTheme.typography.headlineSmall)
                             Text(language.text(R.string.person_photo_detail), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             personJPEG?.let { bytes ->
@@ -372,7 +372,7 @@ private fun LessonContent(state: ShadowState, store: ShadowStore, onGuide: () ->
 
 /** Wardrobe thumbnails in rows of three; the server supplies real garment photos. */
 @Composable
-private fun WardrobeGrid(items: List<WardrobeItem>, headers: Map<String, String>) {
+private fun WardrobeGrid(items: List<WardrobeItem>, headers: Map<String, String>, editable: Boolean, onGender: (String, String) -> Unit) {
     val language = LocalAppLanguage.current
     val context = LocalContext.current
     // This screen already scrolls vertically: bound composition and image loading per page.
@@ -401,6 +401,16 @@ private fun WardrobeGrid(items: List<WardrobeItem>, headers: Map<String, String>
                         )
                     }
                     Text(item.name, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                    val groups = listOf("men" to "Nam", "women" to "Nữ", "unisex" to "Unisex", "unknown" to "Chưa xác định")
+                    var editing by remember(item.id) { mutableStateOf(false) }
+                    Box {
+                        TextButton(onClick = { editing = true }, enabled = editable) {
+                            Text(groups.firstOrNull { it.first == item.gender }?.second ?: "Chưa xác định", style = MaterialTheme.typography.labelSmall)
+                        }
+                        DropdownMenu(expanded = editing, onDismissRequest = { editing = false }) {
+                            groups.forEach { (value, label) -> DropdownMenuItem(text = { Text(label) }, onClick = { editing = false; onGender(item.id, value) }) }
+                        }
+                    }
                 }
             }
             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
