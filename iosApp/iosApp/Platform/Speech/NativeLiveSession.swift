@@ -27,6 +27,7 @@ struct LiveFailure: LocalizedError {
         switch code {
         case "insufficient_credits", "billing_required": message = "Dịch vụ trò chuyện chưa đủ tín dụng. Vui lòng nạp tín dụng rồi mở lại Live."
         case "provider_auth_failed", "missing_api_key": message = "Chưa xác thực được dịch vụ trò chuyện. Kiểm tra cấu hình máy chủ."
+        case "chat_quota", "quota": message = "Đã đạt giới hạn mở phiên trò chuyện trong giờ này. Bạn vui lòng thử lại sau."
         case "rate_limited": message = "Trò chuyện đang đạt hạn mức. Bạn thử lại sau ít phút nhé."
         case "provider_timeout": message = "Kết nối trò chuyện quá lâu. Bạn thử mở lại micro nhé."
         default:

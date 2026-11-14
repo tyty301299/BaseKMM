@@ -90,6 +90,11 @@ final class LiveHTTPFixture: URLProtocol {
     }
     static func require(_ value: @autoclosure () -> Bool, _ message: String) { if !value() { fatalError(message) } }
     @MainActor static func main() async {
+        for code in ["quota", "chat_quota"] {
+            let error = LiveFailure.provider(["code": code, "detail": "DO_NOT_DISPLAY_PROVIDER_DETAILS"], status: 429)
+            require(error.message.contains("giới hạn mở phiên"), "Local session quota must be distinct from temporary service load")
+            require(!error.message.contains("DO_NOT_DISPLAY"), "Quota errors must not expose upstream details")
+        }
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [LiveHTTPFixture.self]
         let http = URLSession(configuration: config)
