@@ -1,6 +1,9 @@
 package com.example.kmmbase.data.repository.conversation
 
 import com.example.kmmbase.domain.model.StylingLocation
+import com.example.kmmbase.domain.model.WardrobeItem
+import com.example.kmmbase.domain.model.ShadowOutfit
+import com.example.kmmbase.domain.model.ShadowOutfitItem
 import com.example.kmmbase.data.remote.shadow.normalizeShadowOrigin
 import com.example.kmmbase.domain.repository.*
 import io.ktor.client.HttpClient
@@ -52,6 +55,7 @@ class HttpConversationRepository(endpoint: String, private val headers: Map<Stri
                 when (value("type")) {
                     "text" -> onEvent(ConversationEvent.Text(value("text")))
                     "action" -> onEvent(ConversationEvent.Action(ConversationLink(value("route"), value("label"), value("id"))))
+                    "wardrobe", "outfits" -> decodeGalleryEvent(line, origin)?.let(onEvent)
                     "error" -> error("Kết nối hội thoại bị gián đoạn. Bạn thử lại nhé.")
                     "done" -> { completed = true; onEvent(ConversationEvent.Done); break }
                 }
@@ -62,3 +66,35 @@ class HttpConversationRepository(endpoint: String, private val headers: Map<Stri
 
     override fun close() = client.close()
 }
+
+/** Preserve visual server events; text-only decoding previously hid wardrobes and outfit cards. */
+internal fun decodeGalleryEvent(line: String, origin: String): ConversationEvent? {
+    val event = Json.parseToJsonElement(line).jsonObject
+    fun text(key: String) = event[key]?.jsonPrimitive?.contentOrNull.orEmpty()
+    return when (text("type")) {
+        "wardrobe" -> ConversationEvent.Wardrobe(galleryItems(event["items"], origin),
+            event["total"]?.jsonPrimitive?.intOrNull ?: 0, text("gender_filter").ifEmpty { "all" })
+        "outfits" -> ConversationEvent.Outfits((event["outfits"] as? JsonArray).orEmpty().take(3).mapNotNull { element ->
+            val outfit = element as? JsonObject ?: return@mapNotNull null
+            fun field(key: String) = outfit[key]?.jsonPrimitive?.contentOrNull.orEmpty()
+            ShadowOutfit(field("title"), field("reason"), galleryItems(outfit["items"], origin).map { item ->
+                ShadowOutfitItem(item.id, item.name, item.category, item.imageUrl, item.colorHex)
+            }, field("tips"))
+        })
+        else -> null
+    }
+}
+
+private fun galleryItems(value: JsonElement?, origin: String): List<WardrobeItem> = (value as? JsonArray).orEmpty().take(80).mapNotNull { element ->
+        val item = element as? JsonObject ?: return@mapNotNull null
+        fun text(key: String) = item[key]?.jsonPrimitive?.contentOrNull.orEmpty()
+        val id = text("id")
+        if (id.isBlank()) return@mapNotNull null
+        val image = text("image_url")
+        val url = when {
+            image.startsWith("/") && !image.startsWith("//") -> origin + image
+            image.startsWith("https://") || image.startsWith("http://") -> image
+            else -> ""
+        }
+        WardrobeItem(id, text("name"), text("category"), false, imageUrl = url, gender = text("gender").ifEmpty { "unknown" })
+    }

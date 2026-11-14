@@ -15,6 +15,7 @@ struct ShadowCameraScreen: View {
     let cameraVisible: Bool
     @Environment(\.scenePhase) private var scenePhase
     @State private var settings = false
+    @State private var wardrobeExpanded = false
     @State private var wardrobeQuery = ""
     @State private var wardrobeGender = "all"
     @State private var manageWardrobeAfterDismiss = false
@@ -62,7 +63,7 @@ struct ShadowCameraScreen: View {
                         Text("SKI").font(.system(size: 18, weight: .bold)).tracking(2)
                     }
                     Spacer(minLength: 4)
-                    navigationButton("Tủ đồ") { typing = false; model.wardrobePresented = true }
+                    navigationButton("Tủ đồ") { typing = false; model.openWardrobe() }
                     navigationButton("Bài đã học", action: onLessons)
                 }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
                 HStack(spacing: 6) {
@@ -75,6 +76,7 @@ struct ShadowCameraScreen: View {
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer(minLength: 22)
+                if model.wardrobePresented { wardrobeOverlay }
                 if model.showsOutfit && !model.outfitItems.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(model.outfitTitle).font(.headline)
@@ -126,13 +128,13 @@ struct ShadowCameraScreen: View {
                             }
                             Color.clear.frame(height: 1).id("latest")
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 42)
-                    }.frame(maxHeight: 240).fixedSize(horizontal: false, vertical: true)
+                    }.frame(maxHeight: model.wardrobePresented ? 110 : 240).fixedSize(horizontal: false, vertical: true)
                         .onChange(of: model.messages.last?.text) { _ in withAnimation { proxy.scrollTo("latest", anchor: .bottom) } }
                         .onChange(of: model.messages.count) { _ in withAnimation { proxy.scrollTo("latest", anchor: .bottom) } }
                 }.foregroundStyle(.white).accessibilityLabel("Cuộc trò chuyện")
                 ForEach(Array(model.links.enumerated()), id: \.offset) { _, link in
                     Button("\(link.label)  →") {
-                        if ["wardrobe", "stylist", "tryon-photo", "tryon-live"].contains(link.route) { model.wardrobePresented = true }
+                        if ["wardrobe", "stylist", "tryon-photo", "tryon-live"].contains(link.route) { model.openWardrobe() }
                         else { onLessons() }
                     }.font(.system(size: 14)).foregroundStyle(accent).buttonStyle(.bordered)
                         .buttonBorderShape(.capsule).controlSize(.large).padding(.top, 8)
@@ -170,7 +172,7 @@ struct ShadowCameraScreen: View {
                 Spacer()
             }.padding(.top, 100).padding(.trailing, 14)
         }
-        .sheet(isPresented: $model.wardrobePresented, onDismiss: {
+        .sheet(isPresented: $wardrobeExpanded, onDismiss: {
             if manageWardrobeAfterDismiss { manageWardrobeAfterDismiss = false; onWardrobe() }
         }) { wardrobePicker.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
         .preferredColorScheme(.dark)
@@ -204,6 +206,60 @@ struct ShadowCameraScreen: View {
         }
     }
 
+    private var wardrobeOverlay: some View {
+        let items = model.wardrobeItems ?? shadow.state.wardrobe.map {
+            LiveOutfitItem(id: $0.id, name: $0.name, imageURL: $0.imageUrl, gender: $0.gender, category: $0.category)
+        }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Tủ đồ · \(model.wardrobeItems == nil ? items.count : model.wardrobeTotal) món").font(.headline)
+                Spacer()
+                Button("Xem tất cả") { wardrobeExpanded = true }.frame(minHeight: 44)
+                Button { model.wardrobePresented = false } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle())
+                }.accessibilityLabel("Đóng danh sách trang phục")
+            }
+            if items.isEmpty {
+                Text(shadow.state.busy.isEmpty ? "Chưa có trang phục phù hợp." : "Đang tải tủ đồ…").font(.subheadline).padding(.vertical)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 10) {
+                        ForEach(items) { item in
+                            let selected = model.selectedWardrobeIDs.contains(item.id)
+                            Button {
+                                var ids = model.selectedWardrobeIDs
+                                if selected { ids.removeAll { $0 == item.id } } else if ids.count < 3 { ids.append(item.id) }
+                                model.selectWardrobe(ids)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    RemoteImage(url: item.imageURL, headers: model.imageHeaders(item.imageURL), height: 105, fit: true)
+                                    Text(item.name).font(.caption2).lineLimit(2).frame(height: 30, alignment: .topLeading)
+                                    HStack {
+                                        Text(["men": "Nam", "women": "Nữ", "unisex": "Nam và nữ"][item.gender] ?? "Chưa gắn nhãn").font(.caption2)
+                                        Spacer()
+                                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                                    }.foregroundStyle(selected ? accent : .secondary)
+                                }.padding(8).frame(width: 125).background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(selected ? accent : .clear, lineWidth: 2))
+                                    .contentShape(Rectangle())
+                            }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+                                .disabled(!selected && model.selectedWardrobeIDs.count >= 3)
+                        }
+                    }
+                }
+            }
+            if !model.selectedWardrobeIDs.isEmpty {
+                Button("Phối \(model.selectedWardrobeIDs.count) món đã chọn") {
+                    let catalog = shadow.state.wardrobe.map { ($0.id, $0.name) } + (model.wardrobeItems ?? []).map { ($0.id, $0.name) }
+                    let names = model.selectedWardrobeIDs.compactMap { id in catalog.first { $0.0 == id }?.1 }
+                    model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
+                }.buttonStyle(.borderedProminent).controlSize(.large)
+            }
+        }.padding(12).background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 16))
+            .foregroundStyle(.white).tint(accent).padding(.trailing, 42).padding(.bottom, 10)
+            .onAppear { if shadow.state.wardrobe.isEmpty && shadow.state.busy.isEmpty { shadow.send(ShadowActionRefresh.shared) } }
+    }
+
     private var wardrobePicker: some View {
         let items = shadow.state.wardrobe.filter { item in
             (wardrobeGender == "all" || item.gender == wardrobeGender || item.gender == "unisex")
@@ -225,11 +281,12 @@ struct ShadowCameraScreen: View {
                 }
                 HStack(spacing: 12) {
                     Button("Thêm quần áo") {
-                        manageWardrobeAfterDismiss = true; model.wardrobePresented = false
+                        manageWardrobeAfterDismiss = true; wardrobeExpanded = false
                     }.buttonStyle(.bordered).controlSize(.large)
                     Button("Phối \(model.selectedWardrobeIDs.count) món") {
-                        let names = shadow.state.wardrobe.filter { model.selectedWardrobeIDs.contains($0.id) }.map(\.name)
-                        model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
+                        let catalog = shadow.state.wardrobe.map { ($0.id, $0.name) } + (model.wardrobeItems ?? []).map { ($0.id, $0.name) }
+                    let names = model.selectedWardrobeIDs.compactMap { id in catalog.first { $0.0 == id }?.1 }
+                        wardrobeExpanded = false; model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
                     }.buttonStyle(.borderedProminent).controlSize(.large)
                         .disabled(model.selectedWardrobeIDs.isEmpty || !shadow.state.connected)
                 }.padding(.horizontal).padding(.bottom)
@@ -238,7 +295,7 @@ struct ShadowCameraScreen: View {
             .searchable(text: $wardrobeQuery, prompt: "Tìm áo, quần, áo khoác…")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button { model.wardrobePresented = false } label: {
+                    Button { wardrobeExpanded = false } label: {
                         Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle())
                     }.accessibilityLabel("Đóng tủ đồ")
                 }

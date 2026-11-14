@@ -18,6 +18,7 @@ class ConversationStoreTest {
         var history = emptyList<ConversationTurn>()
         var fail = false
         var hold = false
+        var gallery: ConversationEvent? = null
         val started = CompletableDeferred<Unit>()
         override suspend fun converse(text: String, history: List<ConversationTurn>, image: String?, location: StylingLocation?, onEvent: (ConversationEvent) -> Unit) {
             this.text = text; this.history = history; this.image = image; this.location = location; started.complete(Unit)
@@ -26,6 +27,7 @@ class ConversationStoreTest {
             onEvent(ConversationEvent.Text("Tủ đồ "))
             onEvent(ConversationEvent.Text("trong SKI."))
             onEvent(ConversationEvent.Action(ConversationLink("wardrobe", "Xem tủ đồ")))
+            gallery?.let(onEvent)
             onEvent(ConversationEvent.Done)
         }
         override fun close() { closed = true }
@@ -62,6 +64,26 @@ class ConversationStoreTest {
             repeat(5) { store.send("tiếp $it", null); runCurrent() }
             assertEquals(6, repo.history.size)
             assertEquals(listOf("user", "assistant", "user", "assistant", "user", "assistant"), repo.history.map { it.role })
+        } finally { store.close() }
+    }
+
+    @Test fun galleriesSurviveStreamingAndReplaceEachOtherWithNewEvents() = runTest {
+        val repo = FakeConversation()
+        val store = ConversationStore({ repo }, StandardTestDispatcher(testScheduler))
+        try {
+            val item = com.example.kmmbase.domain.model.WardrobeItem("shirt", "Áo trắng", "top", false, imageUrl = "https://ski.test/shirt.jpg")
+            repo.gallery = ConversationEvent.Wardrobe(listOf(item), 1, "all")
+            store.send("Hiện tủ đồ", null); runCurrent()
+            assertEquals(listOf(item), store.currentState.wardrobe)
+            val revision = store.currentState.galleryRevision
+            val outfit = com.example.kmmbase.domain.model.ShadowOutfit("Đi chơi", "Dễ phối", emptyList(), "")
+            repo.gallery = ConversationEvent.Outfits(listOf(outfit))
+            store.send("Phối bộ này", null); runCurrent()
+            assertNull(store.currentState.wardrobe)
+            assertEquals(listOf(outfit), store.currentState.outfits)
+            assertTrue(store.currentState.galleryRevision > revision)
+            store.clear()
+            assertTrue(store.currentState.outfits.isEmpty())
         } finally { store.close() }
     }
 

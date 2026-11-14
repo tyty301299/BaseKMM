@@ -2,6 +2,8 @@ package com.example.kmmbase.presentation.conversation
 
 import com.example.kmmbase.domain.repository.*
 import com.example.kmmbase.domain.model.StylingLocation
+import com.example.kmmbase.domain.model.WardrobeItem
+import com.example.kmmbase.domain.model.ShadowOutfit
 import com.example.kmmbase.presentation.common.StoreSubscription
 import com.example.kmmbase.presentation.common.subscribeIn
 import kotlinx.coroutines.*
@@ -13,6 +15,11 @@ data class ConversationState(
     val busy: Boolean = false,
     val error: String? = null,
     val reply: String = "",
+    val wardrobe: List<WardrobeItem>? = null,
+    val wardrobeGender: String = "all",
+    val wardrobeTotal: Int = 0,
+    val outfits: List<ShadowOutfit> = emptyList(),
+    val galleryRevision: Int = 0,
 )
 
 class ConversationStore internal constructor(
@@ -43,6 +50,10 @@ class ConversationStore internal constructor(
                     when (event) {
                         is ConversationEvent.Text -> mutableState.update { it.copy(reply = it.reply + event.text) }
                         is ConversationEvent.Action -> mutableState.update { it.copy(links = (it.links + event.link).distinct()) }
+                        is ConversationEvent.Wardrobe -> mutableState.update { it.copy(wardrobe = event.items,
+                            wardrobeGender = event.gender, wardrobeTotal = event.total, outfits = emptyList(), galleryRevision = it.galleryRevision + 1) }
+                        is ConversationEvent.Outfits -> mutableState.update { it.copy(outfits = event.outfits,
+                            wardrobe = null, galleryRevision = it.galleryRevision + 1) }
                         ConversationEvent.Done -> Unit
                     }
                 }

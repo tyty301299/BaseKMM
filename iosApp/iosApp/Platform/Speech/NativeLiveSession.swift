@@ -401,9 +401,6 @@ final class NativeLiveSession {
                         result["camera_decision"] = decision
                     } else { result["execution"] = execution; if let error = execution["error"] { result["error"] = error } }
                 }
-                if name == "list_wardrobe", result["items"] != nil, result["error"] == nil {
-                    self.onEvent(["type": "wardrobe"])
-                }
                 for event in data["events"] as? [[String: Any]] ?? [] { self.onEvent(event) }
                 let response: [String: Any] = ["id": id, "name": name, "response": result["camera_decision"] ?? result]
                 self.completed[id] = (fingerprint, response)

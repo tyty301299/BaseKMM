@@ -6,6 +6,8 @@ struct LiveOutfitItem: Identifiable {
     let id: String
     let name: String
     let imageURL: String
+    var gender = "unknown"
+    var category = ""
 }
 
 @MainActor
@@ -30,6 +32,9 @@ final class NativeCameraChatModel: ObservableObject {
     var getCity: () -> String? = { nil }
     @Published private(set) var selectedWardrobeIDs: [String] = []
     @Published var wardrobePresented = false
+    @Published private(set) var wardrobeItems: [LiveOutfitItem]?
+    @Published private(set) var wardrobeTotal = 0
+    private var galleryRevision: Int32 = 0
     let camera = NativeServices.makeCamera()
     private let session = NativeServices.makeLiveSession()
     let teaching = NativeLessonSession()
@@ -59,7 +64,26 @@ final class NativeCameraChatModel: ObservableObject {
 
     init(store: ConversationStore) {
         self.store = store; state = store.currentState
-        subscription = store.observeState { [weak self] in self?.state = $0 }
+        subscription = store.observeState { [weak self] value in
+            guard let self else { return }
+            let previousLinks = self.state.links
+            self.state = value
+            if value.galleryRevision != self.galleryRevision {
+                self.galleryRevision = value.galleryRevision
+                if let items = value.wardrobe {
+                    self.wardrobeItems = items.map { LiveOutfitItem(id: $0.id, name: $0.name, imageURL: $0.imageUrl, gender: $0.gender, category: $0.category) }
+                    self.wardrobeTotal = Int(value.wardrobeTotal)
+                    self.wardrobePresented = true; self.showsOutfit = false
+                } else if let outfit = value.outfits.first {
+                    self.outfitTitle = outfit.title; self.outfitReason = outfit.reason
+                    self.outfitItems = outfit.items.map { LiveOutfitItem(id: $0.id, name: $0.name, imageURL: $0.imageUrl, category: $0.category) }
+                    self.wardrobePresented = false; self.showsOutfit = true
+                }
+            }
+            if value.links != previousLinks, value.links.contains(where: { $0.route == "wardrobe" }), !self.wardrobePresented {
+                self.openWardrobe()
+            }
+        }
         session.onChange = { [weak self] snapshot in
             self?.live = snapshot
             self?.teaching.observe(snapshot.messages)
@@ -172,6 +196,7 @@ final class NativeCameraChatModel: ObservableObject {
     func clear() { stop(); session.clear(); store.clear(); teaching.reset(); text = ""; wantsLive = true; clearLesson(); outfitItems = []; showsOutfit = false }
 
     func syncLocation() { session.syncLocationContext() }
+    func openWardrobe() { wardrobeItems = nil; wardrobePresented = true; showsOutfit = false }
     func selectWardrobe(_ ids: [String]) { selectedWardrobeIDs = Array(ids.prefix(3)) }
     func styleSelectedWardrobe(names: [String]) {
         text = String(("Tư vấn phối đồ với các món tôi vừa chọn trong tủ đồ: " + names.joined(separator: ", ")).prefix(500))
@@ -185,7 +210,16 @@ final class NativeCameraChatModel: ObservableObject {
     }
     private func handleEvent(_ event: [String: Any]) {
         if event["type"] as? String == "wardrobe" {
-            wardrobePresented = true
+            wardrobeItems = (event["items"] as? [[String: Any]])?.compactMap { item in
+                guard let id = item["id"] as? String else { return nil }
+                let raw = item["image_url"] as? String ?? ""
+                let url = URL(string: raw, relativeTo: URL(string: endpoint))?.absoluteURL
+                let image = ["https", "http"].contains(url?.scheme) ? url?.absoluteString ?? "" : ""
+                return LiveOutfitItem(id: id, name: item["name"] as? String ?? "Trang phục", imageURL: image,
+                    gender: item["gender"] as? String ?? "unknown", category: item["category"] as? String ?? "")
+            }
+            wardrobeTotal = event["total"] as? Int ?? wardrobeItems?.count ?? 0
+            wardrobePresented = true; showsOutfit = false
         } else if event["type"] as? String == "outfits", let outfit = (event["outfits"] as? [[String: Any]])?.first {
             outfitTitle = outfit["title"] as? String ?? "Trang phục gợi ý"
             outfitReason = outfit["reason"] as? String ?? ""
@@ -199,6 +233,7 @@ final class NativeCameraChatModel: ObservableObject {
             wardrobePresented = false
             showsOutfit = true
         } else if event["type"] as? String == "action", let route = event["route"] as? String {
+            if route == "wardrobe" { if !wardrobePresented { openWardrobe() }; return }
             liveLinks = [ConversationLink(route: route, label: event["label"] as? String ?? "Mở", id: event["id"] as? String ?? "")]
         }
     }
