@@ -1,187 +1,810 @@
 // !$*UTF8*$!
-{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
-ABCDEF000000000000000105 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift"; sourceTree = SOURCE_ROOT; };
-ABCDEF000000000000000106 = { isa = PBXBuildFile; fileRef = ABCDEF000000000000000105; };
-ABCDEF000000000000000103 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Speech/LiveAudioEngine.swift"; sourceTree = SOURCE_ROOT; };
-ABCDEF000000000000000104 = { isa = PBXBuildFile; fileRef = ABCDEF000000000000000103; };
-ABCDEF000000000000000107 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Speech/NativeLessonSession.swift"; sourceTree = SOURCE_ROOT; };
-ABCDEF000000000000000108 = { isa = PBXBuildFile; fileRef = ABCDEF000000000000000107; };
-ABCDEF000000000000000101 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Speech/NativeLiveSession.swift"; sourceTree = SOURCE_ROOT; };
-ABCDEF000000000000000102 = { isa = PBXBuildFile; fileRef = ABCDEF000000000000000101; };
-ABCDEF000000000000000005 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Home/Presentation/WardrobeAddSheet.swift"; sourceTree = SOURCE_ROOT; };
-ABCDEF000000000000000006 = { isa = PBXBuildFile; fileRef = ABCDEF000000000000000005; };
-ABCDEF000000000000000001 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift"; sourceTree = SOURCE_ROOT; };
-ABCDEF000000000000000002 = { isa = PBXBuildFile; fileRef = ABCDEF000000000000000001; };
-ABCDEF000000000000000003 = { isa = PBXGroup; path = "iosApp/Features/Camera"; sourceTree = SOURCE_ROOT; children = (ABCDEF000000000000000004); };
-ABCDEF000000000000000004 = { isa = PBXGroup; path = "iosApp/Features/Camera/Presentation"; sourceTree = SOURCE_ROOT; children = (ABCDEF000000000000000105, ABCDEF000000000000000001); };
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
 
-000000000000000000000020 = { isa = PBXGroup; path = "iosApp"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0001, 0000000000000000000A0002, 0000000000000000000A0003, 0000000000000000000A0004, 0000000000000000000A0018, 0000000000000000000A0019, 000000000000000000007006, 000000000000000000007004, 000000000000000000007001); };
-0000000000000000000A0001 = { isa = PBXGroup; path = "iosApp/App"; sourceTree = SOURCE_ROOT; children = (000000000000000000000005); };
-0000000000000000000A0002 = { isa = PBXGroup; path = "iosApp/Common"; sourceTree = SOURCE_ROOT; children = (000000000000000000000017); };
-0000000000000000000A0003 = { isa = PBXGroup; path = "iosApp/DI"; sourceTree = SOURCE_ROOT; children = (000000000000000000090000); };
-0000000000000000000A0004 = { isa = PBXGroup; path = "iosApp/Features"; sourceTree = SOURCE_ROOT; children = (ABCDEF000000000000000003, 0000000000000000000A0005, 0000000000000000000A0007, 0000000000000000000A0009, 0000000000000000000A000C, 0000000000000000000A0010, 0000000000000000000A0012, 0000000000000000000A0016); };
-0000000000000000000A0005 = { isa = PBXGroup; path = "iosApp/Features/Guide"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0006); };
-0000000000000000000A0006 = { isa = PBXGroup; path = "iosApp/Features/Guide/Presentation"; sourceTree = SOURCE_ROOT; children = (000000000000000000090002, 000000000000000000006010); };
-0000000000000000000A0007 = { isa = PBXGroup; path = "iosApp/Features/Home"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0008); };
-0000000000000000000A0008 = { isa = PBXGroup; path = "iosApp/Features/Home/Presentation"; sourceTree = SOURCE_ROOT; children = (ABCDEF000000000000000005,000000000000000000000016); };
-0000000000000000000A0009 = { isa = PBXGroup; path = "iosApp/Features/LiveTryOn"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A000A, 0000000000000000000A000B); };
-0000000000000000000A000A = { isa = PBXGroup; path = "iosApp/Features/LiveTryOn/Data"; sourceTree = SOURCE_ROOT; children = (000000000000000000008122, 000000000000000000008125); };
-0000000000000000000A000B = { isa = PBXGroup; path = "iosApp/Features/LiveTryOn/Presentation"; sourceTree = SOURCE_ROOT; children = (000000000000000000008121, 000000000000000000008100); };
-0000000000000000000A000C = { isa = PBXGroup; path = "iosApp/Features/Looks"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A000D); };
-0000000000000000000A000D = { isa = PBXGroup; path = "iosApp/Features/Looks/Presentation"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A000E, 0000000000000000000A000F, 000000000000000000000103); };
-0000000000000000000A000E = { isa = PBXGroup; path = "iosApp/Features/Looks/Presentation/Components"; sourceTree = SOURCE_ROOT; children = (000000000000000000000100, 000000000000000000000101, 000000000000000000000102); };
-0000000000000000000A000F = { isa = PBXGroup; path = "iosApp/Features/Looks/Presentation/Screens"; sourceTree = SOURCE_ROOT; children = (000000000000000000000104, 000000000000000000000105, 000000000000000000000106, 000000000000000000000107, 000000000000000000000108, 000000000000000000000150); };
-0000000000000000000A0010 = { isa = PBXGroup; path = "iosApp/Features/Notes"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0011); };
-0000000000000000000A0011 = { isa = PBXGroup; path = "iosApp/Features/Notes/Presentation"; sourceTree = SOURCE_ROOT; children = (000000000000000000000012, 000000000000000000000011); };
-0000000000000000000A0012 = { isa = PBXGroup; path = "iosApp/Features/Studio"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0013); };
-0000000000000000000A0013 = { isa = PBXGroup; path = "iosApp/Features/Studio/Presentation"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0014, 0000000000000000000A0015, 000000000000000000004014); };
-0000000000000000000A0014 = { isa = PBXGroup; path = "iosApp/Features/Studio/Presentation/Components"; sourceTree = SOURCE_ROOT; children = (000000000000000000004000, 000000000000000000004100, 000000000000000000004001); };
-0000000000000000000A0015 = { isa = PBXGroup; path = "iosApp/Features/Studio/Presentation/Screens"; sourceTree = SOURCE_ROOT; children = (000000000000000000004002, 000000000000000000004003, 000000000000000000004004, 000000000000000000004005, 000000000000000000004006, 000000000000000000004007, 000000000000000000004008, 000000000000000000004009, 00000000000000000000400A, 00000000000000000000400B, 00000000000000000000400C, 00000000000000000000400D, 00000000000000000000400E, 00000000000000000000400F, 000000000000000000004010, 000000000000000000004011, 000000000000000000004012, 000000000000000000004013); };
-0000000000000000000A0016 = { isa = PBXGroup; path = "iosApp/Features/Teach"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A0017); };
-0000000000000000000A0017 = { isa = PBXGroup; path = "iosApp/Features/Teach/Presentation"; sourceTree = SOURCE_ROOT; children = (000000000000000000006011, 000000000000000000090004); };
-0000000000000000000A0018 = { isa = PBXGroup; path = "iosApp/Navigation"; sourceTree = SOURCE_ROOT; children = (000000000000000000000015, 000000000000000000004016, 000000000000000000004015); };
-0000000000000000000A0019 = { isa = PBXGroup; path = "iosApp/Platform"; sourceTree = SOURCE_ROOT; children = (0000000000000000000A001A, 0000000000000000000A001B, 0000000000000000000A001C, 0000000000000000000A001D); };
-0000000000000000000A001A = { isa = PBXGroup; path = "iosApp/Platform/Camera"; sourceTree = SOURCE_ROOT; children = (000000000000000000006003, 000000000000000000090006, 000000000000000000006001); };
-0000000000000000000A001B = { isa = PBXGroup; path = "iosApp/Platform/Media"; sourceTree = SOURCE_ROOT; children = (000000000000000000090008, 0000000000000000000C0000); };
-0000000000000000000A001C = { isa = PBXGroup; path = "iosApp/Platform/Speech"; sourceTree = SOURCE_ROOT; children = (ABCDEF000000000000000107, ABCDEF000000000000000103, ABCDEF000000000000000101, 00000000000000000009000A, 000000000000000000006002); };
-0000000000000000000A001D = { isa = PBXGroup; path = "iosApp/Platform/Video"; sourceTree = SOURCE_ROOT; children = (0000000000000000000B0000); };
-0000000000000000000C0000 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Media/TeachVideoImport.swift"; sourceTree = SOURCE_ROOT; };
-0000000000000000000C0001 = { isa = PBXBuildFile; fileRef = 0000000000000000000C0000; };
-0000000000000000000B0000 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Video/NativeLiveVideoEngine.swift"; sourceTree = SOURCE_ROOT; };
-0000000000000000000B0001 = { isa = PBXBuildFile; fileRef = 0000000000000000000B0000; };
-00000000000000000009000A = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Speech/ShadowListener.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000009000B = { isa = PBXBuildFile; fileRef = 00000000000000000009000A; };
-000000000000000000090008 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Media/RemoteImage.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000090009 = { isa = PBXBuildFile; fileRef = 000000000000000000090008; };
-000000000000000000090006 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Camera/CameraPreview.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000090007 = { isa = PBXBuildFile; fileRef = 000000000000000000090006; };
-000000000000000000090004 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Teach/Presentation/TeachModel.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000090005 = { isa = PBXBuildFile; fileRef = 000000000000000000090004; };
-000000000000000000090002 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Guide/Presentation/GuideModel.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000090003 = { isa = PBXBuildFile; fileRef = 000000000000000000090002; };
-000000000000000000090000 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/DI/NativeServices.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000090001 = { isa = PBXBuildFile; fileRef = 000000000000000000090000; };
-000000000000000000008125 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000008126 = { isa = PBXBuildFile; fileRef = 000000000000000000008125; };
-000000000000000000008121 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000008122 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000008123 = { isa = PBXBuildFile; fileRef = 000000000000000000008121; };
-000000000000000000008124 = { isa = PBXBuildFile; fileRef = 000000000000000000008122; };
-000000000000000000008110 = { isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git"; requirement = { kind = exactVersion; version = 4.5.2; }; };
-000000000000000000008111 = { isa = XCSwiftPackageProductDependency; package = 000000000000000000008110; productName = RtcBasic; };
-000000000000000000008112 = { isa = PBXBuildFile; productRef = 000000000000000000008111; };
-000000000000000000008100 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000008101 = { isa = PBXBuildFile; fileRef = 000000000000000000008100; };
+/* Begin PBXBuildFile section */
+		ABCDEF00000000000000AA03 /* XmaxSDK in Frameworks */ = {isa = PBXBuildFile; productRef = ABCDEF00000000000000AA02 /* XmaxSDK */; };
+		000000000000000000000010 /* iosApp/App/KmmBaseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000005 /* iosApp/App/KmmBaseApp.swift */; };
+		000000000000000000000013 /* iosApp/Features/Notes/Presentation/NoteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000011 /* iosApp/Features/Notes/Presentation/NoteListView.swift */; };
+		000000000000000000000014 /* iosApp/Features/Notes/Presentation/NoteEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000012 /* iosApp/Features/Notes/Presentation/NoteEditView.swift */; };
+		000000000000000000000018 /* iosApp/Navigation/RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000015 /* iosApp/Navigation/RootView.swift */; };
+		000000000000000000000019 /* iosApp/Features/Home/Presentation/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000016 /* iosApp/Features/Home/Presentation/HomeView.swift */; };
+		00000000000000000000001A /* iosApp/Common/AppError+Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017 /* iosApp/Common/AppError+Message.swift */; };
+		000000000000000000000200 /* iosApp/Features/Looks/Presentation/Components/LookMannequin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000100 /* iosApp/Features/Looks/Presentation/Components/LookMannequin.swift */; };
+		000000000000000000000201 /* iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000101 /* iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift */; };
+		000000000000000000000202 /* iosApp/Features/Looks/Presentation/Components/LookStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000102 /* iosApp/Features/Looks/Presentation/Components/LookStyle.swift */; };
+		000000000000000000000203 /* iosApp/Features/Looks/Presentation/LookModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000103 /* iosApp/Features/Looks/Presentation/LookModel.swift */; };
+		000000000000000000000204 /* iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000104 /* iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift */; };
+		000000000000000000000205 /* iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000105 /* iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift */; };
+		000000000000000000000206 /* iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000106 /* iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift */; };
+		000000000000000000000207 /* iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000107 /* iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift */; };
+		000000000000000000000208 /* iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000108 /* iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift */; };
+		000000000000000000000250 /* iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000150 /* iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift */; };
+		000000000000000000005000 /* iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004000 /* iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift */; };
+		000000000000000000005001 /* iosApp/Features/Studio/Presentation/Components/StudioPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004001 /* iosApp/Features/Studio/Presentation/Components/StudioPage.swift */; };
+		000000000000000000005002 /* iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004002 /* iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift */; };
+		000000000000000000005003 /* iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004003 /* iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift */; };
+		000000000000000000005004 /* iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004004 /* iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift */; };
+		000000000000000000005005 /* iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004005 /* iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift */; };
+		000000000000000000005006 /* iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004006 /* iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift */; };
+		000000000000000000005007 /* iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004007 /* iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift */; };
+		000000000000000000005008 /* iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004008 /* iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift */; };
+		000000000000000000005009 /* iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004009 /* iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift */; };
+		00000000000000000000500A /* iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000400A /* iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift */; };
+		00000000000000000000500B /* iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000400B /* iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift */; };
+		00000000000000000000500C /* iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000400C /* iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift */; };
+		00000000000000000000500D /* iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000400D /* iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift */; };
+		00000000000000000000500E /* iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000400E /* iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift */; };
+		00000000000000000000500F /* iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000400F /* iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift */; };
+		000000000000000000005010 /* iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004010 /* iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift */; };
+		000000000000000000005011 /* iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004011 /* iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift */; };
+		000000000000000000005012 /* iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004012 /* iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift */; };
+		000000000000000000005013 /* iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004013 /* iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift */; };
+		000000000000000000005014 /* iosApp/Features/Studio/Presentation/StudioModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004014 /* iosApp/Features/Studio/Presentation/StudioModel.swift */; };
+		000000000000000000005015 /* iosApp/Navigation/StudioRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004015 /* iosApp/Navigation/StudioRoute.swift */; };
+		000000000000000000005016 /* iosApp/Navigation/StudioDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004016 /* iosApp/Navigation/StudioDestination.swift */; };
+		000000000000000000005100 /* iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000004100 /* iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift */; };
+		000000000000000000006101 /* iosApp/Platform/Camera/ShadowCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000006001 /* iosApp/Platform/Camera/ShadowCamera.swift */; };
+		000000000000000000006102 /* iosApp/Platform/Speech/ShadowSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000006002 /* iosApp/Platform/Speech/ShadowSpeaker.swift */; };
+		000000000000000000006103 /* iosApp/Platform/Camera/CameraFrameBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000006003 /* iosApp/Platform/Camera/CameraFrameBridge.swift */; };
+		000000000000000000006110 /* iosApp/Features/Guide/Presentation/LiveGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000006010 /* iosApp/Features/Guide/Presentation/LiveGuideView.swift */; };
+		000000000000000000006111 /* iosApp/Features/Teach/Presentation/LiveTeachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000006011 /* iosApp/Features/Teach/Presentation/LiveTeachView.swift */; };
+		000000000000000000007002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000007001 /* Localizable.xcstrings */; };
+		000000000000000000007005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000007004 /* Assets.xcassets */; };
+		000000000000000000007007 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000007006 /* PrivacyInfo.xcprivacy */; };
+		000000000000000000008101 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000008100 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift */; };
+		000000000000000000008112 /* RtcBasic in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000000008111 /* RtcBasic */; };
+		000000000000000000008123 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000008121 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift */; };
+		000000000000000000008124 /* iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000008122 /* iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift */; };
+		000000000000000000008126 /* iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000008125 /* iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift */; };
+		000000000000000000090001 /* iosApp/DI/NativeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000090000 /* iosApp/DI/NativeServices.swift */; };
+		000000000000000000090003 /* iosApp/Features/Guide/Presentation/GuideModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000090002 /* iosApp/Features/Guide/Presentation/GuideModel.swift */; };
+		000000000000000000090005 /* iosApp/Features/Teach/Presentation/TeachModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000090004 /* iosApp/Features/Teach/Presentation/TeachModel.swift */; };
+		000000000000000000090007 /* iosApp/Platform/Camera/CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000090006 /* iosApp/Platform/Camera/CameraPreview.swift */; };
+		000000000000000000090009 /* iosApp/Platform/Media/RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000090008 /* iosApp/Platform/Media/RemoteImage.swift */; };
+		00000000000000000009000B /* iosApp/Platform/Speech/ShadowListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000009000A /* iosApp/Platform/Speech/ShadowListener.swift */; };
+		0000000000000000000B0001 /* iosApp/Platform/Video/NativeLiveVideoEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000B0000 /* iosApp/Platform/Video/NativeLiveVideoEngine.swift */; };
+		0000000000000000000C0001 /* iosApp/Platform/Media/TeachVideoImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000000000000000000C0000 /* iosApp/Platform/Media/TeachVideoImport.swift */; };
+		ABCDEF000000000000000002 /* iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000001 /* iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift */; };
+		ABCDEF000000000000000006 /* iosApp/Features/Home/Presentation/WardrobeAddSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000005 /* iosApp/Features/Home/Presentation/WardrobeAddSheet.swift */; };
+		ABCDEF000000000000000102 /* iosApp/Platform/Speech/NativeLiveSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000101 /* iosApp/Platform/Speech/NativeLiveSession.swift */; };
+		ABCDEF000000000000000104 /* iosApp/Platform/Speech/LiveAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000103 /* iosApp/Platform/Speech/LiveAudioEngine.swift */; };
+		ABCDEF000000000000000106 /* iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000105 /* iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift */; };
+		ABCDEF000000000000000108 /* iosApp/Platform/Speech/NativeLessonSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000107 /* iosApp/Platform/Speech/NativeLessonSession.swift */; };
+/* End PBXBuildFile section */
 
-000000000000000000007006 = { isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-000000000000000000007007 = { isa = PBXBuildFile; fileRef = 000000000000000000007006; };
-000000000000000000007004 = { isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-000000000000000000007005 = { isa = PBXBuildFile; fileRef = 000000000000000000007004; };
-000000000000000000007001 = { isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-000000000000000000007002 = { isa = PBXBuildFile; fileRef = 000000000000000000007001; };
-000000000000000000007003 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (000000000000000000007002, 000000000000000000007005, 000000000000000000007007); runOnlyForDeploymentPostprocessing = 0; };
-000000000000000000000001 = { isa = PBXProject; packageReferences = (000000000000000000008110); attributes = { LastUpgradeCheck = 2600; }; buildConfigurationList = 00000000000000000000000A; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, vi, Base); mainGroup = 000000000000000000000002; productRefGroup = 000000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (000000000000000000000004); };
-000000000000000000000002 = { isa = PBXGroup; children = (000000000000000000000020, 000000000000000000000003); sourceTree = "<group>"; };
-000000000000000000000003 = { isa = PBXGroup; children = (000000000000000000000006); name = Products; sourceTree = "<group>"; };
-000000000000000000000004 = { isa = PBXNativeTarget; packageProductDependencies = (000000000000000000008111); buildConfigurationList = 00000000000000000000000B; buildPhases = (000000000000000000000007, 000000000000000000000008, 000000000000000000000009, 000000000000000000007003); buildRules = (); dependencies = (); name = iosApp; productName = KmmBase; productReference = 000000000000000000000006; productType = "com.apple.product-type.application"; };
-000000000000000000000005 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/App/KmmBaseApp.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000006 = { isa = PBXFileReference; explicitFileType = wrapper.application; path = KmmBase.app; sourceTree = BUILT_PRODUCTS_DIR; };
-000000000000000000000007 = { isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = (); name = "Compile Kotlin Framework"; outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "set -eu\nif [ \"${OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED:-NO}\" = \"YES\" ]; then exit 0; fi\ncd \"$SRCROOT/..\"\n. ./tools/mobile-env.sh\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n"; };
-000000000000000000000008 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (ABCDEF000000000000000108, ABCDEF000000000000000106, ABCDEF000000000000000104, ABCDEF000000000000000102, ABCDEF000000000000000006, ABCDEF000000000000000002, 0000000000000000000C0001, 0000000000000000000B0001, 00000000000000000009000B, 000000000000000000090009, 000000000000000000090007, 000000000000000000090005, 000000000000000000090003, 000000000000000000090001, 000000000000000000008126, 000000000000000000008123, 000000000000000000008124, 000000000000000000008101, 000000000000000000005100, 000000000000000000005000, 000000000000000000005001, 000000000000000000005002, 000000000000000000005003, 000000000000000000005004, 000000000000000000005005, 000000000000000000005006, 000000000000000000005007, 000000000000000000005008, 000000000000000000005009, 00000000000000000000500A, 00000000000000000000500B, 00000000000000000000500C, 00000000000000000000500D, 00000000000000000000500E, 00000000000000000000500F, 000000000000000000005010, 000000000000000000005011, 000000000000000000005012, 000000000000000000005013, 000000000000000000005014, 000000000000000000005015, 000000000000000000005016, 000000000000000000000250, 000000000000000000000200, 000000000000000000000201, 000000000000000000000202, 000000000000000000000203, 000000000000000000000204, 000000000000000000000205, 000000000000000000000206, 000000000000000000000207, 000000000000000000000208, 000000000000000000000010, 000000000000000000000013, 000000000000000000000014, 000000000000000000000018, 000000000000000000000019, 00000000000000000000001A, 000000000000000000006101, 000000000000000000006102, 000000000000000000006103, 000000000000000000006110, 000000000000000000006111); runOnlyForDeploymentPostprocessing = 0; };
-000000000000000000000009 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (000000000000000000008112); runOnlyForDeploymentPostprocessing = 0; };
-00000000000000000000000A = { isa = XCConfigurationList; buildConfigurations = (00000000000000000000000C, 00000000000000000000000D); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-00000000000000000000000B = { isa = XCConfigurationList; buildConfigurations = (00000000000000000000000E, 00000000000000000000000F); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-00000000000000000000000C = { isa = XCBuildConfiguration; name = Debug; buildSettings = { ONLY_ACTIVE_ARCH = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 16.0; CLANG_ENABLE_MODULES = YES; SWIFT_VERSION = 5.0; }; };
-00000000000000000000000D = { isa = XCBuildConfiguration; name = Release; buildSettings = { SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 16.0; CLANG_ENABLE_MODULES = YES; SWIFT_VERSION = 5.0; }; };
-00000000000000000000000E = { isa = XCBuildConfiguration; name = Debug; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; PRODUCT_NAME = "KmmBase"; PRODUCT_BUNDLE_IDENTIFIER = "com.example.kmmbase.ios"; "PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.trioxstudios.shadow"; DEVELOPMENT_TEAM = "GJD9MS8W54"; GENERATE_INFOPLIST_FILE = "YES"; INFOPLIST_FILE = "iosApp/Info.plist"; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = "YES"; INFOPLIST_KEY_UILaunchScreen_Generation = "YES"; INFOPLIST_KEY_CFBundleDisplayName = "SKI"; INFOPLIST_KEY_NSUserTrackingUsageDescription = "Cho phép theo dõi để cá nhân hóa trải nghiệm."; INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Lưu ảnh bạn chụp vào thư viện ảnh."; INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh trang phục hoặc video của bạn."; INFOPLIST_KEY_NSCameraUsageDescription = "SKI dùng camera để chụp trang phục và hướng dẫn kỹ năng."; INFOPLIST_KEY_NSMicrophoneUsageDescription = "SKI dùng micro để nghe câu hỏi và lời hướng dẫn của bạn."; INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng lời hướng dẫn để tạo các bước của bài học."; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; ENABLE_USER_SCRIPT_SANDBOXING = "NO"; CODE_SIGN_STYLE = "Automatic"; CURRENT_PROJECT_VERSION = "1"; MARKETING_VERSION = "1.0.0"; FRAMEWORK_SEARCH_PATHS = "$(inherited) $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"; OTHER_LDFLAGS = "$(inherited) -framework Shared"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; SWIFT_OPTIMIZATION_LEVEL = "-Onone";}; };
-00000000000000000000000F = { isa = XCBuildConfiguration; name = Release; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; PRODUCT_NAME = "KmmBase"; PRODUCT_BUNDLE_IDENTIFIER = "com.trioxstudios.shadow"; DEVELOPMENT_TEAM = "GJD9MS8W54"; GENERATE_INFOPLIST_FILE = "YES"; INFOPLIST_FILE = "iosApp/Info.plist"; INFOPLIST_KEY_UIApplicationSceneManifest_Generation = "YES"; INFOPLIST_KEY_UILaunchScreen_Generation = "YES"; INFOPLIST_KEY_CFBundleDisplayName = "SKI"; INFOPLIST_KEY_NSUserTrackingUsageDescription = "Cho phép theo dõi để cá nhân hóa trải nghiệm."; INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Lưu ảnh bạn chụp vào thư viện ảnh."; INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh trang phục hoặc video của bạn."; INFOPLIST_KEY_NSCameraUsageDescription = "SKI dùng camera để chụp trang phục và hướng dẫn kỹ năng."; INFOPLIST_KEY_NSMicrophoneUsageDescription = "SKI dùng micro để nghe câu hỏi và lời hướng dẫn của bạn."; INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng lời hướng dẫn để tạo các bước của bài học."; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; ENABLE_USER_SCRIPT_SANDBOXING = "NO"; CODE_SIGN_STYLE = "Automatic"; CURRENT_PROJECT_VERSION = "1"; MARKETING_VERSION = "1.0.0"; FRAMEWORK_SEARCH_PATHS = "$(inherited) $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"; OTHER_LDFLAGS = "$(inherited) -framework Shared"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; SWIFT_OPTIMIZATION_LEVEL = "-O";}; };
-000000000000000000000010 = { isa = PBXBuildFile; fileRef = 000000000000000000000005; };
-000000000000000000000011 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Notes/Presentation/NoteListView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000012 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Notes/Presentation/NoteEditView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000013 = { isa = PBXBuildFile; fileRef = 000000000000000000000011; };
-000000000000000000000014 = { isa = PBXBuildFile; fileRef = 000000000000000000000012; };
-000000000000000000000015 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Navigation/RootView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000016 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Home/Presentation/HomeView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000017 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Common/AppError+Message.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000018 = { isa = PBXBuildFile; fileRef = 000000000000000000000015; };
-000000000000000000000019 = { isa = PBXBuildFile; fileRef = 000000000000000000000016; };
-00000000000000000000001A = { isa = PBXBuildFile; fileRef = 000000000000000000000017; };
-000000000000000000000100 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Components/LookMannequin.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000200 = { isa = PBXBuildFile; fileRef = 000000000000000000000100; };
-000000000000000000000101 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000201 = { isa = PBXBuildFile; fileRef = 000000000000000000000101; };
-000000000000000000000102 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Components/LookStyle.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000202 = { isa = PBXBuildFile; fileRef = 000000000000000000000102; };
-000000000000000000000103 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/LookModel.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000203 = { isa = PBXBuildFile; fileRef = 000000000000000000000103; };
-000000000000000000000104 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000204 = { isa = PBXBuildFile; fileRef = 000000000000000000000104; };
-000000000000000000000105 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000205 = { isa = PBXBuildFile; fileRef = 000000000000000000000105; };
-000000000000000000000106 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000206 = { isa = PBXBuildFile; fileRef = 000000000000000000000106; };
-000000000000000000000107 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000207 = { isa = PBXBuildFile; fileRef = 000000000000000000000107; };
-000000000000000000000108 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000208 = { isa = PBXBuildFile; fileRef = 000000000000000000000108; };
-000000000000000000000150 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000000250 = { isa = PBXBuildFile; fileRef = 000000000000000000000150; };
-000000000000000000004000 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005000 = { isa = PBXBuildFile; fileRef = 000000000000000000004000; };
-000000000000000000004001 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Components/StudioPage.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005001 = { isa = PBXBuildFile; fileRef = 000000000000000000004001; };
-000000000000000000004002 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005002 = { isa = PBXBuildFile; fileRef = 000000000000000000004002; };
-000000000000000000004003 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005003 = { isa = PBXBuildFile; fileRef = 000000000000000000004003; };
-000000000000000000004004 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005004 = { isa = PBXBuildFile; fileRef = 000000000000000000004004; };
-000000000000000000004005 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005005 = { isa = PBXBuildFile; fileRef = 000000000000000000004005; };
-000000000000000000004006 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005006 = { isa = PBXBuildFile; fileRef = 000000000000000000004006; };
-000000000000000000004007 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005007 = { isa = PBXBuildFile; fileRef = 000000000000000000004007; };
-000000000000000000004008 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005008 = { isa = PBXBuildFile; fileRef = 000000000000000000004008; };
-000000000000000000004009 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005009 = { isa = PBXBuildFile; fileRef = 000000000000000000004009; };
-00000000000000000000400A = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000000500A = { isa = PBXBuildFile; fileRef = 00000000000000000000400A; };
-00000000000000000000400B = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000000500B = { isa = PBXBuildFile; fileRef = 00000000000000000000400B; };
-00000000000000000000400C = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000000500C = { isa = PBXBuildFile; fileRef = 00000000000000000000400C; };
-00000000000000000000400D = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000000500D = { isa = PBXBuildFile; fileRef = 00000000000000000000400D; };
-00000000000000000000400E = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000000500E = { isa = PBXBuildFile; fileRef = 00000000000000000000400E; };
-00000000000000000000400F = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift"; sourceTree = SOURCE_ROOT; };
-00000000000000000000500F = { isa = PBXBuildFile; fileRef = 00000000000000000000400F; };
-000000000000000000004010 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005010 = { isa = PBXBuildFile; fileRef = 000000000000000000004010; };
-000000000000000000004011 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005011 = { isa = PBXBuildFile; fileRef = 000000000000000000004011; };
-000000000000000000004012 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005012 = { isa = PBXBuildFile; fileRef = 000000000000000000004012; };
-000000000000000000004013 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005013 = { isa = PBXBuildFile; fileRef = 000000000000000000004013; };
-000000000000000000004014 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/StudioModel.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005014 = { isa = PBXBuildFile; fileRef = 000000000000000000004014; };
-000000000000000000004015 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Navigation/StudioRoute.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005015 = { isa = PBXBuildFile; fileRef = 000000000000000000004015; };
-000000000000000000004016 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Navigation/StudioDestination.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005016 = { isa = PBXBuildFile; fileRef = 000000000000000000004016; };
-000000000000000000004100 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000005100 = { isa = PBXBuildFile; fileRef = 000000000000000000004100; };
-000000000000000000006001 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Camera/ShadowCamera.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000006101 = { isa = PBXBuildFile; fileRef = 000000000000000000006001; };
-000000000000000000006002 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Speech/ShadowSpeaker.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000006102 = { isa = PBXBuildFile; fileRef = 000000000000000000006002; };
-000000000000000000006003 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Platform/Camera/CameraFrameBridge.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000006103 = { isa = PBXBuildFile; fileRef = 000000000000000000006003; };
-000000000000000000006010 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Guide/Presentation/LiveGuideView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000006110 = { isa = PBXBuildFile; fileRef = 000000000000000000006010; };
-000000000000000000006011 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Features/Teach/Presentation/LiveTeachView.swift"; sourceTree = SOURCE_ROOT; };
-000000000000000000006111 = { isa = PBXBuildFile; fileRef = 000000000000000000006011; };
-}; rootObject = 000000000000000000000001; }
+/* Begin PBXFileReference section */
+		000000000000000000000005 /* iosApp/App/KmmBaseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/App/KmmBaseApp.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000006 /* KmmBase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = KmmBase.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000011 /* iosApp/Features/Notes/Presentation/NoteListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Notes/Presentation/NoteListView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000012 /* iosApp/Features/Notes/Presentation/NoteEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Notes/Presentation/NoteEditView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000015 /* iosApp/Navigation/RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Navigation/RootView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000016 /* iosApp/Features/Home/Presentation/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Home/Presentation/HomeView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000017 /* iosApp/Common/AppError+Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/Common/AppError+Message.swift"; sourceTree = SOURCE_ROOT; };
+		000000000000000000000100 /* iosApp/Features/Looks/Presentation/Components/LookMannequin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Components/LookMannequin.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000101 /* iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000102 /* iosApp/Features/Looks/Presentation/Components/LookStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Components/LookStyle.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000103 /* iosApp/Features/Looks/Presentation/LookModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/LookModel.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000104 /* iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000105 /* iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000106 /* iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000107 /* iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000108 /* iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000000150 /* iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004000 /* iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004001 /* iosApp/Features/Studio/Presentation/Components/StudioPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Components/StudioPage.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004002 /* iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004003 /* iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004004 /* iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004005 /* iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004006 /* iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004007 /* iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004008 /* iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004009 /* iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000000400A /* iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000000400B /* iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000000400C /* iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000000400D /* iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000000400E /* iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000000400F /* iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004010 /* iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004011 /* iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004012 /* iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004013 /* iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004014 /* iosApp/Features/Studio/Presentation/StudioModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/StudioModel.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004015 /* iosApp/Navigation/StudioRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Navigation/StudioRoute.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004016 /* iosApp/Navigation/StudioDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Navigation/StudioDestination.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000004100 /* iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000006001 /* iosApp/Platform/Camera/ShadowCamera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Camera/ShadowCamera.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000006002 /* iosApp/Platform/Speech/ShadowSpeaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Speech/ShadowSpeaker.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000006003 /* iosApp/Platform/Camera/CameraFrameBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Camera/CameraFrameBridge.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000006010 /* iosApp/Features/Guide/Presentation/LiveGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Guide/Presentation/LiveGuideView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000006011 /* iosApp/Features/Teach/Presentation/LiveTeachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Teach/Presentation/LiveTeachView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000007001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		000000000000000000007004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		000000000000000000007006 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		000000000000000000008100 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000008121 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000008122 /* iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000008125 /* iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000090000 /* iosApp/DI/NativeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/DI/NativeServices.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000090002 /* iosApp/Features/Guide/Presentation/GuideModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Guide/Presentation/GuideModel.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000090004 /* iosApp/Features/Teach/Presentation/TeachModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Teach/Presentation/TeachModel.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000090006 /* iosApp/Platform/Camera/CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Camera/CameraPreview.swift; sourceTree = SOURCE_ROOT; };
+		000000000000000000090008 /* iosApp/Platform/Media/RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Media/RemoteImage.swift; sourceTree = SOURCE_ROOT; };
+		00000000000000000009000A /* iosApp/Platform/Speech/ShadowListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Speech/ShadowListener.swift; sourceTree = SOURCE_ROOT; };
+		0000000000000000000B0000 /* iosApp/Platform/Video/NativeLiveVideoEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Video/NativeLiveVideoEngine.swift; sourceTree = SOURCE_ROOT; };
+		0000000000000000000C0000 /* iosApp/Platform/Media/TeachVideoImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Media/TeachVideoImport.swift; sourceTree = SOURCE_ROOT; };
+		ABCDEF000000000000000001 /* iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift; sourceTree = SOURCE_ROOT; };
+		ABCDEF000000000000000005 /* iosApp/Features/Home/Presentation/WardrobeAddSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Home/Presentation/WardrobeAddSheet.swift; sourceTree = SOURCE_ROOT; };
+		ABCDEF000000000000000101 /* iosApp/Platform/Speech/NativeLiveSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Speech/NativeLiveSession.swift; sourceTree = SOURCE_ROOT; };
+		ABCDEF000000000000000103 /* iosApp/Platform/Speech/LiveAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Speech/LiveAudioEngine.swift; sourceTree = SOURCE_ROOT; };
+		ABCDEF000000000000000105 /* iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift; sourceTree = SOURCE_ROOT; };
+		ABCDEF000000000000000107 /* iosApp/Platform/Speech/NativeLessonSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosApp/Platform/Speech/NativeLessonSession.swift; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		000000000000000000000009 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000008112 /* RtcBasic in Frameworks */,
+				ABCDEF00000000000000AA03 /* XmaxSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000020 /* iosApp */,
+				000000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000006 /* KmmBase.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000020 /* iosApp */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0001 /* iosApp/App */,
+				0000000000000000000A0002 /* iosApp/Common */,
+				0000000000000000000A0003 /* iosApp/DI */,
+				0000000000000000000A0004 /* iosApp/Features */,
+				0000000000000000000A0018 /* iosApp/Navigation */,
+				0000000000000000000A0019 /* iosApp/Platform */,
+				000000000000000000007006 /* PrivacyInfo.xcprivacy */,
+				000000000000000000007004 /* Assets.xcassets */,
+				000000000000000000007001 /* Localizable.xcstrings */,
+			);
+			path = iosApp;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0001 /* iosApp/App */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000005 /* iosApp/App/KmmBaseApp.swift */,
+			);
+			path = iosApp/App;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0002 /* iosApp/Common */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000017 /* iosApp/Common/AppError+Message.swift */,
+			);
+			path = iosApp/Common;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0003 /* iosApp/DI */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000090000 /* iosApp/DI/NativeServices.swift */,
+			);
+			path = iosApp/DI;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0004 /* iosApp/Features */ = {
+			isa = PBXGroup;
+			children = (
+				ABCDEF000000000000000003 /* iosApp/Features/Camera */,
+				0000000000000000000A0005 /* iosApp/Features/Guide */,
+				0000000000000000000A0007 /* iosApp/Features/Home */,
+				0000000000000000000A0009 /* iosApp/Features/LiveTryOn */,
+				0000000000000000000A000C /* iosApp/Features/Looks */,
+				0000000000000000000A0010 /* iosApp/Features/Notes */,
+				0000000000000000000A0012 /* iosApp/Features/Studio */,
+				0000000000000000000A0016 /* iosApp/Features/Teach */,
+			);
+			path = iosApp/Features;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0005 /* iosApp/Features/Guide */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0006 /* iosApp/Features/Guide/Presentation */,
+			);
+			path = iosApp/Features/Guide;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0006 /* iosApp/Features/Guide/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000090002 /* iosApp/Features/Guide/Presentation/GuideModel.swift */,
+				000000000000000000006010 /* iosApp/Features/Guide/Presentation/LiveGuideView.swift */,
+			);
+			path = iosApp/Features/Guide/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0007 /* iosApp/Features/Home */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0008 /* iosApp/Features/Home/Presentation */,
+			);
+			path = iosApp/Features/Home;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0008 /* iosApp/Features/Home/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				ABCDEF000000000000000005 /* iosApp/Features/Home/Presentation/WardrobeAddSheet.swift */,
+				000000000000000000000016 /* iosApp/Features/Home/Presentation/HomeView.swift */,
+			);
+			path = iosApp/Features/Home/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0009 /* iosApp/Features/LiveTryOn */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A000A /* iosApp/Features/LiveTryOn/Data */,
+				0000000000000000000A000B /* iosApp/Features/LiveTryOn/Presentation */,
+			);
+			path = iosApp/Features/LiveTryOn;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A000A /* iosApp/Features/LiveTryOn/Data */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000008122 /* iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift */,
+				000000000000000000008125 /* iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift */,
+			);
+			path = iosApp/Features/LiveTryOn/Data;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A000B /* iosApp/Features/LiveTryOn/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000008121 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift */,
+				000000000000000000008100 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift */,
+			);
+			path = iosApp/Features/LiveTryOn/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A000C /* iosApp/Features/Looks */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A000D /* iosApp/Features/Looks/Presentation */,
+			);
+			path = iosApp/Features/Looks;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A000D /* iosApp/Features/Looks/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A000E /* iosApp/Features/Looks/Presentation/Components */,
+				0000000000000000000A000F /* iosApp/Features/Looks/Presentation/Screens */,
+				000000000000000000000103 /* iosApp/Features/Looks/Presentation/LookModel.swift */,
+			);
+			path = iosApp/Features/Looks/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A000E /* iosApp/Features/Looks/Presentation/Components */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000100 /* iosApp/Features/Looks/Presentation/Components/LookMannequin.swift */,
+				000000000000000000000101 /* iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift */,
+				000000000000000000000102 /* iosApp/Features/Looks/Presentation/Components/LookStyle.swift */,
+			);
+			path = iosApp/Features/Looks/Presentation/Components;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A000F /* iosApp/Features/Looks/Presentation/Screens */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000104 /* iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift */,
+				000000000000000000000105 /* iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift */,
+				000000000000000000000106 /* iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift */,
+				000000000000000000000107 /* iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift */,
+				000000000000000000000108 /* iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift */,
+				000000000000000000000150 /* iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift */,
+			);
+			path = iosApp/Features/Looks/Presentation/Screens;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0010 /* iosApp/Features/Notes */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0011 /* iosApp/Features/Notes/Presentation */,
+			);
+			path = iosApp/Features/Notes;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0011 /* iosApp/Features/Notes/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000012 /* iosApp/Features/Notes/Presentation/NoteEditView.swift */,
+				000000000000000000000011 /* iosApp/Features/Notes/Presentation/NoteListView.swift */,
+			);
+			path = iosApp/Features/Notes/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0012 /* iosApp/Features/Studio */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0013 /* iosApp/Features/Studio/Presentation */,
+			);
+			path = iosApp/Features/Studio;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0013 /* iosApp/Features/Studio/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0014 /* iosApp/Features/Studio/Presentation/Components */,
+				0000000000000000000A0015 /* iosApp/Features/Studio/Presentation/Screens */,
+				000000000000000000004014 /* iosApp/Features/Studio/Presentation/StudioModel.swift */,
+			);
+			path = iosApp/Features/Studio/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0014 /* iosApp/Features/Studio/Presentation/Components */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000004000 /* iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift */,
+				000000000000000000004100 /* iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift */,
+				000000000000000000004001 /* iosApp/Features/Studio/Presentation/Components/StudioPage.swift */,
+			);
+			path = iosApp/Features/Studio/Presentation/Components;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0015 /* iosApp/Features/Studio/Presentation/Screens */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000004002 /* iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift */,
+				000000000000000000004003 /* iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift */,
+				000000000000000000004004 /* iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift */,
+				000000000000000000004005 /* iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift */,
+				000000000000000000004006 /* iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift */,
+				000000000000000000004007 /* iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift */,
+				000000000000000000004008 /* iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift */,
+				000000000000000000004009 /* iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift */,
+				00000000000000000000400A /* iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift */,
+				00000000000000000000400B /* iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift */,
+				00000000000000000000400C /* iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift */,
+				00000000000000000000400D /* iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift */,
+				00000000000000000000400E /* iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift */,
+				00000000000000000000400F /* iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift */,
+				000000000000000000004010 /* iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift */,
+				000000000000000000004011 /* iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift */,
+				000000000000000000004012 /* iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift */,
+				000000000000000000004013 /* iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift */,
+			);
+			path = iosApp/Features/Studio/Presentation/Screens;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0016 /* iosApp/Features/Teach */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A0017 /* iosApp/Features/Teach/Presentation */,
+			);
+			path = iosApp/Features/Teach;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0017 /* iosApp/Features/Teach/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000006011 /* iosApp/Features/Teach/Presentation/LiveTeachView.swift */,
+				000000000000000000090004 /* iosApp/Features/Teach/Presentation/TeachModel.swift */,
+			);
+			path = iosApp/Features/Teach/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0018 /* iosApp/Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000015 /* iosApp/Navigation/RootView.swift */,
+				000000000000000000004016 /* iosApp/Navigation/StudioDestination.swift */,
+				000000000000000000004015 /* iosApp/Navigation/StudioRoute.swift */,
+			);
+			path = iosApp/Navigation;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A0019 /* iosApp/Platform */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000A001A /* iosApp/Platform/Camera */,
+				0000000000000000000A001B /* iosApp/Platform/Media */,
+				0000000000000000000A001C /* iosApp/Platform/Speech */,
+				0000000000000000000A001D /* iosApp/Platform/Video */,
+			);
+			path = iosApp/Platform;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A001A /* iosApp/Platform/Camera */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000006003 /* iosApp/Platform/Camera/CameraFrameBridge.swift */,
+				000000000000000000090006 /* iosApp/Platform/Camera/CameraPreview.swift */,
+				000000000000000000006001 /* iosApp/Platform/Camera/ShadowCamera.swift */,
+			);
+			path = iosApp/Platform/Camera;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A001B /* iosApp/Platform/Media */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000090008 /* iosApp/Platform/Media/RemoteImage.swift */,
+				0000000000000000000C0000 /* iosApp/Platform/Media/TeachVideoImport.swift */,
+			);
+			path = iosApp/Platform/Media;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A001C /* iosApp/Platform/Speech */ = {
+			isa = PBXGroup;
+			children = (
+				ABCDEF000000000000000107 /* iosApp/Platform/Speech/NativeLessonSession.swift */,
+				ABCDEF000000000000000103 /* iosApp/Platform/Speech/LiveAudioEngine.swift */,
+				ABCDEF000000000000000101 /* iosApp/Platform/Speech/NativeLiveSession.swift */,
+				00000000000000000009000A /* iosApp/Platform/Speech/ShadowListener.swift */,
+				000000000000000000006002 /* iosApp/Platform/Speech/ShadowSpeaker.swift */,
+			);
+			path = iosApp/Platform/Speech;
+			sourceTree = SOURCE_ROOT;
+		};
+		0000000000000000000A001D /* iosApp/Platform/Video */ = {
+			isa = PBXGroup;
+			children = (
+				0000000000000000000B0000 /* iosApp/Platform/Video/NativeLiveVideoEngine.swift */,
+			);
+			path = iosApp/Platform/Video;
+			sourceTree = SOURCE_ROOT;
+		};
+		ABCDEF000000000000000003 /* iosApp/Features/Camera */ = {
+			isa = PBXGroup;
+			children = (
+				ABCDEF000000000000000004 /* iosApp/Features/Camera/Presentation */,
+			);
+			path = iosApp/Features/Camera;
+			sourceTree = SOURCE_ROOT;
+		};
+		ABCDEF000000000000000004 /* iosApp/Features/Camera/Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				ABCDEF000000000000000105 /* iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift */,
+				ABCDEF000000000000000001 /* iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift */,
+			);
+			path = iosApp/Features/Camera/Presentation;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000004 /* iosApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000000B /* Build configuration list for PBXNativeTarget "iosApp" */;
+			buildPhases = (
+				000000000000000000000007 /* Compile Kotlin Framework */,
+				000000000000000000000008 /* Sources */,
+				000000000000000000000009 /* Frameworks */,
+				000000000000000000007003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iosApp;
+			packageProductDependencies = (
+				ABCDEF00000000000000AA02 /* XmaxSDK */,
+				000000000000000000008111 /* RtcBasic */,
+			);
+			productName = KmmBase;
+			productReference = 000000000000000000000006 /* KmmBase.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 2600;
+			};
+			buildConfigurationList = 00000000000000000000000A /* Build configuration list for PBXProject "iosApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				vi,
+				Base,
+			);
+			mainGroup = 000000000000000000000002;
+			packageReferences = (
+				ABCDEF00000000000000AA01 /* XmaxSDK */,
+				000000000000000000008110 /* XCRemoteSwiftPackageReference "AgoraRtcEngine_iOS" */,
+			);
+			productRefGroup = 000000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				000000000000000000000004 /* iosApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000007003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000007002 /* Localizable.xcstrings in Resources */,
+				000000000000000000007005 /* Assets.xcassets in Resources */,
+				000000000000000000007007 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		000000000000000000000007 /* Compile Kotlin Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Kotlin Framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nif [ \"${OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED:-NO}\" = \"YES\" ]; then exit 0; fi\ncd \"$SRCROOT/..\"\n. ./tools/mobile-env.sh\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ABCDEF000000000000000108 /* iosApp/Platform/Speech/NativeLessonSession.swift in Sources */,
+				ABCDEF000000000000000106 /* iosApp/Features/Camera/Presentation/NativeCameraChatModel.swift in Sources */,
+				ABCDEF000000000000000104 /* iosApp/Platform/Speech/LiveAudioEngine.swift in Sources */,
+				ABCDEF000000000000000102 /* iosApp/Platform/Speech/NativeLiveSession.swift in Sources */,
+				ABCDEF000000000000000006 /* iosApp/Features/Home/Presentation/WardrobeAddSheet.swift in Sources */,
+				ABCDEF000000000000000002 /* iosApp/Features/Camera/Presentation/ShadowCameraScreen.swift in Sources */,
+				0000000000000000000C0001 /* iosApp/Platform/Media/TeachVideoImport.swift in Sources */,
+				0000000000000000000B0001 /* iosApp/Platform/Video/NativeLiveVideoEngine.swift in Sources */,
+				00000000000000000009000B /* iosApp/Platform/Speech/ShadowListener.swift in Sources */,
+				000000000000000000090009 /* iosApp/Platform/Media/RemoteImage.swift in Sources */,
+				000000000000000000090007 /* iosApp/Platform/Camera/CameraPreview.swift in Sources */,
+				000000000000000000090005 /* iosApp/Features/Teach/Presentation/TeachModel.swift in Sources */,
+				000000000000000000090003 /* iosApp/Features/Guide/Presentation/GuideModel.swift in Sources */,
+				000000000000000000090001 /* iosApp/DI/NativeServices.swift in Sources */,
+				000000000000000000008126 /* iosApp/Features/LiveTryOn/Data/LiveMemoryReader.swift in Sources */,
+				000000000000000000008123 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnModel.swift in Sources */,
+				000000000000000000008124 /* iosApp/Features/LiveTryOn/Data/AgoraLiveVideoEngine.swift in Sources */,
+				000000000000000000008101 /* iosApp/Features/LiveTryOn/Presentation/LiveTryOnView.swift in Sources */,
+				000000000000000000005100 /* iosApp/Features/Studio/Presentation/Components/StudioInstructionIllustration.swift in Sources */,
+				000000000000000000005000 /* iosApp/Features/Studio/Presentation/Components/StudioFeedback.swift in Sources */,
+				000000000000000000005001 /* iosApp/Features/Studio/Presentation/Components/StudioPage.swift in Sources */,
+				000000000000000000005002 /* iosApp/Features/Studio/Presentation/Screens/StudioAddItemView.swift in Sources */,
+				000000000000000000005003 /* iosApp/Features/Studio/Presentation/Screens/StudioAskView.swift in Sources */,
+				000000000000000000005004 /* iosApp/Features/Studio/Presentation/Screens/StudioCameraIntroView.swift in Sources */,
+				000000000000000000005005 /* iosApp/Features/Studio/Presentation/Screens/StudioCompileView.swift in Sources */,
+				000000000000000000005006 /* iosApp/Features/Studio/Presentation/Screens/StudioComponentsView.swift in Sources */,
+				000000000000000000005007 /* iosApp/Features/Studio/Presentation/Screens/StudioGeneratingView.swift in Sources */,
+				000000000000000000005008 /* iosApp/Features/Studio/Presentation/Screens/StudioGuideView.swift in Sources */,
+				000000000000000000005009 /* iosApp/Features/Studio/Presentation/Screens/StudioItemView.swift in Sources */,
+				00000000000000000000500A /* iosApp/Features/Studio/Presentation/Screens/StudioLearningView.swift in Sources */,
+				00000000000000000000500B /* iosApp/Features/Studio/Presentation/Screens/StudioOccasionView.swift in Sources */,
+				00000000000000000000500C /* iosApp/Features/Studio/Presentation/Screens/StudioRecordingView.swift in Sources */,
+				00000000000000000000500D /* iosApp/Features/Studio/Presentation/Screens/StudioReviewView.swift in Sources */,
+				00000000000000000000500E /* iosApp/Features/Studio/Presentation/Screens/StudioSavedSkillView.swift in Sources */,
+				00000000000000000000500F /* iosApp/Features/Studio/Presentation/Screens/StudioSettingsView.swift in Sources */,
+				000000000000000000005010 /* iosApp/Features/Studio/Presentation/Screens/StudioSkillDetailView.swift in Sources */,
+				000000000000000000005011 /* iosApp/Features/Studio/Presentation/Screens/StudioSuggestionsView.swift in Sources */,
+				000000000000000000005012 /* iosApp/Features/Studio/Presentation/Screens/StudioTeachView.swift in Sources */,
+				000000000000000000005013 /* iosApp/Features/Studio/Presentation/Screens/StudioWardrobeView.swift in Sources */,
+				000000000000000000005014 /* iosApp/Features/Studio/Presentation/StudioModel.swift in Sources */,
+				000000000000000000005015 /* iosApp/Navigation/StudioRoute.swift in Sources */,
+				000000000000000000005016 /* iosApp/Navigation/StudioDestination.swift in Sources */,
+				000000000000000000000250 /* iosApp/Features/Looks/Presentation/Screens/LookOutfitView.swift in Sources */,
+				000000000000000000000200 /* iosApp/Features/Looks/Presentation/Components/LookMannequin.swift in Sources */,
+				000000000000000000000201 /* iosApp/Features/Looks/Presentation/Components/LookPresetPicker.swift in Sources */,
+				000000000000000000000202 /* iosApp/Features/Looks/Presentation/Components/LookStyle.swift in Sources */,
+				000000000000000000000203 /* iosApp/Features/Looks/Presentation/LookModel.swift in Sources */,
+				000000000000000000000204 /* iosApp/Features/Looks/Presentation/Screens/LookCameraView.swift in Sources */,
+				000000000000000000000205 /* iosApp/Features/Looks/Presentation/Screens/LookCaptureView.swift in Sources */,
+				000000000000000000000206 /* iosApp/Features/Looks/Presentation/Screens/LookDetailView.swift in Sources */,
+				000000000000000000000207 /* iosApp/Features/Looks/Presentation/Screens/LookHistoryView.swift in Sources */,
+				000000000000000000000208 /* iosApp/Features/Looks/Presentation/Screens/LookHomeView.swift in Sources */,
+				000000000000000000000010 /* iosApp/App/KmmBaseApp.swift in Sources */,
+				000000000000000000000013 /* iosApp/Features/Notes/Presentation/NoteListView.swift in Sources */,
+				000000000000000000000014 /* iosApp/Features/Notes/Presentation/NoteEditView.swift in Sources */,
+				000000000000000000000018 /* iosApp/Navigation/RootView.swift in Sources */,
+				000000000000000000000019 /* iosApp/Features/Home/Presentation/HomeView.swift in Sources */,
+				00000000000000000000001A /* iosApp/Common/AppError+Message.swift in Sources */,
+				000000000000000000006101 /* iosApp/Platform/Camera/ShadowCamera.swift in Sources */,
+				000000000000000000006102 /* iosApp/Platform/Speech/ShadowSpeaker.swift in Sources */,
+				000000000000000000006103 /* iosApp/Platform/Camera/CameraFrameBridge.swift in Sources */,
+				000000000000000000006110 /* iosApp/Features/Guide/Presentation/LiveGuideView.swift in Sources */,
+				000000000000000000006111 /* iosApp/Features/Teach/Presentation/LiveTeachView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		00000000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		00000000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		00000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4B7C4QH7DZ;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SKI;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SKI dùng camera để chụp trang phục và hướng dẫn kỹ năng.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SKI dùng micro để nghe câu hỏi và lời hướng dẫn của bạn.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Lưu ảnh bạn chụp vào thư viện ảnh.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh trang phục hoặc video của bạn.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng lời hướng dẫn để tạo các bước của bài học.";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "Cho phép theo dõi để cá nhân hóa trải nghiệm.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Shared,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.kmmbase.ios;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.trioxstudios.shadow;
+				PRODUCT_NAME = KmmBase;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		00000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4B7C4QH7DZ;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SKI;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SKI dùng camera để chụp trang phục và hướng dẫn kỹ năng.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "SKI dùng micro để nghe câu hỏi và lời hướng dẫn của bạn.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Lưu ảnh bạn chụp vào thư viện ảnh.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Chọn ảnh trang phục hoặc video của bạn.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng lời hướng dẫn để tạo các bước của bài học.";
+				INFOPLIST_KEY_NSUserTrackingUsageDescription = "Cho phép theo dõi để cá nhân hóa trải nghiệm.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Shared,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trioxstudios.shadow;
+				PRODUCT_NAME = KmmBase;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		00000000000000000000000A /* Build configuration list for PBXProject "iosApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000000C /* Debug */,
+				00000000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		00000000000000000000000B /* Build configuration list for PBXNativeTarget "iosApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00000000000000000000000E /* Debug */,
+				00000000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		ABCDEF00000000000000AA01 /* XmaxSDK */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/tyty301299/XmaxSDK-iOS.git"; requirement = {kind = revision; revision = afd9e00c963f9794fb8c025c60243adce5696861; }; };
+		000000000000000000008110 /* XCRemoteSwiftPackageReference "AgoraRtcEngine_iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git";
+			requirement = {
+				kind = exactVersion;
+				version = 4.6.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		ABCDEF00000000000000AA02 /* XmaxSDK */ = {isa = XCSwiftPackageProductDependency; package = ABCDEF00000000000000AA01 /* XmaxSDK */; productName = XmaxSDK; };
+		000000000000000000008111 /* RtcBasic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 000000000000000000008110 /* XCRemoteSwiftPackageReference "AgoraRtcEngine_iOS" */;
+			productName = RtcBasic;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 000000000000000000000001 /* Project object */;
+}

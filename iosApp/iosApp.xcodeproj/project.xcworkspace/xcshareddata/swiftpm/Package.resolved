@@ -1,13 +1,13 @@
 {
-  "originHash" : "81a26d12e8b83e30bbf2f0e44a5f715b93b697fc85f8655db8a7401d5d6a7c8b",
+  "originHash" : "eefa2183906453f205da89513e91493d3c9f16efe926bf36d5c6d63061d03caa",
   "pins" : [
     {
       "identity" : "agorainfra_ios",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/AgoraIO/AgoraInfra_iOS.git",
       "state" : {
-        "revision" : "4dfb30919815b1d4f2abb9e2cfbff345cfe5e493",
-        "version" : "1.3.16"
+        "revision" : "0c21b485af8e64b2716632f2f7badab8705343b1",
+        "version" : "1.3.5"
       }
     },
     {
@@ -15,8 +15,16 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/AgoraIO/AgoraRtcEngine_iOS.git",
       "state" : {
-        "revision" : "515a9f30c228665cd6cdadc46ae62c04de6ba5c2",
-        "version" : "4.5.2"
+        "revision" : "00b614b1ff1135565e45e9e4bf7d4ec33da7b67f",
+        "version" : "4.6.4"
+      }
+    },
+    {
+      "identity" : "xmaxsdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tyty301299/XmaxSDK-iOS.git",
+      "state" : {
+        "revision" : "afd9e00c963f9794fb8c025c60243adce5696861"
       }
     }
   ],

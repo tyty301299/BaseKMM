@@ -2,6 +2,7 @@ import SwiftUI
 import AVFoundation
 import CoreLocation
 import Shared
+import XmaxSDK
 
 /// SwiftUI camera chrome backed by the shared conversation store and native capture/speech.
 @MainActor
@@ -13,6 +14,8 @@ struct ShadowCameraScreen: View {
     let onWardrobe: () -> Void
     let onLessons: () -> Void
     let cameraVisible: Bool
+    let homeTryOn: LiveTryOnModel?
+    let onEndTryOn: () -> Void
     @Environment(\.scenePhase) private var scenePhase
     @State private var settings = false
     @State private var draftEndpoint = ""
@@ -21,25 +24,29 @@ struct ShadowCameraScreen: View {
     @FocusState private var typing: Bool
     private let accent = Color(red: 1, green: 210/255, blue: 63/255)
 
-    init(container: AppContainer, shadow: ShadowModel, cameraVisible: Bool, onWardrobe: @escaping () -> Void, onLessons: @escaping () -> Void) {
+    init(container: AppContainer, shadow: ShadowModel, cameraVisible: Bool, homeTryOn: LiveTryOnModel? = nil, onEndTryOn: @escaping () -> Void = {}, onWardrobe: @escaping () -> Void, onLessons: @escaping () -> Void) {
         self.container = container
         self.shadow = shadow
         self.onWardrobe = onWardrobe
         self.onLessons = onLessons
         self.cameraVisible = cameraVisible
+        self.homeTryOn = homeTryOn
+        self.onEndTryOn = onEndTryOn
         _model = StateObject(wrappedValue: NativeCameraChatModel(store: container.conversationStore(shadow: shadow.shadowStore)))
     }
 
     var body: some View {
         ZStack {
             Color(red: 17/255, green: 21/255, blue: 18/255).ignoresSafeArea()
-            if model.cameraGranted && model.cameraAvailable && model.cameraEnabled && !settings {
-                CameraPreview(camera: model.camera).ignoresSafeArea()
+            if let homeTryOn {
+                HomeTryOnVideo(model: homeTryOn).ignoresSafeArea()
+            } else if model.cameraGranted && model.cameraAvailable && model.cameraEnabled && !settings {
+                CameraPreview(camera: model.camera).id(ObjectIdentifier(model.camera)).ignoresSafeArea()
             }
             LinearGradient(stops: [.init(color: .black.opacity(0.54), location: 0), .init(color: .clear, location: 0.3),
                                    .init(color: .clear, location: 0.5), .init(color: .black.opacity(0.82), location: 1)],
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
-            if !model.cameraGranted || !model.cameraAvailable || !model.cameraEnabled {
+            if homeTryOn == nil && (!model.cameraGranted || !model.cameraAvailable || !model.cameraEnabled) {
                 VStack(spacing: 16) {
                     Image(systemName: "camera").font(.system(size: 34, weight: .light)).foregroundStyle(.white.opacity(0.65))
                     Text(!model.cameraAvailable ? "Camera không khả dụng trên thiết bị này" : model.cameraGranted ? "Camera đang tắt" : "Cho phép camera để bắt đầu")
@@ -155,20 +162,38 @@ struct ShadowCameraScreen: View {
                 HStack {
                     Spacer()
                     VStack(spacing: 12) {
-                        control(model.cameraEnabled ? "camera" : "camera.slash", model.cameraEnabled ? "Tắt camera" : "Bật camera") { model.toggleCamera() }
-                        control("arrow.triangle.2.circlepath.camera", "Đổi camera trước sau") { model.flip() }
+                        control(model.cameraEnabled ? "camera" : "camera.slash", model.cameraEnabled ? "Tắt camera" : "Bật camera") {
+                            if let homeTryOn { Task { await homeTryOn.close(); onEndTryOn() } }
+                            else { model.toggleCamera() }
+                        }
+                        control("arrow.triangle.2.circlepath.camera", "Đổi camera trước sau") {
+                            if let homeTryOn { homeTryOn.flipCamera() } else { model.flip() }
+                        }
                         control("gearshape", "Cài đặt kết nối") { openSettings() }
                     }
                 }
                 Spacer()
             }.padding(.top, 100).padding(.trailing, 14)
         }
+        .overlay {
+            if let homeTryOn {
+                HomeTryOnProgress(model: homeTryOn, visible: cameraVisible && !settings, prepareCamera: { await model.prepareForTryOn() }, onEnd: onEndTryOn)
+                    .id(ObjectIdentifier(homeTryOn))
+            }
+        }
         .preferredColorScheme(.dark)
-        .onAppear { gps.refresh(container); configureLive(); if cameraVisible { model.start() } }
+        .onChange(of: homeTryOn.map { ObjectIdentifier($0) }) { _ in
+            model.setExternalCamera(homeTryOn != nil)
+            if homeTryOn == nil && cameraVisible && scenePhase == .active && !settings {
+                model.start()
+            }
+        }
+        .onAppear { gps.refresh(container); model.setExternalCamera(homeTryOn != nil); configureLive(); if cameraVisible { model.start() } }
         .onDisappear { model.stop(); gps.stop() }
         .onChange(of: shadow.state.endpoint) { _ in configureLive() }
         .onChange(of: shadow.state.connected) { _ in configureLive() }
         .onChange(of: cameraVisible) { visible in
+            model.setExternalCamera(homeTryOn != nil)
             if visible && scenePhase == .active && !settings { model.start() } else { model.stop() }
         }
         .onChange(of: scenePhase) { phase in
@@ -303,4 +328,45 @@ private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLoc
         stop(); fix = nil; container?.clearLocation(); label = "Thử lại GPS"
     }
     func stop() { timeout?.cancel(); timeout = nil; manager.stopUpdatingLocation() }
+}
+
+/// Only replaces the camera image; Home chrome and conversation remain in place.
+private struct HomeTryOnVideo: View {
+    @ObservedObject var model: LiveTryOnModel
+    var body: some View {
+        XmaxRealtimeDualVideo(localTrack: model.localTrack, remoteTrack: model.remoteTrack,
+                              isInteractionEnabled: false)
+    }
+}
+
+private struct HomeTryOnProgress: View {
+    @ObservedObject var model: LiveTryOnModel
+    let visible: Bool
+    let prepareCamera: () async -> Void
+    let onEnd: () -> Void
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Color.clear
+            .allowsHitTesting(false)
+        .task {
+            if visible && !model.hasAttempted {
+                await prepareCamera()
+                guard !Task.isCancelled else { return }
+                model.start()
+            }
+        }
+        .onChange(of: visible) { if !$0 { model.stop() } }
+        .onChange(of: scenePhase) { if $0 == .background { model.stop() } }
+        .onDisappear { model.stop() }
+        .alert(item: $model.alert) { notice in
+            Alert(title: Text(notice.title), message: Text(notice.message),
+                  primaryButton: .default(Text("Thử lại")) { model.retry(notice) },
+                  secondaryButton: .cancel(Text("Đóng")) { finish() })
+        }
+    }
+
+    private func finish() {
+        Task { await model.close(); onEnd() }
+    }
 }

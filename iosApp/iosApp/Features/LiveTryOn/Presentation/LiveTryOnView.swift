@@ -1,91 +1,102 @@
 import SwiftUI
 import Shared
+import XmaxSDK
 
 struct LiveTryOnView: View {
     @StateObject var model: LiveTryOnModel
     let onClose: () -> Void
+    private let initialGarmentId: String?
+    private let onHomeCamera: Bool
+    @State private var closing = false
+    @State private var didAutoStart = false
     @Environment(\.scenePhase) private var scenePhase
 
-    init(container: AppContainer, shadow: ShadowStore, onClose: @escaping () -> Void) {
+    init(container: AppContainer, shadow: ShadowStore, initialGarmentId: String? = nil, onHomeCamera: Bool = false, onClose: @escaping () -> Void) {
         _model = StateObject(wrappedValue: LiveTryOnModel(container: container, shadow: shadow))
+        self.initialGarmentId = initialGarmentId
+        self.onHomeCamera = onHomeCamera
         self.onClose = onClose
     }
-
-    private var active: Bool { model.state.phase == .live || model.state.phase == .connecting }
 
     var body: some View {
         VStack(spacing: 14) {
             HStack {
-                Button("Đóng") { model.stop(); onClose() }
-                Spacer()
-                Text("Thử áo trực tiếp").font(.headline)
-            }
-            ZStack(alignment: .topTrailing) {
-                if active {
-                    LiveVideoSurface(surface: model.engine.remoteView)
-                    if model.state.phase != .live {
-                        Color.black
-                        VStack(spacing: 12) {
-                            ProgressView().tint(.white)
-                            Text("Đang chờ video AI…")
-                        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                Button(onHomeCamera ? "Camera gốc" : "Đóng") {
+                    closing = true
+                    Task {
+                        await model.close()
+                        onClose()
                     }
-                    VStack(spacing: 4) {
-                        LiveVideoSurface(surface: model.engine.localView).frame(width: 100, height: 140)
-                        Text("Camera gốc").font(.caption2)
-                    }.padding(8)
-                } else {
-                    Text(model.state.garments.isEmpty
-                        ? "Chưa có áo trong tủ đồ. Thêm ảnh áo rồi mở lại màn này."
-                        : "Chọn áo bên dưới. Khi bắt đầu, camera sẽ được gửi tới Vidu để tạo video thử đồ.")
-                        .multilineTextAlignment(.center).padding()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }.disabled(closing)
+                Spacer()
+                Text(onHomeCamera ? "Thử đồ · Home" : "Thử đồ trực tiếp").font(.headline)
+                Spacer()
+                Button(action: model.flipCamera) {
+                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(model.cameraPosition == .front ? "Chuyển camera sau" : "Chuyển camera trước")
+                .disabled(model.busy || model.switchingCamera)
+            }
+            ZStack {
+                XmaxRealtimeDualVideo(localTrack: model.localTrack, remoteTrack: model.remoteTrack,
+                                      isInteractionEnabled: false)
+                if model.localTrack == nil {
+                    VStack(spacing: 12) {
+                        if model.busy { ProgressView().tint(.white) }
+                        Text(model.hasAttempted ? model.message : model.garments.isEmpty ? "Chưa có trang phục trong túi đồ." : "Chọn trang phục rồi bắt đầu thử. Camera sẽ được gửi để tạo hình ảnh thử đồ trực tiếp.")
+                            .multilineTextAlignment(.center).padding()
+                    }
                 }
             }.frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
-            Text(model.state.message).font(.subheadline).multilineTextAlignment(.center)
-            Text(String(format: "RAM app: %.0f MB", model.memoryMB)).font(.caption2).monospacedDigit()
-            if active {
-                Text("Video AI: \(model.state.fps) FPS · còn \(model.state.remainingSeconds)s").font(.caption).monospacedDigit()
-                Button("Tôi vẫn đang thử") { model.store.activity() }
+            if model.localTrack != nil {
+                Text(model.message).font(.subheadline).multilineTextAlignment(.center)
             }
-            if model.permissionDenied {
-                Button("Cho phép camera trong Cài đặt") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-                }
+            if !model.diagnosticCode.isEmpty {
+                Text("Mã lỗi: \(model.diagnosticCode)").font(.caption).textSelection(.enabled)
+            }
+            if model.live {
+                Text("Còn \(model.remainingSeconds)s · \(model.videoFPS) FPS" + (model.transportDelayMS.map { " · Trễ truyền video: \($0) ms (chưa gồm AI)" } ?? ""))
+                    .font(.caption2).foregroundStyle(.secondary)
+            } else if !model.busy {
+                Text(model.cameraPosition == .front ? "Camera trước" : "Camera sau").font(.caption)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(model.state.garments, id: \.id) { item in
-                        Button(item.name.isEmpty ? "Áo" : item.name) { model.store.select(id: item.id) }
-                            .buttonStyle(.bordered)
-                            .tint(item.id == model.state.selectedId ? .yellow : .white)
-                            .disabled(model.state.changing || model.state.phase == .connecting)
+                    ForEach(model.garments, id: \.id) { item in
+                        Button {
+                            model.selectedId = item.id
+                        } label: {
+                            Label(item.name, systemImage: model.appliedId == item.id ? "checkmark.circle.fill" : "tshirt")
+                        }.buttonStyle(.bordered)
+                            .tint(item.id == model.selectedId ? .yellow : .white)
+                            .disabled(model.busy || model.switchingCamera)
                     }
                 }
             }
-            HStack(spacing: 14) {
-                if active {
+            HStack {
+                Button(model.live ? "Đổi trang phục" : model.hasAttempted ? "Thử lại" : "Bắt đầu thử") { model.start() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.busy || model.switchingCamera || model.selectedId.isEmpty || model.selectedId == model.appliedId)
+                if model.live || model.busy {
                     Button("Dừng") { model.stop() }.buttonStyle(.bordered)
-                    if model.state.phase == .live {
-                        Button(model.state.changing ? "Đang đổi…" : "Đổi áo") { model.store.applySelection() }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(model.state.changing || model.state.selectedId == model.state.sentGarmentId)
-                    }
-                } else {
-                    Button("Bắt đầu thử") { model.start() }.buttonStyle(.borderedProminent)
-                        .disabled(!model.state.available || model.state.selectedId.isEmpty || model.state.phase == .loading)
-                    Button("Kiểm tra lại") { model.store.reload() }.disabled(model.state.phase == .loading)
                 }
             }
         }
+        .disabled(closing)
         .padding(16).background(Color.black).foregroundStyle(.white)
         .onChange(of: scenePhase) { if $0 == .background { model.stop() } }
+        .onAppear {
+            guard !didAutoStart, let id = initialGarmentId else { return }
+            didAutoStart = true
+            model.selectedId = id
+            model.start()
+        }
         .onDisappear { model.stop() }
+        .alert(item: $model.alert) { notice in
+            Alert(title: Text(notice.title), message: Text(notice.message),
+                  primaryButton: .default(Text("Thử lại")) { model.retry(notice) },
+                  secondaryButton: .cancel(Text("Đóng")))
+        }
     }
-}
-
-private struct LiveVideoSurface: UIViewRepresentable {
-    let surface: UIView
-    func makeUIView(context: Context) -> UIView { surface }
-    func updateUIView(_ uiView: UIView, context: Context) {}
 }

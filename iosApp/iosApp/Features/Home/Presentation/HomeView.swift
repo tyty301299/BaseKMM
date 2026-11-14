@@ -43,6 +43,7 @@ enum ShadowStyle {
 struct HomeView: View {
     @EnvironmentObject private var language: AppLanguage
     private let container: AppContainer
+    private let onApplyToHome: ((String) -> Void)?
     private let onGuideCompleted: (String, String, String, Bool) -> Void
     @EnvironmentObject private var feedback: StudioFeedback
     @StateObject private var model: ShadowModel
@@ -51,6 +52,9 @@ struct HomeView: View {
     @State private var accessCode = ""
     @State private var tab = 0
     @State private var addingWardrobeItem = false
+    @State private var tryOnItem: WardrobeTryOnItem?
+    @State private var pendingTryOnItem: WardrobeTryOnItem?
+    @State private var showTryOnOptions = false
     @State private var showSettings = false
     @State private var attemptedAutoConnect = false
     @State private var teaching = false
@@ -67,8 +71,9 @@ struct HomeView: View {
     @State private var photoError: String?
     @Environment(\.openURL) private var openURL
 
-    init(container: AppContainer, initialTab: Int = 0, initialSettings: Bool = false, existingModel: ShadowModel? = nil, onGuideCompleted: @escaping (String, String, String, Bool) -> Void) {
+    init(container: AppContainer, initialTab: Int = 0, initialSettings: Bool = false, existingModel: ShadowModel? = nil, onApplyToHome: ((String) -> Void)? = nil, onGuideCompleted: @escaping (String, String, String, Bool) -> Void) {
         self.container = container
+        self.onApplyToHome = onApplyToHome
         self.onGuideCompleted = onGuideCompleted
         _tab = State(initialValue: initialTab)
         _showSettings = State(initialValue: initialSettings)
@@ -107,6 +112,26 @@ struct HomeView: View {
             .padding(.horizontal, 16).padding(.vertical, 10)
         }
         .sheet(isPresented: $addingWardrobeItem) { WardrobeAddSheet(model: model) }
+        .confirmationDialog("Áp dụng trang phục", isPresented: $showTryOnOptions, titleVisibility: .visible, presenting: pendingTryOnItem) { item in
+            if let onApplyToHome {
+                Button("Thử trên camera Shadow") {
+                    pendingTryOnItem = nil
+                    onApplyToHome(item.id)
+                }
+            }
+            Button("Mở phiên thử đồ mới") {
+                pendingTryOnItem = nil
+                tryOnItem = item
+            }
+            Button("Hủy", role: .cancel) { pendingTryOnItem = nil }
+        } message: { _ in
+            Text("Chọn nơi hiển thị camera và video thử đồ.")
+        }
+        .fullScreenCover(item: $tryOnItem) { item in
+            LiveTryOnView(container: container, shadow: model.shadowStore, initialGarmentId: item.id) {
+                tryOnItem = nil
+            }
+        }
         .modifier(StudioFeedbackOverlay())
         .background(ShadowStyle.background)
         .tint(ShadowStyle.accent)
@@ -348,8 +373,21 @@ struct HomeView: View {
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(model.state.wardrobe, id: \.id) { item in
                     VStack(spacing: 4) {
-                        RemoteImage(url: item.imageUrl, headers: model.mediaHeaders, height: 110)
-                        Text(item.name).font(.caption2).lineLimit(2)
+                        if !item.imageUrl.isEmpty {
+                            Button {
+                                pendingTryOnItem = WardrobeTryOnItem(id: item.id)
+                                showTryOnOptions = true
+                            } label: {
+                                VStack(spacing: 4) {
+                                    RemoteImage(url: item.imageUrl, headers: model.mediaHeaders, height: 110)
+                                    Text(item.name).font(.caption2).lineLimit(2)
+                                    Text("Áp dụng trang phục").font(.caption2.weight(.semibold)).foregroundStyle(ShadowStyle.accent)
+                                }.frame(maxWidth: .infinity).contentShape(Rectangle())
+                            }.buttonStyle(.plain).disabled(!model.state.connected || busy)
+                        } else {
+                            RemoteImage(url: item.imageUrl, headers: model.mediaHeaders, height: 110)
+                            Text(item.name).font(.caption2).lineLimit(2)
+                        }
                         Menu {
                             ForEach([("men", "Nam"), ("women", "Nữ"), ("unisex", "Unisex"), ("unknown", "Chưa xác định")], id: \.0) { group in
                                 Button(group.1) { model.send(ShadowActionUpdateWardrobeGender(id: item.id, gender: group.0)) }
@@ -477,6 +515,10 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(tab == value ? .isSelected : [])
     }
+}
+
+private struct WardrobeTryOnItem: Identifiable {
+    let id: String
 }
 
 private struct ShadowLessonView: View {

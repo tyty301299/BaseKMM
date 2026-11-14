@@ -27,12 +27,13 @@ final class NativeCameraChatModel: ObservableObject {
     @Published private(set) var lessonSteps = 0
     @Published private var liveLinks: [ConversationLink] = []
     var getLocation: () -> [String: Double]? = { nil }
-    let camera = NativeServices.makeCamera()
+    @Published private(set) var camera = NativeServices.makeCamera()
     private let session = NativeServices.makeLiveSession()
     let teaching = NativeLessonSession()
     private let store: ConversationStore
     private var subscription: StoreSubscription?
     private var active = false
+    private var externalCamera = false
     private var front = false
     private var wantsLive = true
     private var endpoint = ""
@@ -64,7 +65,7 @@ final class NativeCameraChatModel: ObservableObject {
             if snapshot.status == .idle || snapshot.status == .failed { self?.teaching.suspend() }
         }
         teaching.capture = { [weak self] in
-            guard let self, self.active, self.cameraGranted, self.cameraEnabled else { return nil }
+            guard let self, self.active, !self.externalCamera, self.cameraGranted, self.cameraEnabled else { return nil }
             return self.camera.capture(maxSide: 512)
         }
         teaching.onChange = { [weak self] in self?.objectWillChange.send() }
@@ -86,7 +87,7 @@ final class NativeCameraChatModel: ObservableObject {
             return result
         }
         session.getFrame = { [weak self] in
-            guard let self, self.active, self.cameraGranted, self.cameraEnabled else { return nil }
+            guard let self, self.active, !self.externalCamera, self.cameraGranted, self.cameraEnabled else { return nil }
             return self.camera.capture(maxSide: 640)
         }
         session.getLocation = { [weak self] in self?.getLocation() }
@@ -104,10 +105,27 @@ final class NativeCameraChatModel: ObservableObject {
             stop(); session.clear(); store.clear(); teaching.reset(); liveLinks = []; outfitItems = []; showsOutfit = false; clearLesson()
             self.endpoint = endpoint; self.headers = headers; wantsLive = true
             active = wasActive
-            if active && cameraGranted && cameraEnabled { camera.start(front: front) }
+            if active && !externalCamera && cameraGranted && cameraEnabled { camera.start(front: front) }
         }
         backendConnected = connected
         if active && connected { connectLive() }
+    }
+
+    func setExternalCamera(_ enabled: Bool) {
+        guard externalCamera != enabled else { return }
+        externalCamera = enabled
+        if enabled { camera.stop() }
+        else {
+            // A fresh session and preview must own capture after the SDK releases it.
+            camera = NativeServices.makeCamera()
+            CameraHandoffTrace.record("home camera replaced")
+            if active && cameraEnabled && cameraGranted { camera.start(front: front) }
+        }
+    }
+
+    func prepareForTryOn() async {
+        setExternalCamera(true)
+        await camera.releaseDevice()
     }
 
     func start() {
@@ -117,7 +135,7 @@ final class NativeCameraChatModel: ObservableObject {
             ShadowCamera.requestAccess { [weak self] granted in
                 guard let self else { return }
                 self.cameraGranted = granted
-                if granted && self.active && self.cameraEnabled { self.camera.start(front: self.front) }
+                if granted && self.active && !self.externalCamera && self.cameraEnabled { self.camera.start(front: self.front) }
             }
         }
         // Audio Live is usable even if the camera is unavailable or permission was declined.
@@ -132,7 +150,7 @@ final class NativeCameraChatModel: ObservableObject {
         cameraEnabled.toggle()
         if cameraEnabled && active { start() } else { teaching.suspend(); camera.stop() }
     }
-    func flip() { front.toggle(); if active && cameraEnabled { camera.flip(front: front) } }
+    func flip() { front.toggle(); if active && !externalCamera && cameraEnabled { camera.flip(front: front) } }
     func toggleMic() {
         if listening || startTask != nil {
             wantsLive = false; epoch += 1; startTask?.cancel(); startTask = nil; teaching.suspend(); session.stop()
@@ -161,7 +179,7 @@ final class NativeCameraChatModel: ObservableObject {
         guard !state.busy else { return }
         // Explicitly typed fallback. Voice never goes through on-device dictation + REST + TTS.
         session.clear(); liveLinks = []; text = ""; notice = nil
-        let image = cameraEnabled && cameraGranted && active ? camera.capture(maxSide: 640) : nil
+        let image = !externalCamera && cameraEnabled && cameraGranted && active ? camera.capture(maxSide: 640) : nil
         store.send(text: prompt, image: image)
     }
     func cancel() { if live.connected { session.cancelResponse() } else { store.cancel() } }
@@ -260,7 +278,7 @@ final class NativeCameraChatModel: ObservableObject {
     }
     private func clearLesson() { lesson = nil; lessonID = nil; lessonTitle = ""; lessonInstruction = ""; lessonStep = 0; lessonSteps = 0; lessonIndex = 0 }
     deinit {
-        subscription?.cancel(); startTask?.cancel(); camera.stop(); store.close()
+        subscription?.cancel(); startTask?.cancel(); store.close()
         let liveSession = session
         Task { @MainActor in liveSession.stop() }
     }

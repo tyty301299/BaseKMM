@@ -11,14 +11,67 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
     private let lock = NSLock()
     private var latest: CVPixelBuffer?
     private var configured = false
+    private var wantsRunning = false
+    private var observers: [NSObjectProtocol] = []
     private var frameHandler: ((CVPixelBuffer, Bool) -> Void)?
     private var isFront = false
+    private var awaitingFirstFrame = false
+
+    override init() {
+        super.init()
+        for name in [AVCaptureSession.interruptionEndedNotification, AVCaptureSession.runtimeErrorNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: session, queue: nil) { [weak self] notification in
+                if notification.name == AVCaptureSession.runtimeErrorNotification {
+                    let error = notification.userInfo?[AVCaptureSessionErrorKey] as? NSError
+                    guard error?.code == AVError.mediaServicesWereReset.rawValue else { return }
+                }
+                guard let self else { return }
+                self.queue.async { [weak self] in
+                    guard let self, self.wantsRunning, !self.session.isInterrupted else { return }
+                    if !self.session.isRunning { self.session.startRunning() }
+                }
+            })
+        }
+    }
+
+    deinit {
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+        let captureSession = session
+        let captureOutput = output
+        queue.async {
+            captureOutput.setSampleBufferDelegate(nil, queue: nil)
+            if captureSession.isRunning { captureSession.stopRunning() }
+        }
+    }
 
     var captureSession: AVCaptureSession { session }
+
+    /// Wait until capture has stopped and all device inputs have been released.
+    func releaseDevice() async {
+        await withCheckedContinuation { continuation in
+            queue.async { [self] in
+                wantsRunning = false
+                if session.isRunning { session.stopRunning() }
+                session.beginConfiguration()
+                session.inputs.forEach { session.removeInput($0) }
+                session.outputs.forEach { session.removeOutput($0) }
+                session.commitConfiguration()
+                configured = false
+                lock.lock()
+                latest = nil
+                lock.unlock()
+                CameraHandoffTrace.record("home device released")
+                continuation.resume()
+            }
+        }
+    }
 
     func start(front: Bool = false) {
         queue.async { [weak self] in
             guard let self else { return }
+            self.wantsRunning = true
+            self.awaitingFirstFrame = true
+            CameraHandoffTrace.record("home start requested")
             if !self.configured { self.configure(front: front) }
             if !self.session.isRunning { self.session.startRunning() }
         }
@@ -26,8 +79,12 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 
     func stop() {
         queue.async { [weak self] in
-            guard let self, self.session.isRunning else { return }
-            self.session.stopRunning()
+            guard let self else { return }
+            self.wantsRunning = false
+            if self.session.isRunning { self.session.stopRunning() }
+            self.lock.lock()
+            self.latest = nil
+            self.lock.unlock()
         }
     }
 
@@ -97,6 +154,10 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
         guard let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        if awaitingFirstFrame {
+            awaitingFirstFrame = false
+            CameraHandoffTrace.record("home first frame received")
+        }
         lock.lock()
         latest = buffer
         lock.unlock()
@@ -145,3 +206,17 @@ private extension UIImage {
 
 /// Loads an image that sits behind the access gate. `AsyncImage` cannot send headers, so the
 /// request is made directly with the headers the repository supplies.
+
+/// Small, credential-free diagnostic trail for camera ownership transitions.
+enum CameraHandoffTrace {
+    private static let queue = DispatchQueue(label: "ski.camera.handoff.trace")
+    static func record(_ event: String) {
+        queue.async {
+            guard let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
+            let url = directory.appendingPathComponent("camera-handoff.log")
+            var entries = (try? String(contentsOf: url, encoding: .utf8))?.split(separator: "\n").suffix(99).map(String.init) ?? []
+            entries.append("\(Date().timeIntervalSince1970) \(event)")
+            try? entries.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+        }
+    }
+}

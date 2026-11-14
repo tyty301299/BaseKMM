@@ -14,7 +14,16 @@ struct CameraPreview: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: PreviewView, context: Context) {}
+    func updateUIView(_ uiView: PreviewView, context: Context) {
+        if uiView.layer.session !== camera.captureSession {
+            uiView.layer.session = camera.captureSession
+        }
+    }
+
+    static func dismantleUIView(_ uiView: PreviewView, coordinator: ()) {
+        uiView.layer.session = nil
+        uiView.camera = nil
+    }
 
     final class PreviewView: UIView {
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }

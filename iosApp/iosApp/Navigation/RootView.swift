@@ -21,6 +21,7 @@ struct RootView: View {
     @State private var tab = 0
     @State private var showCamera = false
     @State private var showService = false
+    @State private var homeTryOn: LiveTryOnModel?
     @State private var selectedRecord: LookRecordRoute?
     @State private var retryAfterDismiss = false
 
@@ -37,6 +38,7 @@ struct RootView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ShadowCameraScreen(container: container, shadow: shadow, cameraVisible: !showService,
+                homeTryOn: homeTryOn, onEndTryOn: { homeTryOn = nil },
                 onWardrobe: { openService(1) }, onLessons: { openService(0) })
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Route.self) { route in
@@ -71,6 +73,7 @@ struct RootView: View {
         .sheet(isPresented: $showService) {
             NavigationStack {
                 HomeView(container: container, initialTab: serviceTab, initialSettings: serviceSettings, existingModel: shadow,
+                         onApplyToHome: applyToShadow,
                          onGuideCompleted: { session, skill, title, manual in
                              looks.send(LookActionSaveGuideCompletion(sessionId: session, skillId: skill, title: title,
                                  source: manual ? "manual" : (title.hasSuffix(" · Demo") ? "demo" : "ai")))
@@ -121,6 +124,13 @@ struct RootView: View {
                 } else if effect is StudioEffectDataCleared { looks?.send(LookActionRetake.shared) }
             }
         }
+    }
+
+    private func applyToShadow(_ id: String) {
+        let session = LiveTryOnModel(container: container, shadow: shadow.shadowStore)
+        session.selectedId = id
+        homeTryOn = session
+        showService = false
     }
 
     private func navigate(_ route: StudioRoute) { path.append(.studio(route)) }
