@@ -34,7 +34,7 @@ class VietnameseSpeaker(context: Context, private val onAvailability: (Boolean) 
 
     private fun speakNow(text: String) {
         // Only normalize speech: the product name stays SKI in the UI.
-        val spoken = text.replace(Regex("\\bSKI\\b"), "Sky")
+        val spoken = text.replace(Regex("\\bSKI\\b"), "sờ ki")
         engine.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, "shadow")
     }
 
