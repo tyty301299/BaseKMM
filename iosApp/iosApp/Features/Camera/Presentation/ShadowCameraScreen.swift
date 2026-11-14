@@ -143,7 +143,7 @@ struct ShadowCameraScreen: View {
                         TextField("Base URL", text: $draftEndpoint).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                         SecureField("Mã truy cập (nếu có)", text: $draftCode).textInputAutocapitalization(.never).autocorrectionDisabled()
                     } header: { Text("Máy chủ") }
-                    footer: { Text("Chạy local dùng http://localhost:8001. Bạn có thể đổi địa chỉ máy chủ sau.") }
+                    footer: { Text("Mặc định kết nối hackathon.trioxstudios.com. Bạn có thể đổi địa chỉ máy chủ tại đây.") }
                     if let error = settingsError { Text(error).foregroundStyle(.red) }
                     Button("Lưu & kết nối") { saveSettings() }.foregroundStyle(accent)
                 }

@@ -4,7 +4,7 @@ Android dùng CameraX và Jetpack Compose; iOS dùng AVFoundation và SwiftUI. M
 
 App không tải trang web để hiển thị giao diện. `ConversationStore` trong shared quản lý trạng thái, lịch sử, hủy yêu cầu và phản hồi; `HttpConversationRepository` gọi trực tiếp `POST /api/conversation` và đọc luồng NDJSON. Ảnh camera thu nhỏ có thể gửi kèm câu hỏi. Micro dùng nhận dạng tiếng Việt của hệ điều hành; phản hồi cho câu hỏi bằng giọng nói được đọc bằng TTS của thiết bị. Chế độ này chưa phải phiên âm thanh Gemini Live hai chiều của website. Các màn thử đồ live native cũ vẫn cần cấu hình provider tương ứng, chưa chuyển sang video Xmax.
 
-Nút **Cài đặt kết nối** trên camera cho đổi **Base URL** và mã truy cập tùy chọn, lưu trên thiết bị. Mặc định `http://localhost:8001`. Dùng origin HTTPS khi kết nối server từ xa; HTTP chỉ chấp nhận loopback khi chạy local. Không nhập `/api` hoặc mã truy cập vào Base URL. Mã truy cập gửi qua header `x-shadow-access`; API key AI chỉ ở backend.
+Nút **Cài đặt kết nối** trên camera cho đổi **Base URL** và mã truy cập tùy chọn, lưu trên thiết bị. Mặc định `https://hackathon.trioxstudios.com`. Các địa chỉ đã lưu trên máy vẫn được giữ; muốn chạy local thì nhập `http://localhost:8001` trong Cài đặt kết nối. Dùng origin HTTPS khi kết nối server từ xa; HTTP chỉ chấp nhận loopback khi chạy local. Không nhập `/api` hoặc mã truy cập vào Base URL. Mã truy cập gửi qua header `x-shadow-access`; API key AI chỉ ở backend.
 
 ## Chạy local
 
