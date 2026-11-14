@@ -1,7 +1,11 @@
 # SKI native Live conversation
 
 The iOS camera starts Live automatically after backend and microphone access are
-available. Audio goes directly to the same ephemeral-token WebSocket endpoint as
+available. The interface is fixed to Vietnamese, including existing installations
+that previously selected English. The backend pins Live to vi-VN and the Kore
+voice; processing labels are shown below the conversation, not spoken.
+
+Audio goes directly to the same ephemeral-token WebSocket endpoint as
 the website. A voice turn no longer uses speech recognition, one REST message and
 device text-to-speech. The microphone stays active while SKI replies and after each
 turn; a server interruption stops queued playback. Typed messages during Live use

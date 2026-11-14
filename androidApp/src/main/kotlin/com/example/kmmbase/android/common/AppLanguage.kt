@@ -15,15 +15,8 @@ import java.util.Locale
 internal class AppLanguage(context: Context) {
     private val appContext = context.applicationContext
     private val preferences = appContext.getSharedPreferences("shadow", Context.MODE_PRIVATE)
-    var code by mutableStateOf(preferences.getString("language", "vi")
-        ?.takeIf { it in setOf("vi", "en") } ?: "vi")
-        private set
-
-    fun select(value: String) {
-        if (value !in setOf("vi", "en")) return
-        preferences.edit().putString("language", value).apply()
-        code = value
-    }
+    val code = "vi"
+    init { preferences.edit().putString("language", code).apply() }
 
     fun text(@StringRes id: Int): String {
         val configuration = Configuration(appContext.resources.configuration)
@@ -414,23 +407,6 @@ internal val LocalAppLanguage = staticCompositionLocalOf<AppLanguage> {
 @Composable
 internal fun LanguageSetting() {
     val language = LocalAppLanguage.current
-    var expanded by rememberSaveable { mutableStateOf(false) }
     ListItem(headlineContent = { Text(language.text(R.string.language_title)) },
-        supportingContent = { Text(if (language.code == "vi") "Tiếng Việt" else "English") },
-        trailingContent = { TextButton(onClick = { expanded = true }) { Text(language.text(R.string.language_title)) } })
-    if (expanded) AlertDialog(
-        onDismissRequest = { expanded = false },
-        title = { Text(language.text(R.string.language_title)) },
-        text = {
-            Column {
-                listOf("vi" to "Tiếng Việt", "en" to "English").forEach { (code, name) ->
-                    TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
-                        language.select(code)
-                        expanded = false
-                    }) { Text((if (language.code == code) "✓ " else "") + name) }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = { expanded = false }) { Text(language.text(R.string.cancel)) } },
-    )
+        supportingContent = { Text("Tiếng Việt") })
 }

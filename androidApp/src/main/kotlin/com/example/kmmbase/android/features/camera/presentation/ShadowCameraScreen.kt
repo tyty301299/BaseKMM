@@ -250,7 +250,7 @@ internal fun ShadowCameraScreen(container: AppContainer, shadow: ShadowStore,
     if (settings) AlertDialog(onDismissRequest = { code = ""; settings = false }, title = { Text("Kết nối SKI") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Đổi địa chỉ máy chủ khi cần. Chạy local dùng http://localhost:8001.", style = MaterialTheme.typography.bodySmall)
-            OutlinedTextField(endpoint, { endpoint = it }, label = { Text("Base URL") }, singleLine = true)
+            OutlinedTextField(endpoint, { endpoint = it }, label = { Text("Địa chỉ máy chủ") }, singleLine = true)
             OutlinedTextField(code, { code = it }, label = { Text("Mã truy cập (nếu có)") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
             settingsError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         } }, confirmButton = { TextButton(onClick = {

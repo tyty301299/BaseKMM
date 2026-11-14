@@ -165,7 +165,7 @@ struct ShadowCameraScreen: View {
             NavigationStack {
                 Form {
                     Section {
-                        TextField("Base URL", text: $draftEndpoint).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                        TextField("Địa chỉ máy chủ", text: $draftEndpoint).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                         SecureField("Mã truy cập (nếu có)", text: $draftCode).textInputAutocapitalization(.never).autocorrectionDisabled()
                     } header: { Text("Máy chủ") }
                     footer: { Text("Mặc định kết nối hackathon.trioxstudios.com. Bạn có thể đổi địa chỉ máy chủ tại đây.") }

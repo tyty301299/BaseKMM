@@ -16,13 +16,10 @@ struct KmmBaseApp: App {
 
 /// Owns only the interface language; backend content and lesson identifiers are unchanged.
 final class AppLanguage: ObservableObject {
-    @Published var code: String {
-        didSet { UserDefaults.standard.set(code, forKey: "shadow.language") }
-    }
+    let code = "vi"
 
     init() {
-        let saved = UserDefaults.standard.string(forKey: "shadow.language") ?? "vi"
-        code = ["vi", "en"].contains(saved) ? saved : "vi"
+        UserDefaults.standard.set(code, forKey: "shadow.language")
     }
 
     func text(_ key: String) -> String {
@@ -416,10 +413,10 @@ struct LanguageSetting: View {
     @EnvironmentObject private var language: AppLanguage
 
     var body: some View {
-        Picker(language.text("language_title"), selection: $language.code) {
-            Text("Tiếng Việt").tag("vi")
-            Text("English").tag("en")
+        HStack {
+            Text(language.text("language_title"))
+            Spacer()
+            Text("Tiếng Việt").foregroundStyle(.secondary)
         }
-        .pickerStyle(.navigationLink)
     }
 }
