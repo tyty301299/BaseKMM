@@ -173,11 +173,16 @@ private final class FittingFirstFrame: @unchecked Sendable {
 }
 
 @MainActor private final class FittingCameraSource: RealtimeExternalVideoSource {
-    let videoFormat = RealtimeVideoFormat(width: 480, height: 640, fps: 20)
+    let videoFormat: RealtimeVideoFormat
+    private let geometry: FittingVideoGeometry
     private let camera: ShadowCamera
-    init(camera: ShadowCamera) { self.camera = camera }
+    init(camera: ShadowCamera) {
+        self.camera = camera
+        geometry = FittingVideoGeometry(sensorSize: camera.frameSize)
+        videoFormat = RealtimeVideoFormat(width: geometry.width, height: geometry.height, fps: 20)
+    }
     func start(sink: any RealtimeExternalFrameSink) async throws {
-        let converter = try FittingFrameConverter()
+        let converter = try FittingFrameConverter(geometry: geometry)
         camera.setFrameHandler { buffer, front in converter.push(buffer, front: front, sink: sink) }
     }
     func stop() async { camera.setFrameHandler(nil) }
@@ -186,10 +191,12 @@ private final class FittingFirstFrame: @unchecked Sendable {
 /// Runs only on ShadowCamera's serial capture queue; no JPEG encoding on the video path.
 private final class FittingFrameConverter {
     private let context = CIContext(options: [.cacheIntermediates: false])
+    private let geometry: FittingVideoGeometry
     private var pool: CVPixelBufferPool?
     private var lastTime = -Double.infinity
-    init() throws {
-        let attributes: [String: Any] = [kCVPixelBufferWidthKey as String: 480, kCVPixelBufferHeightKey as String: 640,
+    init(geometry: FittingVideoGeometry) throws {
+        self.geometry = geometry
+        let attributes: [String: Any] = [kCVPixelBufferWidthKey as String: geometry.width, kCVPixelBufferHeightKey as String: geometry.height,
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA, kCVPixelBufferIOSurfacePropertiesKey as String: [:]]
         guard CVPixelBufferPoolCreate(nil, nil, attributes as CFDictionary, &pool) == kCVReturnSuccess else {
             throw FittingError(message: "Chưa chuẩn bị được camera để thử đồ.")
@@ -204,10 +211,8 @@ private final class FittingFrameConverter {
             guard CVPixelBufferPoolCreatePixelBuffer(nil, pool, &output) == kCVReturnSuccess, let output else { return }
             var image = CIImage(cvPixelBuffer: buffer).oriented(.right)
             if front { image = image.oriented(.upMirrored) }
-            let scale = max(480 / image.extent.width, 640 / image.extent.height)
-            image = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-            image = image.transformed(by: CGAffineTransform(translationX: -image.extent.midX + 240, y: -image.extent.midY + 320))
-            context.render(image, to: output, bounds: CGRect(x: 0, y: 0, width: 480, height: 640), colorSpace: CGColorSpaceCreateDeviceRGB())
+            image = image.transformed(by: geometry.transform(for: image.extent))
+            context.render(image, to: output, bounds: CGRect(origin: .zero, size: geometry.size), colorSpace: CGColorSpaceCreateDeviceRGB())
             sink.pushVideo(output, timestamp: timestamp)
         }
     }

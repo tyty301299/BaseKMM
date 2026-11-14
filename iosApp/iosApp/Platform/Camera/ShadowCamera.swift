@@ -16,6 +16,13 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 
     var captureSession: AVCaptureSession { session }
 
+    var frameSize: CGSize? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let latest else { return nil }
+        return CGSize(width: CVPixelBufferGetWidth(latest), height: CVPixelBufferGetHeight(latest))
+    }
+
     func start(front: Bool = false) {
         queue.async { [weak self] in
             guard let self else { return }
