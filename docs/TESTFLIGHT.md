@@ -42,8 +42,9 @@ also check the bundled SDKs' manifests; this is not a full privacy-label audit.
   profile identifies the team, but does not provide a signing private key or Apple login.
 - The Apple browser tab is not exposed by the connected-document tool, so the App ID
   and App Store Connect app record have not been created.
-- DNS for the production endpoint must resolve and HTTPS must be active before the
-  backend check can pass. The VPS app is deployed; Cloudflare DNS setup is pending.
+- The production backend is live at `https://hackathon.trioxstudios.com`.
+  Public HTTPS health, wardrobe, conversation and WSS checks pass with normal DNS
+  and certificate validation. DNS/HTTPS setup is complete.
 
 [Apple SDK requirements](https://developer.apple.com/news/upcoming-requirements/?id=04282026a)
 and [internal TestFlight testing](https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers/).
