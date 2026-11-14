@@ -76,6 +76,8 @@ final class ShadowCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
 
     private func configure(front: Bool) {
         session.beginConfiguration()
+        // This capture session only uses video. LiveAudioEngine owns the shared audio session.
+        session.automaticallyConfiguresApplicationAudioSession = false
         session.sessionPreset = .high
         let position: AVCaptureDevice.Position = front ? .front : .back
         isFront = front

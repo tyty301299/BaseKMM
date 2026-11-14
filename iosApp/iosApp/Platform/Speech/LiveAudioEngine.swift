@@ -12,10 +12,19 @@ final class LiveAudioEngine: LiveAudioStreaming {
     private var observers: [NSObjectProtocol] = []
     private var onDrained: (() -> Void)?
     private var tapInstalled = false
+    private var configurationRecoveries = 0
+    private var recoveryTask: Task<Void, Never>?
+    private var pendingPlayback: [(Data, Double)] = []
     private let playbackFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 24000, channels: 1, interleaved: false)!
 
     func start(onPCM: @escaping (Data) -> Void, onDrained: @escaping () -> Void, onFailure: @escaping () -> Void) throws {
-        stop()
+        recoveryTask?.cancel(); recoveryTask = nil; pendingPlayback.removeAll()
+        configurationRecoveries = 0
+        try configure(onPCM: onPCM, onDrained: onDrained, onFailure: onFailure)
+    }
+
+    private func configure(onPCM: @escaping (Data) -> Void, onDrained: @escaping () -> Void, onFailure: @escaping () -> Void) throws {
+        release(deactivateSession: false)
         let epoch = generation
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
@@ -49,6 +58,7 @@ final class LiveAudioEngine: LiveAudioStreaming {
                     supplied = true; inputStatus.pointee = .haveData; return buffer
                 }
                 guard status != .error, conversionError == nil, let samples = output.int16ChannelData?[0] else {
+                    print("[LiveAudio] Microphone conversion failed: status=\(status.rawValue), error=\(conversionError?.localizedDescription ?? "none"), frames=\(output.frameLength)")
                     Task { @MainActor [weak self] in if self?.generation == epoch { onFailure() } }
                     return
                 }
@@ -68,13 +78,65 @@ final class LiveAudioEngine: LiveAudioStreaming {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: name == .AVAudioEngineConfigurationChange ? engine : nil, queue: .main) { [weak self] notification in
                     if name == AVAudioSession.interruptionNotification,
                        (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) != AVAudioSession.InterruptionType.began.rawValue { return }
-                    Task { @MainActor [weak self] in if self?.generation == epoch { onFailure() } }
+                    Task { @MainActor [weak self] in
+                        guard let self, self.generation == epoch else { return }
+                        let engine = self.engine
+                        if name == .AVAudioEngineConfigurationChange, let engine {
+                            let current = engine.inputNode.outputFormat(forBus: 0)
+                            if current.sampleRate == hardware.sampleRate && current.channelCount == hardware.channelCount &&
+                                current.commonFormat == hardware.commonFormat && current.isInterleaved == hardware.isInterleaved {
+                                do {
+                                    if !engine.isRunning {
+                                        engine.prepare()
+                                        try engine.start()
+                                        self.player?.play()
+                                        print("[LiveAudio] Restarted existing engine; input format unchanged")
+                                    }
+                                    return
+                                } catch {
+                                    print("[LiveAudio] Engine restart failed: \(error.localizedDescription)")
+                                }
+                            }
+                        }
+                        if name == .AVAudioEngineConfigurationChange, self.configurationRecoveries < 2 {
+                            guard self.recoveryTask == nil else { return }
+                            self.configurationRecoveries += 1
+                            print("[LiveAudio] Rebuilding audio after configuration change (attempt \(self.configurationRecoveries))")
+                            self.recoveryTask = Task { @MainActor [weak self] in
+                                do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
+                                guard let self, self.generation == epoch else { return }
+                                do {
+                                    try self.configure(onPCM: onPCM, onDrained: onDrained, onFailure: onFailure)
+                                    self.recoveryTask = nil
+                                    let pending = self.pendingPlayback
+                                    self.pendingPlayback.removeAll()
+                                    for (data, rate) in pending { try self.play(data, rate: rate) }
+                                    if pending.isEmpty { onDrained() }
+                                    print("[LiveAudio] Audio recovered; Live connection preserved")
+                                } catch {
+                                    self.recoveryTask = nil; self.pendingPlayback.removeAll()
+                                    print("[LiveAudio] Recovery failed: \(error.localizedDescription)")
+                                    onFailure()
+                                }
+                            }
+                            return
+                        }
+                        print("[LiveAudio] Audio failure notification: \(name.rawValue), engineRunning=\(engine?.isRunning == true)")
+                        onFailure()
+                    }
                 })
             }
         } catch { stop(); throw error }
     }
 
     func play(_ pcm: Data, rate: Double) throws {
+        if recoveryTask != nil {
+            guard rate == 24000, pcm.count % 2 == 0,
+                  pendingPlayback.reduce(0, { $0 + $1.0.count }) + pcm.count <= 1_440_000 else {
+                throw LiveFailure(message: "Âm thanh đang bị trễ. Bạn thử mở lại micro nhé.")
+            }
+            pendingPlayback.append((pcm, rate)); return
+        }
         guard let player, engine?.isRunning == true, rate == 24000, pcm.count % 2 == 0 else {
             throw LiveFailure(message: "Chưa phát được âm thanh. Bấm micro để kết nối lại.")
         }
@@ -104,18 +166,26 @@ final class LiveAudioEngine: LiveAudioStreaming {
     }
 
     func interrupt() {
+        pendingPlayback.removeAll()
         playbackGeneration += 1; queuedFrames = 0
         player?.stop()
         if engine?.isRunning == true { player?.play() }
     }
 
     func stop() {
+        recoveryTask?.cancel(); recoveryTask = nil; pendingPlayback.removeAll()
+        release(deactivateSession: true)
+    }
+
+    private func release(deactivateSession: Bool) {
         generation += 1; playbackGeneration += 1; queuedFrames = 0
         observers.forEach(NotificationCenter.default.removeObserver); observers.removeAll()
         player?.stop()
         if let engine { if tapInstalled { engine.inputNode.removeTap(onBus: 0) }; engine.stop() }
         tapInstalled = false
         player = nil; engine = nil; onDrained = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if deactivateSession {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 }
