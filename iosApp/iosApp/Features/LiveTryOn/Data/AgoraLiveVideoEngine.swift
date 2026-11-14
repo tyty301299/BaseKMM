@@ -28,7 +28,7 @@ final class AgoraLiveVideoEngine: NSObject, NativeLiveVideoEngine, AgoraRtcEngin
         camera.cameraDirection = .front
         rtc.setCameraCapturerConfiguration(camera)
         rtc.setVideoEncoderConfiguration(AgoraVideoEncoderConfiguration(size: CGSize(width: 720, height: 1280),
-            frameRate: .fps30, bitrate: AgoraVideoBitrateStandard, orientationMode: .fixedPortrait, mirrorMode: .disabled))
+            frameRate: 30, bitrate: AgoraVideoBitrateStandard, orientationMode: .fixedPortrait, mirrorMode: .disabled))
         let canvas = AgoraRtcVideoCanvas()
         canvas.view = localView
         canvas.renderMode = .hidden

@@ -39,6 +39,7 @@ struct ShadowCameraScreen: View {
             Color(red: 17/255, green: 21/255, blue: 18/255).ignoresSafeArea()
             if model.cameraGranted && model.cameraAvailable && model.cameraEnabled && !settings {
                 CameraPreview(camera: model.camera).ignoresSafeArea()
+                NativeTryOnVideo(session: model.fitting).ignoresSafeArea()
             }
             LinearGradient(stops: [.init(color: .black.opacity(0.54), location: 0), .init(color: .clear, location: 0.3),
                                    .init(color: .clear, location: 0.5), .init(color: .black.opacity(0.82), location: 1)],
@@ -63,19 +64,25 @@ struct ShadowCameraScreen: View {
                         Text("SKI").font(.system(size: 18, weight: .bold)).tracking(2)
                     }
                     Spacer(minLength: 4)
+                    Button { gps.request(container) } label: {
+                        Text(gps.label).font(.system(size: 12)).lineLimit(1).padding(.horizontal, 12).frame(minHeight: 44)
+                            .background(.black.opacity(0.45), in: Capsule())
+                            .overlay(Capsule().stroke(.white.opacity(0.16), lineWidth: 1)).contentShape(Capsule())
+                    }.buttonStyle(.plain).foregroundStyle(accent)
+                }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
+                HStack(spacing: 4) {
                     navigationButton("Tủ đồ") { typing = false; model.openWardrobe() }
                     navigationButton("Bài đã học", action: onLessons)
-                }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
+                    navigationButton(model.fitting.active ? "Dừng thử" : "Thử đồ") { typing = false; model.toggleTryOn() }
+                }.padding(4).background(.black.opacity(0.55), in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(0.16), lineWidth: 1)).padding(.top, 8)
                 HStack(spacing: 6) {
-                    Button { gps.request(container) } label: {
-                        Text(gps.label).font(.system(size: 11)).padding(.horizontal, 10).frame(minHeight: 44)
-                            .contentShape(Rectangle())
-                    }.buttonStyle(.plain).foregroundStyle(accent)
                     Circle().fill(model.live.connected ? accent : .gray).frame(width: 6, height: 6)
                     Text(model.live.connected ? "Live · nghe liên tục" : model.live.status == .connecting ? "Đang mở Live…" : "Live đang tắt")
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
-                }
+                }.padding(.top, 8)
                 Spacer(minLength: 22)
+                NativeTryOnControls(session: model.fitting)
                 if model.wardrobePresented { wardrobeOverlay }
                 if model.showsOutfit && !model.outfitItems.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -89,6 +96,8 @@ struct ShadowCameraScreen: View {
                             }
                         }
                         if !model.outfitReason.isEmpty { Text(model.outfitReason).font(.caption).lineLimit(3) }
+                        Button("Mặc thử bộ này", action: model.trySuggestedOutfit)
+                            .buttonStyle(.borderedProminent).controlSize(.large).tint(accent).foregroundStyle(.black)
                     }.padding(12).background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
                         .foregroundStyle(.white).padding(.trailing, 42).padding(.bottom, 10)
                 }
@@ -170,7 +179,7 @@ struct ShadowCameraScreen: View {
                     }
                 }
                 Spacer()
-            }.padding(.top, 100).padding(.trailing, 14)
+            }.padding(.top, 136).padding(.trailing, 14)
         }
         .sheet(isPresented: $wardrobeExpanded, onDismiss: {
             if manageWardrobeAfterDismiss { manageWardrobeAfterDismiss = false; onWardrobe() }
@@ -249,11 +258,13 @@ struct ShadowCameraScreen: View {
                 }
             }
             if !model.selectedWardrobeIDs.isEmpty {
+                Button("Mặc thử \(model.selectedWardrobeIDs.count) món", action: model.trySelectedWardrobe)
+                    .buttonStyle(.borderedProminent).controlSize(.large).foregroundStyle(.black)
                 Button("Phối \(model.selectedWardrobeIDs.count) món đã chọn") {
                     let catalog = shadow.state.wardrobe.map { ($0.id, $0.name) } + (model.wardrobeItems ?? []).map { ($0.id, $0.name) }
                     let names = model.selectedWardrobeIDs.compactMap { id in catalog.first { $0.0 == id }?.1 }
                     model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
-                }.buttonStyle(.borderedProminent).controlSize(.large)
+                }.buttonStyle(.bordered).controlSize(.large)
             }
         }.padding(12).background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 16))
             .foregroundStyle(.white).tint(accent).padding(.trailing, 42).padding(.bottom, 10)
@@ -279,16 +290,22 @@ struct ShadowCameraScreen: View {
                         ForEach(items, id: \.id) { item in wardrobeItem(item) }
                     }.padding(.horizontal).padding(.bottom)
                 }
-                HStack(spacing: 12) {
-                    Button("Thêm quần áo") {
-                        manageWardrobeAfterDismiss = true; wardrobeExpanded = false
-                    }.buttonStyle(.bordered).controlSize(.large)
-                    Button("Phối \(model.selectedWardrobeIDs.count) món") {
-                        let catalog = shadow.state.wardrobe.map { ($0.id, $0.name) } + (model.wardrobeItems ?? []).map { ($0.id, $0.name) }
-                    let names = model.selectedWardrobeIDs.compactMap { id in catalog.first { $0.0 == id }?.1 }
-                        wardrobeExpanded = false; model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
+                VStack(spacing: 8) {
+                    Button("Mặc thử \(model.selectedWardrobeIDs.count) món") {
+                        wardrobeExpanded = false; model.trySelectedWardrobe()
                     }.buttonStyle(.borderedProminent).controlSize(.large)
                         .disabled(model.selectedWardrobeIDs.isEmpty || !shadow.state.connected)
+                    HStack(spacing: 12) {
+                        Button("Thêm quần áo") {
+                            manageWardrobeAfterDismiss = true; wardrobeExpanded = false
+                        }.buttonStyle(.bordered).controlSize(.large)
+                        Button("Phối \(model.selectedWardrobeIDs.count) món") {
+                            let catalog = shadow.state.wardrobe.map { ($0.id, $0.name) } + (model.wardrobeItems ?? []).map { ($0.id, $0.name) }
+                            let names = model.selectedWardrobeIDs.compactMap { id in catalog.first { $0.0 == id }?.1 }
+                            wardrobeExpanded = false; model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
+                        }.buttonStyle(.bordered).controlSize(.large)
+                            .disabled(model.selectedWardrobeIDs.isEmpty || !shadow.state.connected)
+                    }
                 }.padding(.horizontal).padding(.bottom)
             }
             .navigationTitle("Tủ đồ").navigationBarTitleDisplayMode(.inline)
@@ -340,10 +357,11 @@ struct ShadowCameraScreen: View {
         model.getCity = { gps.liveLocation == nil ? nil : gps.city }
     }
     private var status: String {
+        if model.fitting.status == "loading" || model.fitting.status == "error" { return model.fitting.message }
+        if let notice = model.notice { return notice }
         if let error = model.live.error { return error }
         if model.live.connected || model.live.status == .connecting { return model.live.detail }
         if let error = model.state.error { return error }
-        if let notice = model.notice { return notice }
         if let error = shadow.state.error { return error }
         if model.state.busy { return "Đang phân tích yêu cầu…" }
         if model.listening { return "Đang nghe bạn nói…" }
@@ -352,9 +370,9 @@ struct ShadowCameraScreen: View {
     private func navigationButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title).font(.system(size: 13, weight: .semibold))
-                .padding(.horizontal, 14).frame(minHeight: 44)
-                .background(.black.opacity(0.35), in: Capsule())
-                .overlay(Capsule().stroke(.white.opacity(0.3), lineWidth: 1))
+                .lineLimit(1).minimumScaleFactor(0.85)
+                .padding(.horizontal, 8).frame(maxWidth: .infinity, minHeight: 44)
+                .foregroundStyle(.white)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

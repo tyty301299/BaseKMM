@@ -5,6 +5,7 @@ final class LiveHTTPFixture: URLProtocol {
     static var requests: [(String, [String: Any], String?)] = []
     static var delay: TimeInterval = 0
     static var sessionError = false
+    static var toolExpired = false
     static var duration = 300
     private var work: DispatchWorkItem?
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -29,8 +30,8 @@ final class LiveHTTPFixture: URLProtocol {
             value = failure ? ["detail": ["code": "provider_auth_failed", "message": "DO_NOT_DISPLAY_SECRET_TOKEN"]] :
                 ["token": "ephemeral-test-only", "socketUrl": "wss://generativelanguage.googleapis.com/ws/test", "model": "test-live", "toolSessionId": "6e15d86b-3311-4cc5-8d0b-d83a63261507", "maxSeconds": duration]
         } else {
-            status = 200
-            value = ["result": ["available": true, "temperature": 27], "events": [["type": "outfits", "outfits": []]]]
+            status = Self.toolExpired ? 410 : 200
+            value = Self.toolExpired ? ["detail": "Expired tool session"] : ["result": ["available": true, "temperature": 27], "events": [["type": "outfits", "outfits": []]]]
         }
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.work?.isCancelled != true else { return }
@@ -119,6 +120,10 @@ final class LiveHTTPFixture: URLProtocol {
         await live.start(origin: origin, headers: ["X-Shadow-Access": "demo-access"])
         let socket = sockets.last!
         await wait("setup sent") { socket.sent.first?["setup"] != nil }
+        let initialSetup = socket.sent.first?["setup"] as? [String: Any]
+        let voiceConfig = (initialSetup?["generationConfig"] as? [String: Any])?["speechConfig"] as? [String: Any]
+        require(voiceConfig?["languageCode"] as? String == "vi-VN", "WebSocket setup must configure Vietnamese explicitly")
+        require(((voiceConfig?["voiceConfig"] as? [String: Any])?["prebuiltVoiceConfig"] as? [String: Any])?["voiceName"] as? String == "Kore", "WebSocket setup must include the fixed voice, even with older backends")
         require(!audio.recording, "Mic must not send before setupComplete")
         socket.deliver(["setupComplete": [:]])
         await wait("microphone starts") { audio.recording && live.snapshot.connected }
@@ -207,10 +212,21 @@ final class LiveHTTPFixture: URLProtocol {
         await live.start(origin: origin, headers: [:])
         require(live.snapshot.status == .failed, "Auth failure is visible and retryable by the user")
         require(!(live.snapshot.error ?? "").contains("DO_NOT_DISPLAY_SECRET_TOKEN"), "Raw provider errors must not leak")
-        LiveHTTPFixture.sessionError = false; LiveHTTPFixture.duration = 1
+        LiveHTTPFixture.sessionError = false; LiveHTTPFixture.toolExpired = true
+        await live.start(origin: origin, headers: [:])
+        let expired = sockets.last!; expired.deliver(["setupComplete": [:]])
+        await wait("expired bridge connection") { live.snapshot.connected }
+        expired.deliver(["toolCall": ["functionCalls": [["id": "expired-once", "name": "get_weather", "args": [:]]]]])
+        await wait("expired bridge closes") { live.snapshot.status == .failed }
+        require(expired.closed && !audio.recording, "Expired tools must stop once, instead of repeatedly telling the model that fitting failed")
+        require(!expired.sent.contains { $0["toolResponse"] != nil }, "Do not feed session expiry back as a fitting result")
+        LiveHTTPFixture.toolExpired = false; LiveHTTPFixture.duration = 1
         await live.start(origin: origin, headers: [:])
         let last = sockets.last!; last.deliver(["setupComplete": [:]])
         await wait("reconnect") { live.snapshot.connected }
+        await wait("reconnect setup") { last.sent.first?["setup"] != nil }
+        let reconnectSetup = last.sent.first?["setup"] as? [String: Any]
+        require(NSDictionary(dictionary: reconnectSetup?["generationConfig"] as? [String: Any] ?? [:]).isEqual(to: initialSetup?["generationConfig"] as? [String: Any] ?? [:]), "Reconnecting must not change the voice")
         await wait("server session time limit") { live.snapshot.status == .idle }
         require(!audio.recording && last.closed, "Session expiry releases resources without a paid reconnect loop")
         print("Native Live checks PASS: duplex audio, video frames, partial transcripts, interruption, typed follow-up, tools/GPS, deduplication, cancellation, safe errors and expiry.")

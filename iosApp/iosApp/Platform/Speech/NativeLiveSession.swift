@@ -19,6 +19,7 @@ struct LiveSnapshot {
 
 struct LiveFailure: LocalizedError {
     let message: String
+    var httpStatus: Int = 0
     var errorDescription: String? { message }
     static func provider(_ value: [String: Any], status: Int = 0) -> LiveFailure {
         let detail = value["detail"] as? [String: Any] ?? value["error"] as? [String: Any] ?? value
@@ -37,7 +38,7 @@ struct LiveFailure: LocalizedError {
             else { message = "Chưa kết nối được trò chuyện Live. Bạn có thể nhập câu hỏi trong lúc chờ." }
         }
         // Never surface raw provider messages, close reasons, token URLs or NSError descriptions.
-        return LiveFailure(message: message)
+        return LiveFailure(message: message, httpStatus: status)
     }
 
     private static func accountCode(_ text: String) -> String? {
@@ -187,7 +188,13 @@ final class NativeLiveSession {
                     self.fail(error)
                 }
             }
-            enqueue(["setup": ["model": "models/" + model]])
+            // Repeat the server's voice settings on every connection. A voice
+            // set only on the ephemeral token can fall back to the default.
+            let generationConfig = descriptor["generationConfig"] as? [String: Any] ?? [
+                "responseModalities": ["AUDIO"], "maxOutputTokens": 1024,
+                "speechConfig": ["languageCode": "vi-VN", "voiceConfig": ["prebuiltVoiceConfig": ["voiceName": "Kore"]]],
+            ]
+            enqueue(["setup": ["model": "models/" + model, "generationConfig": generationConfig]])
             setupTimeout = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 15_000_000_000)
                 guard !Task.isCancelled, let self, epoch == self.generation, self.snapshot.status == .connecting else { return }
@@ -409,6 +416,12 @@ final class NativeLiveSession {
                 self.setStatus(.thinking, "SKI đang chuẩn bị trả lời…")
             } catch {
                 guard epoch == self.generation, currentTurn == self.turn, !Task.isCancelled else { return }
+                if (error as? LiveFailure)?.httpStatus == 410 {
+                    // An expired tool bridge cannot serve further calls. Close once,
+                    // instead of letting the model repeatedly narrate a fitting failure.
+                    self.fail(error)
+                    return
+                }
                 let message = (error as? LiveFailure)?.message ?? "Chưa thực hiện được thao tác. Bạn thử lại nhé."
                 self.enqueue(["toolResponse": ["functionResponses": [["id": id, "name": name, "response": ["error": message]]]]])
                 self.setStatus(.thinking, message)

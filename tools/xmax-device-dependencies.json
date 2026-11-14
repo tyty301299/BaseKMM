@@ -1,0 +1,42 @@
+[
+  {
+    "name": "AgoraRtcKit",
+    "url": "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.4/AgoraRtcKit.xcframework.zip",
+    "sha256": "9584bb7ce6c1c03ccee6fd0e71ba563d94099dc3dcd5b96acd9be7ec817ce91b"
+  },
+  {
+    "name": "Agorafdkaac",
+    "url": "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.4/Agorafdkaac.xcframework.zip",
+    "sha256": "277ea54cc53de70a05ea7e08dd75037ab21936063ee2d32f1b004417d8305f77"
+  },
+  {
+    "name": "Agoraffmpeg",
+    "url": "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.4/Agoraffmpeg.xcframework.zip",
+    "sha256": "6dbbccd98e1ebb528df5ebdb7d5b532da194cc833431453debc03d736e238241"
+  },
+  {
+    "name": "AgoraSoundTouch",
+    "url": "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.4/AgoraSoundTouch.xcframework.zip",
+    "sha256": "613c26f96ae06bac3c03017b6492b32725a41557d42e89bacd17fb46d3ac0ba4"
+  },
+  {
+    "name": "video_dec",
+    "url": "https://download.agora.io/swiftpm/AgoraRtcEngine_iOS/4.6.4/video_dec.xcframework.zip",
+    "sha256": "eeeca29224eaa54a530cd4c7cd61860529d9b31d4d868f272bd4fda7244f184b"
+  },
+  {
+    "name": "aosl",
+    "url": "https://download.agora.io/swiftpm/AgoraInfra_iOS/1.3.5/aosl.xcframework.zip",
+    "sha256": "b941278231b91caea7c1aba4a68c75d800acd6a8e38aed2ab3b29f71c19f62d1"
+  },
+  {
+    "name": "QCloudCore",
+    "url": "https://github.com/Xmax-AI/XmaxSDK-iOS/releases/download/cos-6.5.7-spm.1/QCloudCore-6.5.7.xcframework.zip",
+    "sha256": "0c796e1c24b35408ea731b0889c41d481853097323af5a3e9b3c3b3af0900d95"
+  },
+  {
+    "name": "QCloudCOSXML",
+    "url": "https://github.com/Xmax-AI/XmaxSDK-iOS/releases/download/cos-6.5.7-spm.1/QCloudCOSXML-6.5.7.xcframework.zip",
+    "sha256": "027838546a66fa9ade3db2baeea71e607395607650c6d6036e5d8c99dbe6f4a7"
+  }
+]

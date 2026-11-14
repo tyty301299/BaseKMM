@@ -38,6 +38,7 @@ final class NativeCameraChatModel: ObservableObject {
     let camera = NativeServices.makeCamera()
     private let session = NativeServices.makeLiveSession()
     let teaching = NativeLessonSession()
+    let fitting = NativeTryOnSession()
     private let store: ConversationStore
     private var subscription: StoreSubscription?
     private var active = false
@@ -96,6 +97,8 @@ final class NativeCameraChatModel: ObservableObject {
         }
         teaching.onChange = { [weak self] in self?.objectWillChange.send() }
         teaching.notify = { [weak self] in self?.session.notifyTaskResult($0) }
+        fitting.onChange = { [weak self] in self?.objectWillChange.send() }
+        fitting.notify = { [weak self] in self?.session.notifyTaskResult($0) }
         teaching.request = { [weak self] method, path, body in
             guard let self, self.active, let url = URL(string: path, relativeTo: URL(string: self.endpoint))?.absoluteURL else {
                 throw LiveFailure(message: "Camera đã đóng.")
@@ -154,11 +157,11 @@ final class NativeCameraChatModel: ObservableObject {
     func stop() {
         epoch += 1; active = false
         startTask?.cancel(); startTask = nil
-        teaching.suspend(); session.stop(); camera.stop(); store.cancel()
+        fitting.stop(); teaching.suspend(); session.stop(); camera.stop(); store.cancel()
     }
     func toggleCamera() {
         cameraEnabled.toggle()
-        if cameraEnabled && active { start() } else { teaching.suspend(); camera.stop() }
+        if cameraEnabled && active { start() } else { fitting.stop(); teaching.suspend(); camera.stop() }
     }
     func flip() { front.toggle(); if active && cameraEnabled { camera.flip(front: front) } }
     func toggleMic() {
@@ -198,6 +201,23 @@ final class NativeCameraChatModel: ObservableObject {
     func syncLocation() { session.syncLocationContext() }
     func openWardrobe() { wardrobeItems = nil; wardrobePresented = true; showsOutfit = false }
     func selectWardrobe(_ ids: [String]) { selectedWardrobeIDs = Array(ids.prefix(3)) }
+    func toggleTryOn() {
+        if fitting.active { fitting.stop(); return }
+        let ids = selectedWardrobeIDs.isEmpty ? outfitItems.prefix(3).map(\.id) : selectedWardrobeIDs
+        if ids.isEmpty { openWardrobe(); notice = "Chọn áo và quần rồi bấm Mặc thử."; return }
+        _ = beginTryOn(ids)
+    }
+    @discardableResult private func beginTryOn(_ ids: [String]) -> [String: Any] {
+        guard !teaching.hasWork else { return ["status": "needs_finish", "message": "Hãy lưu hoặc hủy bài dạy trước khi thử đồ."] }
+        guard active, cameraGranted, cameraAvailable, cameraEnabled, let origin = URL(string: endpoint) else {
+            notice = "Bật camera để thử đồ trực tiếp."
+            return ["status": "needs_camera", "message": notice!]
+        }
+        clearLesson(); selectedWardrobeIDs = ids; wardrobePresented = false; showsOutfit = false; notice = nil
+        return fitting.start(ids: ids, camera: camera, origin: origin, headers: headers)
+    }
+    func trySelectedWardrobe() { _ = beginTryOn(selectedWardrobeIDs) }
+    func trySuggestedOutfit() { _ = beginTryOn(outfitItems.prefix(3).map(\.id)) }
     func styleSelectedWardrobe(names: [String]) {
         text = String(("Tư vấn phối đồ với các món tôi vừa chọn trong tủ đồ: " + names.joined(separator: ", ")).prefix(500))
         send()
@@ -239,6 +259,7 @@ final class NativeCameraChatModel: ObservableObject {
     }
     private func taskContext() -> [String: Any] {
         if teaching.hasWork { return ["current_task": teaching.mode, "task_title": teaching.title, "lesson_state": teaching.snapshot] }
+        if fitting.active { return ["current_task": "tryon", "selected_item_ids": fitting.itemIDs, "suggested_item_ids": outfitItems.prefix(3).map(\.id)] }
         var value: [String: Any] = ["current_task": lesson == nil ? "chat" : "guiding", "suggested_item_ids": outfitItems.prefix(3).map(\.id), "selected_item_ids": selectedWardrobeIDs]
         if lesson != nil { value["lesson_state"] = lessonSnapshot(); value["task_title"] = lessonTitle }
         return value
@@ -248,7 +269,12 @@ final class NativeCameraChatModel: ObservableObject {
             switch view {
             case "dismiss_outfits": showsOutfit = false
             case "show_outfits": showsOutfit = !outfitItems.isEmpty
-            case "original": if !cameraEnabled { toggleCamera() }
+            case "original": fitting.showsOriginal = true; if !cameraEnabled { toggleCamera() }
+            case "tryon":
+                guard fitting.active else { return ["status": "selecting", "message": "Chọn bộ đồ để bắt đầu thử." ] }
+                fitting.showsOriginal = false
+                return fitting.execution
+            case "stop_tryon": fitting.stop()
             default: return ["status": "unavailable", "error": "Chưa có video mặc thử đang chạy trên iPhone. Không báo đã mặc xong."]
             }
             return ["status": "ready", "view": view]
@@ -257,10 +283,15 @@ final class NativeCameraChatModel: ObservableObject {
             return await controlLesson(control)
         }
         if let decision = result["camera_decision"] as? [String: Any] {
-            if decision["camera_command"] as? String == "cancel_task" { showsOutfit = false; return ["status": "cancelled", "message": "Đã đóng gợi ý trang phục."] }
-            // The existing native fitting engine is a different provider from the web renderer.
-            // Never acknowledge a live fitting that hasn't actually started on this device.
-            return ["status": "unavailable", "error": "Video thay đồ của web chưa có bộ dựng native iOS. Có thể tư vấn và xem bộ đồ tại đây, nhưng chưa thể báo đã mặc thử."]
+            if decision["camera_command"] as? String == "cancel_task" { fitting.stop(); showsOutfit = false; return ["status": "cancelled", "message": "Đã dừng thử đồ."] }
+            if decision["intent"] as? String == "tryon_live" {
+                let plan = (decision["context"] as? [String: Any])?["tryon_plan"] as? [String: Any] ?? [:]
+                if plan["status"] as? String == "unchanged", fitting.active { return fitting.execution }
+                if plan["status"] as? String == "ready", let ids = plan["item_ids"] as? [String], !ids.isEmpty { return beginTryOn(ids) }
+                openWardrobe()
+                return ["mode": "tryon", "status": "selecting", "message": plan["message"] as? String ?? "Bạn muốn thử áo và quần nào trong tủ đồ?"]
+            }
+            return ["status": "needs_clarification", "message": "Bạn muốn thử bộ đồ nào hay mở bài hướng dẫn?"]
         }
         return ["status": "unavailable", "error": "Thao tác chưa được hỗ trợ."]
     }
@@ -275,6 +306,7 @@ final class NativeCameraChatModel: ObservableObject {
         if command == "start_guidance" {
             guard !teaching.hasWork else { return ["error": "Hãy lưu hoặc hủy bài dạy đang ghi trước khi bắt đầu hướng dẫn."] }
             teaching.reset()
+            fitting.stop()
             guard let id = control["skill_id"] as? String, !id.isEmpty,
                   id.range(of: "^[A-Za-z0-9_-]+$", options: .regularExpression) != nil,
                   let url = URL(string: "/api/skills/\(id)", relativeTo: URL(string: endpoint))?.absoluteURL else { return ["error": "Cần chọn bài học đã lưu."] }
