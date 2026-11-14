@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>SHADOW dùng vị trí để xem thời tiết và tư vấn trang phục phù hợp.</string>
+    <string>SKI dùng vị trí để xem thời tiết và tư vấn trang phục phù hợp.</string>
     <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSAllowsLocalNetworking</key><true/>

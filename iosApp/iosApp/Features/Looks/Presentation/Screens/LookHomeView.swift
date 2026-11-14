@@ -36,7 +36,7 @@ struct LookHomeView: View {
                 HStack {
                     HStack(spacing: 9) {
                         Image(systemName: "sparkle").foregroundStyle(LookStyle.accent)
-                        Text("SHADOW").font(.subheadline.weight(.heavy)).tracking(2)
+                        Text("SKI").font(.subheadline.weight(.heavy)).tracking(2)
                     }
                     Spacer()
                     Button(action: onSettings) {

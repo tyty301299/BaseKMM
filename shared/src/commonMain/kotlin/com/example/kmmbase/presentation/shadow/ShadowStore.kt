@@ -127,7 +127,7 @@ class ShadowStore internal constructor(
                         val question = action.question.trim()
                         if (question.isEmpty() || question.length > 500 || lesson.steps.none { it.id == action.stepId }) return
                         mutableState.update { it.copy(answer = null, answerLabel = "") }
-                        run("SHADOW đang trả lời…") {
+                        run("SKI đang trả lời…") {
                             val answer = repo.ask(lesson.id, action.stepId, question)
                             currentCoroutineContext().ensureActive()
                             mutableState.update { it.copy(answer = answer, answerLabel = shadowSourceLabel(answer.source), answerQuestion = question) }
@@ -194,7 +194,7 @@ class ShadowStore internal constructor(
                 currentCoroutineContext().ensureActive()
                 operationTrace.event("success")
                 mutableState.update { it.copy(busy = "") }
-                messageChannel.send(UiMessage("Đã hoàn tất thao tác với SHADOW"))
+                messageChannel.send(UiMessage("Đã hoàn tất thao tác với SKI"))
             } catch (error: CancellationException) {
                 operationTrace.event("cancelled")
                 throw error

@@ -61,7 +61,7 @@ struct WardrobeAddSheet: View {
                 }.listRowBackground(accent).foregroundStyle(.black)
                     .disabled(jpeg == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || busy || reading || !model.state.connected)
             }
-            .navigationTitle("Thêm vào tủ đồ").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Thêm quần áo").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Hủy") { dismiss() }.disabled(busy) } }
             .interactiveDismissDisabled(busy)
             .task(id: selection) {

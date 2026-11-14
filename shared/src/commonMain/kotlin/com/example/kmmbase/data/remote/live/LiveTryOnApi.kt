@@ -28,7 +28,7 @@ internal class LiveTryOnApi(private val origin: String, private val requestHeade
                 Json.parseToJsonElement(response.bodyAsText()).jsonObject["detail"]?.jsonObject?.get("code")?.jsonPrimitive?.content
             }.getOrNull()
             throw LiveTryOnException(when {
-                response.status.value in listOf(401, 403) -> "Mã truy cập hết hạn. Kết nối lại SHADOW trong cài đặt."
+                response.status.value in listOf(401, 403) -> "Mã truy cập hết hạn. Kết nối lại SKI trong cài đặt."
                 code == "VIDU_CREDITS" -> "Tài khoản Vidu đã hết credit."
                 code == "NO_VIDU_KEY" || code == "VIDU_AUTH" -> "Máy chủ chưa cấu hình Vidu hợp lệ."
                 response.status.value == 429 -> "Đã đạt giới hạn phiên. Hãy thử lại sau."

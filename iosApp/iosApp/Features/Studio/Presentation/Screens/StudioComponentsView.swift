@@ -7,7 +7,7 @@ struct StudioComponentsView: View {
     let onCamera: () -> Void
     var body: some View {
         StudioPage(title: language.text("ui_159"), model: model) {
-            Text("SHADOW / Mobile system").font(.largeTitle.bold())
+            Text("SKI / Mobile system").font(.largeTitle.bold())
             Text(language.text("ui_147")).foregroundStyle(.secondary)
             HStack { Image(systemName: "sparkles"); Text("Liquid Glass / Material") }
                 .padding(24).frame(maxWidth: .infinity).modifier(LookGlass())

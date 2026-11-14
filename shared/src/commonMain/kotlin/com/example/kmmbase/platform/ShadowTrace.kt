@@ -9,7 +9,7 @@ internal class ShadowTrace(private val area: String) {
     private val started = TimeSource.Monotonic.markNow()
 
     fun event(name: String, details: String = "") {
-        println("[SHADOW][$area][$id] +${started.elapsedNow().inWholeMilliseconds}ms $name $details")
+        println("[SKI][$area][$id] +${started.elapsedNow().inWholeMilliseconds}ms $name $details")
     }
 
     fun failure(name: String, error: Exception) {

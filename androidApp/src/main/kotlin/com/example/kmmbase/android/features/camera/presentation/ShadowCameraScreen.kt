@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -25,6 +26,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.example.kmmbase.android.R
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -178,7 +182,9 @@ internal fun ShadowCameraScreen(container: AppContainer, shadow: ShadowStore,
         }
         Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("SHADOW", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+                Image(painterResource(R.drawable.ski_logo), contentDescription = null, modifier = Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)))
+                Spacer(Modifier.width(7.dp))
+                Text("SKI", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { listening = false; onWardrobe() }, contentPadding = PaddingValues(horizontal = 10.dp)) {
                     Text("Tủ đồ", color = Color.White, fontSize = 13.sp)
                 }
@@ -228,7 +234,7 @@ internal fun ShadowCameraScreen(container: AppContainer, shadow: ShadowStore,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { submit() }),
                     modifier = Modifier.weight(1f).semantics { contentDescription = "Câu hỏi" }
                         .border(1.dp, Color.White.copy(alpha = .25f), CircleShape).background(Color.Black.copy(alpha = .12f), CircleShape).padding(horizontal = 17.dp, vertical = 14.dp),
-                    decorationBox = { inner -> if (text.isEmpty()) Text("Hỏi Shadow…", color = Color.White.copy(alpha = .55f), fontSize = 15.sp); inner() })
+                    decorationBox = { inner -> if (text.isEmpty()) Text("Hỏi SKI…", color = Color.White.copy(alpha = .55f), fontSize = 15.sp); inner() })
                 CameraControl(if (state.busy || capturing) "stop" else "send", if (state.busy || capturing) "Dừng phản hồi" else "Gửi câu hỏi", highlighted = true) {
                     if (state.busy || capturing) { spokenTurn = false; captureJob?.cancel(); store.cancel() } else submit()
                 }
@@ -241,7 +247,7 @@ internal fun ShadowCameraScreen(container: AppContainer, shadow: ShadowStore,
             CameraControl("settings", "Cài đặt kết nối", action = ::openSettings)
         }
     }
-    if (settings) AlertDialog(onDismissRequest = { code = ""; settings = false }, title = { Text("Kết nối SHADOW") },
+    if (settings) AlertDialog(onDismissRequest = { code = ""; settings = false }, title = { Text("Kết nối SKI") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Đổi địa chỉ máy chủ khi cần. Chạy local dùng http://localhost:8001.", style = MaterialTheme.typography.bodySmall)
             OutlinedTextField(endpoint, { endpoint = it }, label = { Text("Base URL") }, singleLine = true)

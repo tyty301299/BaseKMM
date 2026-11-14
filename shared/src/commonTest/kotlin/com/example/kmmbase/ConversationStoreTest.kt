@@ -24,7 +24,7 @@ class ConversationStoreTest {
             if (hold) awaitCancellation()
             if (fail) error("Phản hồi bị gián đoạn. Bạn thử lại nhé.")
             onEvent(ConversationEvent.Text("Tủ đồ "))
-            onEvent(ConversationEvent.Text("trong SHADOW."))
+            onEvent(ConversationEvent.Text("trong SKI."))
             onEvent(ConversationEvent.Action(ConversationLink("wardrobe", "Xem tủ đồ")))
             onEvent(ConversationEvent.Done)
         }
@@ -56,7 +56,7 @@ class ConversationStoreTest {
             runCurrent()
             assertEquals("tủ đồ", repo.text)
             assertEquals("data:image/jpeg;base64,YQ==", repo.image)
-            assertEquals("Tủ đồ trong SHADOW.", store.currentState.reply)
+            assertEquals("Tủ đồ trong SKI.", store.currentState.reply)
             assertEquals("wardrobe", store.currentState.links.single().route)
             assertTrue(repo.closed)
             repeat(5) { store.send("tiếp $it", null); runCurrent() }

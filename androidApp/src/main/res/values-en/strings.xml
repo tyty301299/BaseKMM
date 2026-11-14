@@ -18,7 +18,7 @@
     <string name="close">Close</string>
     <string name="back">Back</string>
     <string name="language_content">Applies to the interface. Server content keeps its original language.</string>
-    <string name="connection_intro">Connect to SHADOW</string>
+    <string name="connection_intro">Connect to SKI</string>
     <string name="connection_description">Use your team\'s HTTPS address to access skills and your wardrobe.</string>
     <string name="access_code_long">Access code, if required by the server</string>
     <string name="learn_tab">Learn &amp; follow</string>
@@ -28,7 +28,7 @@
     <string name="teach_camera">Teach a skill with the camera</string>
     <string name="learned_skills">Learned skills</string>
     <string name="refresh">Refresh</string>
-    <string name="skills_empty">No skills yet. Teach SHADOW your first task.</string>
+    <string name="skills_empty">No skills yet. Teach SKI your first task.</string>
     <string name="connect_to_skills">Connect to see learned skills.</string>
     <string name="wardrobe_heading">What would you\nlike to wear today?</string>
     <string name="wardrobe_description">Suggestions from your wardrobe for your next occasion.</string>
@@ -43,10 +43,10 @@
     <string name="extra_preferences">Additional preferences (optional)</string>
     <string name="suggest">Suggest outfits</string>
     <string name="outfits_empty">No matching outfits yet. Try another occasion or add clothing.</string>
-    <string name="guide_description">SHADOW uses the camera to guide you through each step by voice.</string>
+    <string name="guide_description">SKI uses the camera to guide you through each step by voice.</string>
     <string name="start_guide">Start camera guidance</string>
     <string name="select_step">Select a step</string>
-    <string name="ask_step">Ask SHADOW about this step</string>
+    <string name="ask_step">Ask SKI about this step</string>
     <string name="question_hint">What are you stuck on?</string>
     <string name="send_question">Send question</string>
     <string name="previous_step">Previous step</string>
@@ -58,7 +58,7 @@
     <string name="glass_effect">Glass effects</string>
     <string name="apple_glass_description">Liquid Glass on iOS 26+. Earlier versions use Material. Reduce Transparency uses a solid background.</string>
     <string name="android_glass_description">Android uses Material surfaces. Turn off glass effects for a solid background.</string>
-    <string name="connect_service">Connect to SHADOW</string>
+    <string name="connect_service">Connect to SKI</string>
     <string name="view_components">View UI components</string>
     <string name="local_data">Local data</string>
     <string name="local_data_description">Sample wardrobe, skills and history are stored on this device. Deletion cannot be undone.</string>
@@ -78,9 +78,9 @@
     <string name="quick_start">Start with your wardrobe</string>
     <string name="camera_preview">Sample camera preview</string>
     <string name="add_garment">Add clothing</string>
-    <string name="live_service">SHADOW online</string>
+    <string name="live_service">SKI online</string>
     <string name="live_service_detail">Skills and wardrobe from your server</string>
-    <string name="sample_notice">These photos and outfit flows use sample data. Open SHADOW online for live data.</string>
+    <string name="sample_notice">These photos and outfit flows use sample data. Open SKI online for live data.</string>
     <string name="appearance_title">Appearance</string>
     <string name="filter_all">All</string>
     <string name="filter_tops">Tops</string>
@@ -107,7 +107,7 @@
     <string name="ui_019">Start following</string>
     <string name="ui_020">Start sample demonstration</string>
     <string name="ui_021">Outfits</string>
-    <string name="ui_022">Sample outfits for trying the interface. Connect to SHADOW to use your real wardrobe.</string>
+    <string name="ui_022">Sample outfits for trying the interface. Connect to SKI to use your real wardrobe.</string>
     <string name="ui_023">Sample outfit</string>
     <string name="ui_024">Your sample outfit is ready.</string>
     <string name="ui_025">Peach</string>
@@ -117,7 +117,7 @@
     <string name="ui_029">Outfit details</string>
     <string name="ui_030">Clothing details</string>
     <string name="ui_031">Show AI how you do it.</string>
-    <string name="ui_032">Show SHADOW your clothing.</string>
+    <string name="ui_032">Show SKI your clothing.</string>
     <string name="ui_033">Prepare your outfit</string>
     <string name="ui_034">Prepare to teach</string>
     <string name="ui_035">Restart the sample lesson</string>
@@ -126,7 +126,7 @@
     <string name="ui_038">No skills yet. Start with a sample lesson.</string>
     <string name="ui_039">No saved items in this category.</string>
     <string name="ui_040">No clothing in this category.</string>
-    <string name="ui_041">Not connected to the SHADOW server.</string>
+    <string name="ui_041">Not connected to the SKI server.</string>
     <string name="ui_042">Couldn\'t save this skill. Please try again.</string>
     <string name="ui_043">Result source unknown</string>
     <string name="ui_044">Capture sample result</string>
@@ -134,7 +134,7 @@
     <string name="ui_046">Capture sample image</string>
     <string name="ui_047">Sample steps for assembling a phone stand. No AI video analysis has been performed.</string>
     <string name="ui_048">Components support system text sizes and reduced transparency.</string>
-    <string name="ui_049">Camera access is needed for SHADOW to see your actions.</string>
+    <string name="ui_049">Camera access is needed for SKI to see your actions.</string>
     <string name="ui_050">Camera access is needed to record your demonstration.</string>
     <string name="ui_051">Enter a skill name and at least one description or note.</string>
     <string name="ui_052">Demo based on items in your wardrobe. Not an AI result.</string>
@@ -165,7 +165,7 @@
     <string name="ui_077">Illustrated mannequin · demo camera</string>
     <string name="ui_078">Sample clothing mannequin, not an AI image</string>
     <string name="ui_079">Sample guide. The camera is not used to assess actions.</string>
-    <string name="ui_080">Ask SHADOW</string>
+    <string name="ui_080">Ask SKI</string>
     <string name="ui_081">Ask about this step</string>
     <string name="ui_082">No video or audio is recorded.</string>
     <string name="ui_083">Couldn\'t complete this action.</string>
@@ -237,8 +237,8 @@
     <string name="ui_149">Record demonstration · demo</string>
     <string name="ui_150">Your style. A fresh combination.</string>
     <string name="ui_151">Learned rules: </string>
-    <string name="ui_152">SHADOW is watching…</string>
-    <string name="ui_153">SHADOW is answering…</string>
+    <string name="ui_152">SKI is watching…</string>
+    <string name="ui_153">SKI is answering…</string>
     <string name="ui_154">Tighten the lock to secure the upright pole.</string>
     <string name="ui_155">Ready</string>
     <string name="ui_156">Edit note</string>
@@ -326,7 +326,7 @@
     <string name="ui_238">Appearance updated</string>
     <string name="ui_239">Clothing updated</string>
     <string name="ui_240">Sample guide completed</string>
-    <string name="ui_241">SHADOW action completed</string>
+    <string name="ui_241">SKI action completed</string>
     <string name="ui_242">Skill saved</string>
     <string name="ui_243">Skill saved on device</string>
     <string name="ui_244">Skill saved.</string>
@@ -371,10 +371,10 @@
     <string name="saved_items_count">Saved items: %1$s · on this device</string>
     <string name="sample_skill_steps">Sample skill · Steps: %1$s</string>
     <string name="person_photo_title">Try on with your photo</string>
-    <string name="person_photo_detail">Choose a clear photo of yourself. SHADOW will suggest an outfit and create a try-on image.</string>
+    <string name="person_photo_detail">Choose a clear photo of yourself. SKI will suggest an outfit and create a try-on image.</string>
     <string name="choose_person_photo">Choose your photo</string>
     <string name="change_person_photo">Change photo</string>
-    <string name="person_photo_privacy">Your photo is sent to your SHADOW server only when you tap Create try-on image.</string>
+    <string name="person_photo_privacy">Your photo is sent to your SKI server only when you tap Create try-on image.</string>
     <string name="create_tryon">Create try-on image</string>
     <string name="tryon_result">Your try-on result</string>
     <string name="tryon_mock">Demo composite · not an AI result</string>

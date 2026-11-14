@@ -12,7 +12,7 @@ import com.example.kmmbase.domain.usecase.builtinGuide
 import kotlin.test.*
 
 /**
- * Talks to the real SHADOW server. Opt-in because it needs network and the access code:
+ * Talks to the real SKI server. Opt-in because it needs network and the access code:
  *
  *     SHADOW_ACCESS_CODE=<code> ./gradlew :shared:testAndroidHostTest --tests '*LiveServerTest*'
  *

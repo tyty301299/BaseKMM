@@ -1,0 +1,8 @@
+Use case: logo-brand
+Asset type: production master app icon for SKI, a Vietnamese camera-first AI companion that sees, listens, recommends clothes from your wardrobe, and coaches practical skills.
+Primary request: Design one original, memorable, exceptionally clean logo symbol. A bold folded ribbon forms a clear letter S, with two restrained camera-focus corner brackets integrated into the silhouette. The S suggests both folded fabric and a continuous learning/conversation path. The focus frame communicates visual understanding. It must read immediately at small app-icon size.
+Style: flat geometric vector-style brand design, confident rounded precision, balanced optical weight, crafted negative space, no illustration or mockup.
+Palette: warm yellow #FFD23F symbol on a completely flat near-black #0B0B0F background, matching the existing app.
+Composition: one centered symbol in a square 1024x1024 full-bleed opaque canvas. Entire visible symbol fits inside the central 60% of width and height (safe for circular Android masks). Background fills every pixel including square corners. No outer rounded app tile, no border around the image, no shadows or glow.
+Text: only the abstract S monogram; do not add SKI lettering, slogans, labels or other text.
+Avoid: ski/snow/sports imagery, hanger-only icons, stock sparkle or robot logos, gradients, 3D, textures, tiny details, multiple options, presentation boards.

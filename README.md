@@ -3,13 +3,13 @@
 > **Màn chính mới:** Camera toàn màn hình với chữ trò chuyện trong suốt, dựng bằng **Compose trên Android và SwiftUI trên iOS**. App gọi API backend trực tiếp. Mặc định nối `https://hackathon.trioxstudios.com`; nút Cài đặt trên camera cho đổi Base URL và mã truy cập. Xem [chạy local, kiến trúc và phạm vi kiểm tra](docs/NATIVE_CAMERA.md).
 > **Thêm đồ trên điện thoại:** Tủ đồ → + Thêm đồ từ điện thoại → chụp/chọn ảnh → nhập tên và loại → Lưu vào tủ đồ. Android/iOS gọi trực tiếp API BE, dùng chung dữ liệu với website.
 > Các màn native Phối đồ, Tủ đồ, Học & làm, Lịch sử và logic shared hiện có được giữ trong source.
-> Chọn **Phối đồ cho hôm nay** để nhập ảnh người hoặc chọn một khung hình từ video, lấy bộ đồ gợi ý và tạo ảnh mặc thử. **SHADOW trực tuyến** có **Dạy** (camera + giọng nói) và **Hướng dẫn** (camera + WebSocket).
+> Chọn **Phối đồ cho hôm nay** để nhập ảnh người hoặc chọn một khung hình từ video, lấy bộ đồ gợi ý và tạo ảnh mặc thử. **SKI trực tuyến** có **Dạy** (camera + giọng nói) và **Hướng dẫn** (camera + WebSocket).
 > Settings có trạng thái kết nối/reconnect và ngôn ngữ Việt/English. Các luồng mẫu local được ghi rõ; video nhập vào chỉ tạo ảnh từ khung hình, chưa xuất video thử đồ.
 > Xem [giao thức, kiến trúc, cách build và những gì chưa kiểm tra](docs/SHADOW_MOBILE.md).
 > **Thử áo live native (Android/iOS):** Camera → Thay đồ → Thử áo trực tiếp. Dùng Agora/Vidu, có DTO và Clean Architecture dùng chung; xem [cấu trúc và trạng thái kiểm chứng](docs/NATIVE_LIVE_TRYON.md). Server hiện báo live chưa khả dụng, chưa nghiệm thu trên máy thật.
 > Các màn mẫu cũ vẫn còn làm dự phòng: [SHADOW_NATIVE_UI.md](docs/SHADOW_NATIVE_UI.md).
 > **Chưa chạy trên điện thoại thật** — camera, TTS/STT tiếng Việt mới chỉ qua biên dịch và simulator.
-> Các kết quả template ở cuối README không áp dụng cho phần SHADOW.
+> Các kết quả template ở cuối README không áp dụng cho phần SKI.
 
 Base Kotlin Multiplatform cho Android và iOS, dùng chung logic và UI native riêng: Jetpack Compose trên Android, SwiftUI trên iOS. Base không dùng Compose Multiplatform.
 
@@ -29,12 +29,12 @@ Mở trực tiếp trên macOS, từ thư mục `BaseKMM`:
 open design/shadow-mobile/start.html
 ```
 
-Khi xem README trên GitHub, link file HTML phía trên mở mã nguồn. Workflow **SHADOW HTML Preview** xuất artifact `shadow-html-demo` để tải về và deploy giao diện lên GitHub Pages.
+Khi xem README trên GitHub, link file HTML phía trên mở mã nguồn. Workflow **SKI HTML Preview** xuất artifact `shadow-html-demo` để tải về và deploy giao diện lên GitHub Pages.
 
 ### Bật link UI trên GitHub Pages
 
 1. Trong repo, mở **Settings → Pages → Build and deployment → Source → GitHub Actions**. Repo phải có quyền sử dụng Pages theo gói GitHub hiện tại.
-2. Push thay đổi demo lên `feature/shadow-mobile` hoặc `main`. Workflow tự chạy khi HTML/assets hoặc workflow thay đổi. Khi workflow đã có trên nhánh mặc định, có thể chạy thủ công trong **Actions → SHADOW HTML Preview → Run workflow**.
+2. Push thay đổi demo lên `feature/shadow-mobile` hoặc `main`. Workflow tự chạy khi HTML/assets hoặc workflow thay đổi. Khi workflow đã có trên nhánh mặc định, có thể chạy thủ công trong **Actions → SKI HTML Preview → Run workflow**.
 3. Nếu environment `github-pages` giới hạn nhánh, cho phép nhánh đang deploy trong **Settings → Environments → github-pages**.
 4. Sau khi job `deploy` thành công, mở link **Open UI**, **iOS prototype** hoặc **Android prototype** trong Summary của lần chạy. Đây là link web hiển thị UI, không phải trang source code.
 

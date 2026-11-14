@@ -110,7 +110,7 @@ struct HomeView: View {
         .modifier(StudioFeedbackOverlay())
         .background(ShadowStyle.background)
         .tint(ShadowStyle.accent)
-        .navigationTitle("SHADOW")
+        .navigationTitle("SKI")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -326,7 +326,7 @@ struct HomeView: View {
     private var wardrobe: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Tủ đồ của bạn").font(.largeTitle.bold())
-            Text("Thêm trang phục từ điện thoại, dùng chung tủ đồ với website.").foregroundStyle(.secondary)
+            Text("Thêm quần áo từ điện thoại, dùng chung tủ đồ với website.").foregroundStyle(.secondary)
             primaryButton("+ Thêm đồ từ điện thoại", disabled: !model.state.connected || busy) {
                 model.send(ShadowActionClearWardrobeUpload.shared)
                 addingWardrobeItem = true

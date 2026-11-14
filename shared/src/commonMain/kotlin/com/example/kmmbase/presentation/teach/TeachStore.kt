@@ -291,7 +291,7 @@ class TeachStore(
 
     private fun compile() {
         if (currentState.phase != TeachPhase.IDLE || currentState.stopping || currentState.saving || currentState.videoBusy) return
-        val repo = repository() ?: return fail("Chưa kết nối máy chủ SHADOW.")
+        val repo = repository() ?: return fail("Chưa kết nối máy chủ SKI.")
         if (!currentState.canCompile) {
             return fail("Cần tên kỹ năng và ít nhất một câu mô tả hoặc ghi chú.")
         }
@@ -355,7 +355,7 @@ class TeachStore(
         if (currentState.phase != TeachPhase.REVIEW || currentState.saving || currentState.verifyingStep != null || currentState.videoBusy) return
         val draft = currentState.draft ?: return
         if (action.index !in draft.steps.indices || draft.steps[action.index].instruction.isBlank()) return
-        val repo = repository() ?: return fail("Chưa kết nối máy chủ SHADOW.")
+        val repo = repository() ?: return fail("Chưa kết nối máy chủ SKI.")
         val stepId = draft.steps[action.index].id
         val epoch = generation
         mutableState.update { it.copy(verifyingStep = action.index, error = null,
@@ -377,7 +377,7 @@ class TeachStore(
 
     private fun save() {
         if (!currentState.canSave) return
-        val repo = repository() ?: return fail("Chưa kết nối máy chủ SHADOW.")
+        val repo = repository() ?: return fail("Chưa kết nối máy chủ SKI.")
         val draft = currentState.draft ?: return
         val epoch = generation
         mutableState.update { it.copy(saving = true, error = null) }

@@ -168,7 +168,7 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
                 .verticalScroll(rememberScrollState()).padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(if (showSettings) language.text(R.string.settings_title) else "SHADOW", style = MaterialTheme.typography.titleLarge)
+                    Text(if (showSettings) language.text(R.string.settings_title) else "SKI", style = MaterialTheme.typography.titleLarge)
                     if (showSettings) {
                         TextButton(onClick = { showSettings = false }) { Text(language.text(R.string.close)) }
                     } else if (state.lesson == null) {
@@ -252,7 +252,7 @@ internal fun HomeScreen(container: AppContainer, store: ShadowStore, initialTab:
                             }
                         } else {
                             Text("Tủ đồ của bạn", style = MaterialTheme.typography.headlineLarge)
-                            Text("Thêm trang phục từ điện thoại, dùng chung tủ đồ với website.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Thêm quần áo từ điện thoại, dùng chung tủ đồ với website.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Button(onClick = { store.dispatch(ShadowAction.ClearWardrobeUpload); addingItem = true },
                                 enabled = state.connected && !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                                 Text("+ Thêm đồ từ điện thoại")

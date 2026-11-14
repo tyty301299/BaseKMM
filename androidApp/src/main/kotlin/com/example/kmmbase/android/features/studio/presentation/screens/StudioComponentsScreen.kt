@@ -15,7 +15,7 @@ import com.example.kmmbase.presentation.studio.StudioStore
 internal fun StudioComponentsScreen(store: StudioStore, onBack: () -> Unit, onCamera: () -> Unit) {
     val language = LocalAppLanguage.current
     StudioPage(language.text(R.string.ui_159), store, onBack) {
-        Text("SHADOW / Mobile system", style = MaterialTheme.typography.headlineLarge)
+        Text("SKI / Mobile system", style = MaterialTheme.typography.headlineLarge)
         Text(language.text(R.string.ui_147))
         Text("Adaptive glass / Material", Modifier.fillMaxWidth().lookGlass().padding(24.dp))
         LookButton(language.text(R.string.ui_166), onClick = onCamera)

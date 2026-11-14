@@ -1,7 +1,7 @@
 import Shared
 import SwiftUI
 
-/// Full-screen camera with the step HUD on top. SHADOW watches through the camera and speaks each
+/// Full-screen camera with the step HUD on top. SKI watches through the camera and speaks each
 /// line in Vietnamese; long-pressing the HUD reveals the ◀ ▶ controls used to rescue a live demo.
 struct LiveGuideView: View {
     @Environment(\.scenePhase) private var scenePhase

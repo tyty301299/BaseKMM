@@ -65,7 +65,7 @@ struct LookCameraView: View {
             if granted { CameraPreview(camera: camera).ignoresSafeArea() }
             LinearGradient(colors: [.black.opacity(0.6), .clear, .clear, .black.opacity(0.9)], startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
             if !ready {
-                VStack(spacing: 12) { Image(systemName: "sparkles").font(.largeTitle); Text("SHADOW").font(.title.bold()) }.foregroundStyle(.white)
+                VStack(spacing: 12) { Image(systemName: "sparkles").font(.largeTitle); Text("SKI").font(.title.bold()) }.foregroundStyle(.white)
             } else if !granted {
                 VStack(spacing: 12) {
                     Text("Cho phép truy cập camera để bắt đầu")
@@ -152,7 +152,7 @@ struct LookCameraView: View {
                                     Button("Tự chuyển bước") { manualSessionID = UUID().uuidString; guideStep = 0; message = "" }
                                         .buttonStyle(.bordered).tint(.white)
                                 }
-                                Text(!shadow.state.connected ? "Cần kết nối SHADOW để hướng dẫn qua camera."
+                                Text(!shadow.state.connected ? "Cần kết nối SKI để hướng dẫn qua camera."
                                     : shadow.state.modeLabel == "AI" ? "AI kiểm tra thao tác và tự chuyển bước" : "Demo · kết quả kiểm tra giả lập")
                                     .font(.caption2)
                                 if let error = shadow.state.error { Text(error).font(.caption).foregroundStyle(.orange) }
@@ -164,7 +164,7 @@ struct LookCameraView: View {
                                     Button(!shadow.state.connected ? "Tự động" : shadow.state.modeLabel == "AI" ? "Tự động AI" : "Tự động demo") {
                                         if shadow.state.connected {
                                             shadow.send(ShadowActionPrepareBuiltinGuide(kind: selectedMode == 0 ? "gift" : selectedMode == 1 ? "fold" : "pants"))
-                                        } else { message = "Cần kết nối SHADOW để tự chuyển bước" }
+                                        } else { message = "Cần kết nối SKI để tự chuyển bước" }
                                     }.buttonStyle(.bordered).tint(.white).disabled(!shadow.state.busy.isEmpty)
                                 }
                             }
@@ -177,7 +177,7 @@ struct LookCameraView: View {
                                 .disabled(!shadow.state.connected)
                         } else if guideStep == nil && selectedMode == 4 {
                             HStack(spacing: 10) {
-                                Button("Dạy kỹ năng mới") { if shadow.state.connected { showTeach = true } else { message = "Cần kết nối SHADOW để dạy kỹ năng" } }
+                                Button("Dạy kỹ năng mới") { if shadow.state.connected { showTeach = true } else { message = "Cần kết nối SKI để dạy kỹ năng" } }
                                 Button("Kỹ năng đã học") { showSkills = true }
                             }.font(.subheadline.weight(.semibold)).buttonStyle(.bordered).tint(.white)
                         }
@@ -215,7 +215,7 @@ struct LookCameraView: View {
         .sheet(isPresented: $showSkills) {
             NavigationStack {
                 List {
-                    if !shadow.state.connected { Text("Chưa kết nối SHADOW. Hãy kiểm tra mạng và cài đặt kết nối.") }
+                    if !shadow.state.connected { Text("Chưa kết nối SKI. Hãy kiểm tra mạng và cài đặt kết nối.") }
                     else if shadow.state.skills.isEmpty { Text("Chưa có kỹ năng đã học. Hãy dạy một kỹ năng mới.") }
                     ForEach(shadow.state.skills, id: \.id) { skill in
                         Button(skill.title) { showSkills = false; guideSelection = CameraSkillSelection(id: skill.id, title: skill.title + (shadow.state.modeLabel == "AI" ? "" : " · Demo")) }

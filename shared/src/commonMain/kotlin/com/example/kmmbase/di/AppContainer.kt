@@ -59,7 +59,7 @@ class AppContainer(repository: GreetingRepository, private val services: AppServ
     )
 
     fun liveTryOnStore(shadow: ShadowStore, engine: LiveVideoEngine): LiveTryOnStore {
-        require(shadow.currentState.connected) { "Chưa kết nối SHADOW." }
+        require(shadow.currentState.connected) { "Chưa kết nối SKI." }
         return LiveTryOnStore(
             services.liveTryOn(shadow.currentState.endpoint, shadow.mediaHeaders()),
             engine, shadow.currentState.wardrobe, Dispatchers.Main.immediate,
@@ -71,7 +71,7 @@ class AppContainer(repository: GreetingRepository, private val services: AppServ
      * clock; coroutine plumbing stays in Kotlin.
      */
     fun guideStore(shadow: ShadowStore, camera: FrameSource, speaker: Speaker) = GuideStore(
-        socketFactory = { requireNotNull(shadow.openSession()) { "Chưa kết nối máy chủ SHADOW." } },
+        socketFactory = { requireNotNull(shadow.openSession()) { "Chưa kết nối máy chủ SKI." } },
         captureFrame = { camera.capture(it) },
         speak = speaker::speak,
         stopSpeaking = speaker::stop,

@@ -86,7 +86,7 @@ internal fun AddWardrobeItemDialog(store: ShadowStore, onDismiss: () -> Unit) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Thêm vào tủ đồ", style = MaterialTheme.typography.headlineSmall)
+                    Text("Thêm quần áo", style = MaterialTheme.typography.headlineSmall)
                     TextButton(onClick = ::close, enabled = !busy) { Text("Hủy") }
                 }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {

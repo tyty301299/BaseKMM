@@ -7,7 +7,7 @@ import com.example.kmmbase.domain.model.ShadowStep
 internal fun builtinGuide(kind: String): TeachDraft {
     require(kind in setOf("fold", "pants", "gift"))
     val id = when (kind) { "fold" -> "shadow-builtin-gap-ao-v1"; "pants" -> "shadow-builtin-gap-quan-v1"; else -> "shadow-builtin-goi-qua-v1" }
-    val title = when (kind) { "fold" -> "Gấp áo · SHADOW"; "pants" -> "Gấp quần · SHADOW"; else -> "Gói quà · SHADOW" }
+    val title = when (kind) { "fold" -> "Gấp áo · SKI"; "pants" -> "Gấp quần · SKI"; else -> "Gói quà · SKI" }
     val steps = if (kind == "fold") listOf(
         "Trải áo phẳng, mặt trước úp xuống và vuốt thẳng." to "A single shirt is fully visible lying flat on a table, opened out with the body and both sleeves spread. The shirt is not folded. If uncertain return false.",
         "Gấp một bên áo và tay áo vào giữa." to "Exactly one side of the shirt including its sleeve is visibly folded inward across the torso; the opposite sleeve and side remain spread out. If hidden or both sides appear unfolded, return false.",

@@ -4,6 +4,7 @@ import CoreLocation
 import Shared
 
 /// SwiftUI camera chrome backed by the shared conversation store and native capture/speech.
+@MainActor
 struct ShadowCameraScreen: View {
     private let container: AppContainer
     @ObservedObject private var shadow: ShadowModel
@@ -53,22 +54,48 @@ struct ShadowCameraScreen: View {
             }
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 16) {
-                    Text("SHADOW").font(.system(size: 18, weight: .bold)).tracking(2)
+                    HStack(spacing: 7) {
+                        Image("SkiLogo").resizable().scaledToFit().frame(width: 32, height: 32).clipShape(RoundedRectangle(cornerRadius: 9)).accessibilityHidden(true)
+                        Text("SKI").font(.system(size: 18, weight: .bold)).tracking(2)
+                    }
                     Spacer(minLength: 4)
                     Button("Tủ đồ", action: onWardrobe)
                     Button("Bài đã học", action: onLessons)
                 }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
                 HStack(spacing: 6) {
                     Button(gps.label) { gps.request(container) }.font(.system(size: 11)).foregroundStyle(accent)
-                    Circle().fill(shadow.state.connected ? accent : .gray).frame(width: 6, height: 6)
-                    Text(shadow.state.connected ? "Đã kết nối" : shadow.state.busy.isEmpty ? "Chưa kết nối" : "Đang kết nối…")
+                    Circle().fill(model.live.connected ? accent : .gray).frame(width: 6, height: 6)
+                    Text(model.live.connected ? "Live · nghe liên tục" : model.live.status == .connecting ? "Đang mở Live…" : "Live đang tắt")
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
                 }
                 Spacer(minLength: 22)
+                if model.showsOutfit && !model.outfitItems.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(model.outfitTitle).font(.headline)
+                        HStack(spacing: 8) {
+                            ForEach(model.outfitItems.prefix(3)) { item in
+                                VStack(spacing: 4) {
+                                    RemoteImage(url: item.imageURL, headers: model.imageHeaders(item.imageURL), height: 96, fit: true)
+                                    Text(item.name).font(.caption2).lineLimit(2)
+                                }.frame(maxWidth: .infinity)
+                            }
+                        }
+                        if !model.outfitReason.isEmpty { Text(model.outfitReason).font(.caption).lineLimit(3) }
+                    }.padding(12).background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
+                        .foregroundStyle(.white).padding(.trailing, 42).padding(.bottom, 10)
+                }
+                if !model.lessonInstruction.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(model.lessonTitle) · \(model.lessonStep)/\(model.lessonSteps)").font(.caption).foregroundStyle(accent)
+                        Text(model.lessonInstruction).font(.headline).lineLimit(4)
+                    }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16)).foregroundStyle(.white)
+                        .padding(.trailing, 42).padding(.bottom, 10)
+                }
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
-                            if model.state.turns.isEmpty {
+                            if model.messages.isEmpty {
                                 Text("Chào bạn. Hôm nay bạn muốn mình giúp gì?")
                                     .font(.system(size: 20)).lineSpacing(5)
                             }
@@ -76,29 +103,26 @@ struct ShadowCameraScreen: View {
                                 Text(turn.text).font(.system(size: turn.role == "user" ? 14 : 18))
                                     .foregroundStyle(.white.opacity(turn.role == "user" ? 0.63 : 1)).lineSpacing(5)
                             }
-                            if !model.state.reply.isEmpty {
-                                Text(model.state.reply).font(.system(size: 18)).lineSpacing(5)
-                            }
                             Color.clear.frame(height: 1).id("latest")
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 42)
                     }.frame(maxHeight: 240).fixedSize(horizontal: false, vertical: true)
-                        .onChange(of: model.state.reply) { _ in withAnimation { proxy.scrollTo("latest", anchor: .bottom) } }
-                        .onChange(of: model.state.turns.count) { _ in withAnimation { proxy.scrollTo("latest", anchor: .bottom) } }
+                        .onChange(of: model.messages.last?.text) { _ in withAnimation { proxy.scrollTo("latest", anchor: .bottom) } }
+                        .onChange(of: model.messages.count) { _ in withAnimation { proxy.scrollTo("latest", anchor: .bottom) } }
                 }.foregroundStyle(.white).accessibilityLabel("Cuộc trò chuyện")
-                ForEach(Array(model.state.links.enumerated()), id: \.offset) { _, link in
+                ForEach(Array(model.links.enumerated()), id: \.offset) { _, link in
                     Button("\(link.label)  →") {
                         if ["wardrobe", "stylist", "tryon-photo", "tryon-live"].contains(link.route) { onWardrobe() }
                         else { onLessons() }
                     }.font(.system(size: 14)).foregroundStyle(accent).padding(.top, 8)
                 }
                 Text(status).font(.system(size: 12)).lineSpacing(3)
-                    .foregroundStyle(model.state.error != nil || shadow.state.error != nil ? Color(red: 1, green: 0.79, blue: 0.66) : .white.opacity(0.68))
+                    .foregroundStyle(model.live.error != nil || model.state.error != nil || shadow.state.error != nil ? Color(red: 1, green: 0.79, blue: 0.66) : .white.opacity(0.68))
                     .padding(.top, 14).padding(.bottom, 12)
                 HStack(spacing: 10) {
                     control(model.listening ? "stop.fill" : "mic", model.listening ? "Tắt micro" : "Bật micro", highlighted: model.listening) {
                         typing = false; model.toggleMic()
                     }
-                    TextField("Hỏi Shadow…", text: $model.text)
+                    TextField("Hỏi SKI…", text: $model.text)
                         .font(.system(size: 15)).tint(accent).foregroundStyle(.white)
                         .padding(.horizontal, 17).frame(minHeight: 46)
                         .background(.black.opacity(0.12), in: Capsule())
@@ -106,9 +130,9 @@ struct ShadowCameraScreen: View {
                         .focused($typing).submitLabel(.send).accessibilityLabel("Câu hỏi")
                         .onSubmit { typing = false; model.send() }
                         .onChange(of: model.text) { value in if value.count > 500 { model.text = String(value.prefix(500)) } }
-                    control(model.state.busy ? "stop.fill" : "arrow.up", model.state.busy ? "Dừng phản hồi" : "Gửi câu hỏi", highlighted: true) {
+                    control(model.canCancelResponse ? "stop.fill" : "arrow.up", model.canCancelResponse ? "Dừng phản hồi" : "Gửi câu hỏi", highlighted: true) {
                         typing = false
-                        if model.state.busy { model.cancel() } else { model.send() }
+                        if model.canCancelResponse { model.cancel() } else { model.send() }
                     }
                 }
             }.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 18)
@@ -125,9 +149,10 @@ struct ShadowCameraScreen: View {
             }.padding(.top, 100).padding(.trailing, 14)
         }
         .preferredColorScheme(.dark)
-        .onAppear { gps.refresh(container); if cameraVisible { model.start() } }
+        .onAppear { gps.refresh(container); configureLive(); if cameraVisible { model.start() } }
         .onDisappear { model.stop(); gps.stop() }
-        .onChange(of: shadow.state.endpoint) { _ in model.clear() }
+        .onChange(of: shadow.state.endpoint) { _ in configureLive() }
+        .onChange(of: shadow.state.connected) { _ in configureLive() }
         .onChange(of: cameraVisible) { visible in
             if visible && scenePhase == .active && !settings { model.start() } else { model.stop() }
         }
@@ -136,7 +161,7 @@ struct ShadowCameraScreen: View {
             if phase == .active && cameraVisible && !settings { model.start() }
             else { model.stop() }
         }
-        .sheet(isPresented: $settings, onDismiss: { draftCode = ""; model.start() }) {
+        .sheet(isPresented: $settings, onDismiss: { draftCode = ""; if cameraVisible && scenePhase == .active { model.start() } }) {
             NavigationStack {
                 Form {
                     Section {
@@ -147,18 +172,20 @@ struct ShadowCameraScreen: View {
                     if let error = settingsError { Text(error).foregroundStyle(.red) }
                     Button("Lưu & kết nối") { saveSettings() }.foregroundStyle(accent)
                 }
-                .navigationTitle("Kết nối SHADOW").navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("Kết nối SKI").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Hủy") { settings = false } } }
             }.preferredColorScheme(.dark)
         }
     }
 
-    private var visibleTurns: [ConversationTurn] {
-        var turns = model.state.turns
-        if !model.state.busy && model.state.error == nil && turns.last?.role == "assistant" { turns.removeLast() }
-        return Array(turns.suffix(5))
+    private var visibleTurns: [LiveTranscript] { Array(model.messages.suffix(6)) }
+    private func configureLive() {
+        model.configure(endpoint: shadow.state.endpoint, headers: shadow.mediaHeaders, connected: shadow.state.connected)
+        model.getLocation = { gps.liveLocation }
     }
     private var status: String {
+        if let error = model.live.error { return error }
+        if model.live.connected || model.live.status == .connecting { return model.live.detail }
         if let error = model.state.error { return error }
         if let notice = model.notice { return notice }
         if let error = shadow.state.error { return error }
@@ -194,94 +221,16 @@ struct ShadowCameraScreen: View {
     }
 }
 
-private final class NativeCameraChatModel: ObservableObject {
-    @Published private(set) var state: ConversationState
-    @Published var text = ""
-    @Published private(set) var listening = false
-    @Published private(set) var cameraGranted = false
-    @Published private(set) var cameraAvailable = true
-    @Published private(set) var cameraEnabled = true
-    @Published private(set) var notice: String?
-    let camera = NativeServices.makeCamera()
-    private let speaker = NativeServices.makeSpeaker()
-    private var listener: AuthorizedSpeechListener?
-    private let store: ConversationStore
-    private var subscription: StoreSubscription?
-    private var active = false
-    private var front = false
-    private var spokenTurn = false
-
-    init(store: ConversationStore) {
-        self.store = store
-        state = store.currentState
-        subscription = store.observeState { [weak self] state in
-            guard let self else { return }
-            self.state = state
-            if self.active && !state.busy && self.spokenTurn && !state.reply.isEmpty && state.error == nil {
-                self.spokenTurn = false; self.speaker.speak(text: state.reply)
-            }
-        }
-        listener = NativeServices.makeListener(elapsedSeconds: { Date().timeIntervalSince1970 },
-            onSentence: { [weak self] _, _, sentence in
-                guard let self, self.active, self.listening else { return }
-                self.text = sentence; self.spokenTurn = true; self.send()
-            }, onPartial: { [weak self] text in if self?.listening == true { self?.text = text } },
-            onUnavailable: { [weak self] in
-                self?.listening = false
-                self?.notice = "Nhập câu hỏi nếu thiết bị chưa hỗ trợ nhận giọng nói tiếng Việt."
-            })
-    }
-    func start() {
-        active = true
-        cameraAvailable = AVCaptureDevice.default(for: .video) != nil
-        guard cameraAvailable else { return }
-        ShadowCamera.requestAccess { [weak self] granted in
-            guard let self else { return }
-            self.cameraGranted = granted
-            if granted && self.active && self.cameraEnabled { self.camera.start(front: self.front) }
-        }
-    }
-    func stop() {
-        active = false; listening = false
-        listener?.stop(); speaker.stop(); camera.stop(); store.cancel()
-    }
-    func toggleCamera() {
-        cameraEnabled.toggle()
-        if cameraEnabled { start() } else { camera.stop() }
-    }
-    func flip() { front.toggle(); camera.flip(front: front) }
-    func toggleMic() {
-        if listening { listening = false; listener?.stop(); return }
-        guard !state.busy else { return }
-        speaker.stop(); notice = nil
-        AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-            DispatchQueue.main.async {
-                guard let self, self.active else { return }
-                guard granted else { self.notice = "Cho phép micro trong Cài đặt để nói chuyện."; return }
-                self.listener?.requestAccess { [weak self] speechGranted in
-                    guard let self, self.active else { return }
-                    if speechGranted { self.listening = true; self.listener?.start() }
-                    else { self.notice = "Cho phép nhận dạng giọng nói trong Cài đặt. Bạn vẫn có thể nhập câu hỏi." }
-                }
-            }
-        }
-    }
-    func send() {
-        let prompt = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !prompt.isEmpty, !state.busy else { return }
-        listening = false; listener?.stop(); speaker.stop(); notice = nil; text = ""
-        let image = cameraEnabled && cameraGranted && active ? camera.capture(maxSide: 640) : nil
-        store.send(text: prompt, image: image)
-    }
-    func cancel() { store.cancel(); speaker.stop() }
-    func clear() { store.clear(); text = ""; spokenTurn = false }
-    deinit { subscription?.cancel(); listener?.shutdown(); speaker.shutdown(); camera.stop(); store.close() }
-}
-
 /// One-shot foreground fixes; coordinates are never saved to preferences.
 @MainActor
 private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var label = "Bật GPS"
+    private var fix: CLLocation?
+    var liveLocation: [String: Double]? {
+        guard [.authorizedAlways, .authorizedWhenInUse].contains(manager.authorizationStatus),
+              UIApplication.shared.applicationState == .active, let fix, abs(fix.timestamp.timeIntervalSinceNow) < 600 else { return nil }
+        return ["lat": fix.coordinate.latitude, "lon": fix.coordinate.longitude]
+    }
     private let manager = CLLocationManager()
     private var container: AppContainer?
     private var timeout: Task<Void, Never>?
@@ -301,10 +250,10 @@ private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLoc
             timeout = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 10_000_000_000)
                 guard !Task.isCancelled else { return }
-                self?.stop(); self?.container?.clearLocation(); self?.label = "Thử lại GPS"
+                self?.stop(); self?.fix = nil; self?.container?.clearLocation(); self?.label = "Thử lại GPS"
             }
         default:
-            container.clearLocation(); label = "Bật GPS"
+            fix = nil; container.clearLocation(); label = "Bật GPS"
         }
     }
     func request(_ container: AppContainer) {
@@ -321,11 +270,12 @@ private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLoc
         guard UIApplication.shared.applicationState == .active,
               let fix = locations.last, fix.horizontalAccuracy >= 0, abs(fix.timestamp.timeIntervalSinceNow) < 600 else { return }
         stop()
+        self.fix = fix
         container?.updateLocation(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
         label = "GPS ✓"
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        stop(); container?.clearLocation(); label = "Thử lại GPS"
+        stop(); fix = nil; container?.clearLocation(); label = "Thử lại GPS"
     }
     func stop() { timeout?.cancel(); timeout = nil; manager.stopUpdatingLocation() }
 }

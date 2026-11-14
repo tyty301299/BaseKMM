@@ -105,7 +105,7 @@ internal fun LookCameraScreen(store: LookStore, skills: List<ShadowSkill>, conne
     )
     if (showSkills) AlertDialog(onDismissRequest = { showSkills = false }, title = { Text("Kỹ năng đã học") },
         text = { Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
-            if (!connected) Text("Chưa kết nối SHADOW. Hãy kiểm tra mạng và cài đặt kết nối.")
+            if (!connected) Text("Chưa kết nối SKI. Hãy kiểm tra mạng và cài đặt kết nối.")
             else if (skills.isEmpty()) Text("Chưa có kỹ năng đã học. Hãy dạy một kỹ năng mới.")
             skills.forEach { skill -> TextButton(onClick = { showSkills = false; onGuide(skill.id, skill.title) }) { Text(skill.title) } }
         } }, confirmButton = { TextButton(onClick = { showSkills = false }) { Text("Đóng") } })
@@ -180,7 +180,7 @@ internal fun LookCameraScreen(store: LookStore, skills: List<ShadowSkill>, conne
                             Text("Tự chuyển bước", color = Color.White)
                         }
                     }
-                    Text(if (!connected) "Cần kết nối SHADOW để hướng dẫn qua camera." else if (modeLabel == "AI")
+                    Text(if (!connected) "Cần kết nối SKI để hướng dẫn qua camera." else if (modeLabel == "AI")
                         "AI kiểm tra thao tác và tự chuyển bước" else "Demo · kết quả kiểm tra giả lập", color = Color.White,
                         style = MaterialTheme.typography.labelSmall)
                     guideError?.let { Text(it, color = Color(0xFFFFB547), style = MaterialTheme.typography.bodySmall) }
@@ -190,7 +190,7 @@ internal fun LookCameraScreen(store: LookStore, skills: List<ShadowSkill>, conne
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)) { Text("Hướng dẫn mẫu") }
                         OutlinedButton(onClick = {
                             if (connected) onAutoGuide(when (selectedMode) { 0 -> "gift"; 1 -> "fold"; else -> "pants" })
-                            else message = "Cần kết nối SHADOW để tự chuyển bước"
+                            else message = "Cần kết nối SKI để tự chuyển bước"
                         }) { Text(if (!connected) "Tự động" else if (modeLabel == "AI") "Tự động AI" else "Tự động demo", color = Color.White) }
                     }
                 }
@@ -198,7 +198,7 @@ internal fun LookCameraScreen(store: LookStore, skills: List<ShadowSkill>, conne
                 Button(onClick = onLiveTryOn, enabled = connected) { Text("Thử áo trực tiếp") }
             } else if (guideStep < 0 && selectedMode == 4) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    TextButton(onClick = { if (connected) onTeach() else message = "Cần kết nối SHADOW để dạy kỹ năng" }) { Text("Dạy kỹ năng mới", color = Color.White) }
+                    TextButton(onClick = { if (connected) onTeach() else message = "Cần kết nối SKI để dạy kỹ năng" }) { Text("Dạy kỹ năng mới", color = Color.White) }
                     TextButton(onClick = { showSkills = true }) { Text("Kỹ năng đã học", color = Color.White) }
                 }
             }
@@ -214,7 +214,7 @@ internal fun LookCameraScreen(store: LookStore, skills: List<ShadowSkill>, conne
                         message = if (data != null && runCatching {
                             val bytes = Base64.decode(data, Base64.DEFAULT)
                             if (Build.VERSION.SDK_INT >= 29) {
-                                val values = ContentValues().apply { put(MediaStore.Images.Media.DISPLAY_NAME, "SHADOW_${System.currentTimeMillis()}.jpg"); put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg"); put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SHADOW") }
+                                val values = ContentValues().apply { put(MediaStore.Images.Media.DISPLAY_NAME, "SHADOW_${System.currentTimeMillis()}.jpg"); put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg"); put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SKI") }
                                 val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: error("Cannot create photo")
                                 context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("Cannot save photo")
                             } else {

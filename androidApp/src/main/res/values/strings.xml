@@ -18,7 +18,7 @@
     <string name="close">Đóng</string>
     <string name="back">Quay lại</string>
     <string name="language_content">Ngôn ngữ áp dụng cho giao diện. Nội dung từ máy chủ giữ nguyên.</string>
-    <string name="connection_intro">Kết nối với SHADOW</string>
+    <string name="connection_intro">Kết nối với SKI</string>
     <string name="connection_description">Dùng địa chỉ HTTPS của nhóm để truy cập kỹ năng và tủ đồ.</string>
     <string name="access_code_long">Mã truy cập, nếu máy chủ yêu cầu</string>
     <string name="learn_tab">Học &amp; làm theo</string>
@@ -28,7 +28,7 @@
     <string name="teach_camera">Dạy kỹ năng bằng camera</string>
     <string name="learned_skills">Kỹ năng đã học</string>
     <string name="refresh">Tải lại</string>
-    <string name="skills_empty">Chưa có kỹ năng. Hãy dạy SHADOW thao tác đầu tiên của bạn.</string>
+    <string name="skills_empty">Chưa có kỹ năng. Hãy dạy SKI thao tác đầu tiên của bạn.</string>
     <string name="connect_to_skills">Kết nối máy chủ để xem các kỹ năng đã học.</string>
     <string name="wardrobe_heading">Hôm nay,\nbạn muốn mặc gì?</string>
     <string name="wardrobe_description">Gợi ý từ những món đồ có trong tủ của bạn, phù hợp với dịp sắp tới.</string>
@@ -43,10 +43,10 @@
     <string name="extra_preferences">Mong muốn thêm (không bắt buộc)</string>
     <string name="suggest">Gợi ý phối đồ</string>
     <string name="outfits_empty">Chưa có bộ phối phù hợp. Thử đổi dịp hoặc thêm trang phục.</string>
-    <string name="guide_description">SHADOW nhìn qua camera và hướng dẫn bạn từng bước bằng giọng nói.</string>
+    <string name="guide_description">SKI nhìn qua camera và hướng dẫn bạn từng bước bằng giọng nói.</string>
     <string name="start_guide">Bắt đầu hướng dẫn qua camera</string>
     <string name="select_step">Bước cần xem</string>
-    <string name="ask_step">Hỏi SHADOW về bước này</string>
+    <string name="ask_step">Hỏi SKI về bước này</string>
     <string name="question_hint">Bạn đang vướng ở đâu?</string>
     <string name="send_question">Gửi câu hỏi</string>
     <string name="previous_step">Bước trước</string>
@@ -58,7 +58,7 @@
     <string name="glass_effect">Hiệu ứng kính</string>
     <string name="apple_glass_description">Liquid Glass trên iOS 26+. iOS cũ dùng Material. Reduce Transparency ưu tiên nền đặc.</string>
     <string name="android_glass_description">Android dùng bề mặt Material với hiệu ứng kính tương ứng. Tắt kính để dùng nền đặc.</string>
-    <string name="connect_service">Kết nối dịch vụ SHADOW</string>
+    <string name="connect_service">Kết nối dịch vụ SKI</string>
     <string name="view_components">Xem thành phần UI</string>
     <string name="local_data">Dữ liệu local</string>
     <string name="local_data_description">Tủ mẫu, kỹ năng và lịch sử được lưu trên máy. Xóa dữ liệu không thể hoàn tác.</string>
@@ -77,10 +77,10 @@
     <string name="outfit_today">Phối đồ cho hôm nay</string>
     <string name="quick_start">Bắt đầu từ tủ đồ</string>
     <string name="camera_preview">Camera thử mẫu</string>
-    <string name="add_garment">Thêm trang phục</string>
-    <string name="live_service">SHADOW trực tuyến</string>
+    <string name="add_garment">Thêm quần áo</string>
+    <string name="live_service">SKI trực tuyến</string>
     <string name="live_service_detail">Kỹ năng và tủ đồ từ máy chủ</string>
-    <string name="sample_notice">Ảnh và luồng phối đồ ở đây dùng dữ liệu mẫu. Mở SHADOW trực tuyến để dùng dữ liệu thật.</string>
+    <string name="sample_notice">Ảnh và luồng phối đồ ở đây dùng dữ liệu mẫu. Mở SKI trực tuyến để dùng dữ liệu thật.</string>
     <string name="appearance_title">Giao diện</string>
     <string name="filter_all">Tất cả</string>
     <string name="filter_tops">Áo</string>
@@ -107,7 +107,7 @@
     <string name="ui_019">Bắt đầu làm theo</string>
     <string name="ui_020">Bắt đầu thao tác mẫu</string>
     <string name="ui_021">Bộ phối</string>
-    <string name="ui_022">Bộ phối minh họa để thử giao diện. Kết nối SHADOW để dùng tủ đồ thật.</string>
+    <string name="ui_022">Bộ phối minh họa để thử giao diện. Kết nối SKI để dùng tủ đồ thật.</string>
     <string name="ui_023">Bộ phối mẫu</string>
     <string name="ui_024">Bộ phối mẫu đã sẵn sàng.</string>
     <string name="ui_025">Cam đào</string>
@@ -117,7 +117,7 @@
     <string name="ui_029">Chi tiết bộ phối</string>
     <string name="ui_030">Chi tiết trang phục</string>
     <string name="ui_031">Cho AI thấy cách bạn làm.</string>
-    <string name="ui_032">Cho SHADOW thấy món đồ.</string>
+    <string name="ui_032">Cho SKI thấy món đồ.</string>
     <string name="ui_033">Chuẩn bị bộ phối</string>
     <string name="ui_034">Chuẩn bị dạy</string>
     <string name="ui_035">Chuẩn bị lại bài mẫu</string>
@@ -126,7 +126,7 @@
     <string name="ui_038">Chưa có kỹ năng. Bắt đầu với một bài mẫu.</string>
     <string name="ui_039">Chưa có mục đã lưu trong nhóm này.</string>
     <string name="ui_040">Chưa có trang phục trong nhóm này.</string>
-    <string name="ui_041">Chưa kết nối máy chủ SHADOW.</string>
+    <string name="ui_041">Chưa kết nối máy chủ SKI.</string>
     <string name="ui_042">Chưa lưu được kỹ năng. Thử lại nhé.</string>
     <string name="ui_043">Chưa xác định nguồn kết quả</string>
     <string name="ui_044">Chụp kết quả mẫu</string>
@@ -134,7 +134,7 @@
     <string name="ui_046">Chụp ảnh mẫu</string>
     <string name="ui_047">Các bước minh họa cho bài lắp giá đỡ điện thoại. Chưa phân tích video bằng AI.</string>
     <string name="ui_048">Các thành phần hỗ trợ chữ hệ thống và chế độ giảm độ trong suốt.</string>
-    <string name="ui_049">Cần quyền camera để SHADOW nhìn thao tác của bạn.</string>
+    <string name="ui_049">Cần quyền camera để SKI nhìn thao tác của bạn.</string>
     <string name="ui_050">Cần quyền camera để ghi lại thao tác mẫu.</string>
     <string name="ui_051">Cần tên kỹ năng và ít nhất một câu mô tả hoặc ghi chú.</string>
     <string name="ui_052">Demo từ những món đang có trong tủ. Không phải kết quả AI.</string>
@@ -165,7 +165,7 @@
     <string name="ui_077">Hình nhân minh họa · camera demo</string>
     <string name="ui_078">Hình nhân trang phục mẫu, không phải ảnh AI</string>
     <string name="ui_079">Hướng dẫn mẫu. Không dùng camera để đánh giá thao tác.</string>
-    <string name="ui_080">Hỏi SHADOW</string>
+    <string name="ui_080">Hỏi SKI</string>
     <string name="ui_081">Hỏi về bước này</string>
     <string name="ui_082">Không có video hoặc âm thanh được ghi.</string>
     <string name="ui_083">Không hoàn tất được thao tác.</string>
@@ -237,8 +237,8 @@
     <string name="ui_149">Quay thao tác · demo</string>
     <string name="ui_150">Quen gu. Mới cách mặc.</string>
     <string name="ui_151">Quy tắc đã học: </string>
-    <string name="ui_152">SHADOW đang nhìn…</string>
-    <string name="ui_153">SHADOW đang trả lời…</string>
+    <string name="ui_152">SKI đang nhìn…</string>
+    <string name="ui_153">SKI đang trả lời…</string>
     <string name="ui_154">Siết khóa để thanh đứng chắc chắn.</string>
     <string name="ui_155">Sẵn sàng</string>
     <string name="ui_156">Sửa ghi chú</string>
@@ -326,7 +326,7 @@
     <string name="ui_238">Đã cập nhật giao diện</string>
     <string name="ui_239">Đã cập nhật trang phục</string>
     <string name="ui_240">Đã hoàn thành hướng dẫn mẫu</string>
-    <string name="ui_241">Đã hoàn tất thao tác với SHADOW</string>
+    <string name="ui_241">Đã hoàn tất thao tác với SKI</string>
     <string name="ui_242">Đã lưu kỹ năng</string>
     <string name="ui_243">Đã lưu kỹ năng trên máy</string>
     <string name="ui_244">Đã lưu kỹ năng.</string>
@@ -371,10 +371,10 @@
     <string name="saved_items_count">%1$s mục · lưu trên máy</string>
     <string name="sample_skill_steps">Kỹ năng mẫu · %1$s bước</string>
     <string name="person_photo_title">Thử đồ với ảnh của bạn</string>
-    <string name="person_photo_detail">Chọn ảnh rõ người. SHADOW sẽ gợi ý trang phục và tạo ảnh mặc thử.</string>
+    <string name="person_photo_detail">Chọn ảnh rõ người. SKI sẽ gợi ý trang phục và tạo ảnh mặc thử.</string>
     <string name="choose_person_photo">Chọn ảnh người</string>
     <string name="change_person_photo">Đổi ảnh</string>
-    <string name="person_photo_privacy">Ảnh chỉ được gửi đến máy chủ SHADOW khi bạn bấm Tạo ảnh thử đồ.</string>
+    <string name="person_photo_privacy">Ảnh chỉ được gửi đến máy chủ SKI khi bạn bấm Tạo ảnh thử đồ.</string>
     <string name="create_tryon">Tạo ảnh thử đồ</string>
     <string name="tryon_result">Ảnh thử đồ của bạn</string>
     <string name="tryon_mock">Ảnh ghép demo · chưa phải kết quả AI</string>

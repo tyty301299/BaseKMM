@@ -47,7 +47,7 @@ internal fun LookHomeScreen(store: LookStore, studio: StudioStore, remote: Shado
                 Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("SHADOW", style = MaterialTheme.typography.titleLarge)
+                        Text("SKI", style = MaterialTheme.typography.titleLarge)
                         TextButton(onClick = onSettings, modifier = Modifier.lookGlass()) { Text(language.text(R.string.settings_title)) }
                     }
                     ConnectionStatus(remote, onReconnect, onSettings)
