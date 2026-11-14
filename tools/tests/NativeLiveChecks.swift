@@ -84,6 +84,10 @@ final class LiveHTTPFixture: URLProtocol {
         for _ in 0..<200 { if predicate() { return }; try? await Task.sleep(nanoseconds: 10_000_000) }
         fatalError("Timeout: \(label)")
     }
+    static func clientText(_ value: [String: Any]) -> String {
+        guard let content = value["clientContent"] as? [String: Any], let turns = content["turns"] as? [[String: Any]] else { return "" }
+        return turns.flatMap { $0["parts"] as? [[String: Any]] ?? [] }.compactMap { $0["text"] as? String }.joined()
+    }
     static func require(_ value: @autoclosure () -> Bool, _ message: String) { if !value() { fatalError(message) } }
     @MainActor static func main() async {
         let config = URLSessionConfiguration.ephemeral
@@ -98,6 +102,8 @@ final class LiveHTTPFixture: URLProtocol {
         let origin = URL(string: "https://ski.example.test")!
         var gps: [String: Double]? = ["lat": 10.8, "lon": 106.6]
         live.getLocation = { gps }
+        var city: String? = "Hà Nội"
+        live.getCity = { city }
         live.getFrame = { "data:image/jpeg;base64,FRAME_FIXTURE" }
         var events = 0
         live.onEvent = { _ in events += 1 }
@@ -107,6 +113,16 @@ final class LiveHTTPFixture: URLProtocol {
         require(!audio.recording, "Mic must not send before setupComplete")
         socket.deliver(["setupComplete": [:]])
         await wait("microphone starts") { audio.recording && live.snapshot.connected }
+        require(LiveHTTPFixture.captured().first?.1["configured_city"] as? String == "Hà Nội", "Initial Live setup includes the GPS city")
+        await wait("GPS context reaches Live") { socket.sent.contains { clientText($0).contains("Hà Nội") } }
+        let contextMessages = socket.sent.filter { $0["clientContent"] != nil }
+        require((contextMessages.last?["clientContent"] as? [String: Any])?["turnComplete"] as? Bool == false, "GPS updates must not start a spoken turn")
+        require(live.snapshot.messages.isEmpty, "GPS context must not appear as a user transcript")
+        live.syncLocationContext()
+        try? await Task.sleep(nanoseconds: 30_000_000)
+        require(socket.sent.filter { $0["clientContent"] != nil }.count == contextMessages.count, "Unchanged GPS must not flood the conversation")
+        city = "Đà Nẵng"; live.syncLocationContext()
+        await wait("GPS city update") { socket.sent.contains { clientText($0).contains("Đà Nẵng") } }
         require(LiveHTTPFixture.captured().first?.2 == "demo-access", "BE requests keep the existing access header")
         audio.pcm?(Data(repeating: 0, count: 3200))
         await wait("PCM packet") { socket.sent.contains { ($0["realtimeInput"] as? [String: Any])?["audio"] != nil } }
@@ -116,9 +132,16 @@ final class LiveHTTPFixture: URLProtocol {
         await wait("streamed playback") { audio.played == 1 }
         require(audio.recording, "Mic remains active during assistant audio for barge-in")
         require(live.snapshot.messages.first?.text == "Chào bạn", "Partial user transcript must merge")
+        let beforeLocationUpdate = socket.sent.filter { $0["clientContent"] != nil }.count
+        city = "Huế"; live.syncLocationContext()
+        try? await Task.sleep(nanoseconds: 30_000_000)
+        require(socket.sent.filter { $0["clientContent"] != nil }.count == beforeLocationUpdate, "GPS must not interrupt a spoken reply")
         socket.deliver(["serverContent": ["turnComplete": true]])
         await wait("turn drained") { live.snapshot.messages.count == 2 }
+        try? await Task.sleep(nanoseconds: 30_000_000)
+        require(socket.sent.filter { $0["clientContent"] != nil }.count == beforeLocationUpdate, "GPS waits for buffered audio to drain too")
         audio.drained?()
+        await wait("deferred GPS update") { socket.sent.contains { clientText($0).contains("Huế") } }
         await wait("listening after turn") { live.snapshot.status == .listening }
         require(audio.recording, "Conversation must not stop after one sentence")
         await wait("camera frame streamed") { socket.sent.contains { ($0["realtimeInput"] as? [String: Any])?["video"] != nil } }
@@ -141,6 +164,15 @@ final class LiveHTTPFixture: URLProtocol {
         await wait("cached response") { socket.sent.filter { $0["toolResponse"] != nil }.count == 2 }
         require(LiveHTTPFixture.captured().count == requests && events == 1, "Duplicate tool must not repeat server or UI side effects")
         gps = nil
+        socket.deliver(["serverContent": ["turnComplete": true]])
+        await wait("ready to update revoked GPS") { live.snapshot.status == .listening }
+        live.syncLocationContext()
+        await wait("GPS context revoked") {
+            guard let content = socket.sent.last?["clientContent"] as? [String: Any],
+                  let turns = content["turns"] as? [[String: Any]],
+                  let text = (turns.first?["parts"] as? [[String: Any]])?.first?["text"] as? String else { return false }
+            return text.contains("\"gps_available\":false") && !text.contains("Huế")
+        }
         socket.deliver(["toolCall": ["functionCalls": [["id": "weather-2", "name": "get_weather", "args": [:]]]]])
         await wait("GPS revoked") { LiveHTTPFixture.captured().count > requests }
         require(LiveHTTPFixture.captured().last!.1["location"] is NSNull, "Revoked GPS clears server context")

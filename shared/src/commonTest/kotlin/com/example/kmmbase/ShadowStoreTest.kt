@@ -19,6 +19,7 @@ class ShadowStoreTest {
         var enteredCode: String? = null
         var askCount = 0
         var suggestedLocation: StylingLocation? = null
+        var suggestionCalls = 0
         var suggestionResult = ShadowSuggestions(emptyList(), "mock")
         var savedDraft: TeachDraft? = null
         var tryonCalls = 0
@@ -48,7 +49,7 @@ class ShadowStoreTest {
             return uploadGate?.await() ?: WardrobeItem("phone-1", name, category, false, "https://one.example/wardrobe-media/images/phone-1.jpg", gender = gender)
         }
         override suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestions {
-            suggestedLocation = location; return suggestionResult
+            suggestionCalls++; suggestedLocation = location; return suggestionResult
         }
         override suspend fun rules() = emptyList<ShadowRule>()
         override suspend fun addRule(text: String, taughtBy: String) = Unit
@@ -261,6 +262,33 @@ class ShadowStoreTest {
         assertEquals("mock", store.currentState.tryon?.provider)
         assertFalse(store.currentState.tryingOn)
         assertEquals("", store.currentState.busy)
+        store.close()
+    }
+
+    @Test fun photoTryonReusesCurrentOutfitAndRefreshesWhenContextChanges() = runTest {
+        val repo = FakeShadow().apply {
+            suggestionResult = ShadowSuggestions(listOf(ShadowOutfit("Outfit", "", listOf(
+                ShadowOutfitItem("coat", "Coat", "top", "", ""),
+            ), "")), "ai")
+        }
+        var gps: StylingLocation? = StylingLocation(21.0, 105.8)
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler), locationProvider = { gps })
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.Suggest("Work", ""))
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,dGVzdA==", "Work", ""))
+        assertEquals(1, repo.suggestionCalls, "Do not run the stylist twice for the same displayed outfit")
+        assertEquals(1, repo.tryonCalls)
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,bmV3", "Work", "summer"))
+        assertEquals(2, repo.suggestionCalls, "New weather scenario needs new styling")
+        gps = null
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,bmV3", "Work", "summer"))
+        assertEquals(3, repo.suggestionCalls, "Revoking GPS must invalidate the cached location")
+        store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64,dGVzdA==", "Áo mới", "top"))
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,bmV3", "Work", "summer"))
+        assertEquals(4, repo.suggestionCalls, "Changed wardrobe needs fresh styling")
+        store.dispatch(ShadowAction.Reconnect)
+        store.dispatch(ShadowAction.StylePerson("data:image/jpeg;base64,bmV3", "Work", "summer"))
+        assertEquals(5, repo.suggestionCalls, "A new connection must not reuse a previous server result")
         store.close()
     }
 

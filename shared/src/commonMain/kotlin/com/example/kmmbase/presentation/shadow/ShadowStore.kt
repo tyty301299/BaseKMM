@@ -10,6 +10,8 @@ import com.example.kmmbase.presentation.common.UiMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 class ShadowStore internal constructor(
     private val repositoryFactory: (String, String) -> ShadowRepository,
@@ -23,6 +25,11 @@ class ShadowStore internal constructor(
     private val messageChannel = Channel<UiMessage>(Channel.BUFFERED)
     val messages = messageChannel.receiveAsFlow()
     fun observeMessages(onMessage: (UiMessage) -> Unit): StoreSubscription = messages.subscribeIn(scope, onMessage)
+    private data class CachedStyle(
+        val event: String, val notes: String, val location: StylingLocation?,
+        val wardrobe: List<WardrobeItem>, val suggestions: ShadowSuggestions, val created: TimeMark,
+    )
+    private var cachedStyle: CachedStyle? = null
     private var repository: ShadowRepository? = null
     private var lastConnection: ShadowAction.Connect? = null
     private var operation: Job? = null
@@ -99,8 +106,17 @@ class ShadowStore internal constructor(
                         mutableState.update { it.copy(tryon = null, tryingOn = true) }
                         run("Đang phối từ tủ đồ của bạn…") {
                             try {
-                                val suggestions = repo.suggest(action.event.trim(), action.notes.trim(), locationProvider())
+                                val location = locationProvider()
+                                val cached = cachedStyle?.takeIf {
+                                    it.event == action.event.trim() && it.notes == action.notes.trim() &&
+                                        it.location == location && it.wardrobe == currentState.wardrobe &&
+                                        it.created.elapsedNow().inWholeSeconds < 300
+                                }
+                                trace.event("photo_style", "reused=${cached != null}")
+                                val suggestions = cached?.suggestions ?: repo.suggest(action.event.trim(), action.notes.trim(), location)
                                 currentCoroutineContext().ensureActive()
+                                cachedStyle = CachedStyle(action.event.trim(), action.notes.trim(), location,
+                                    currentState.wardrobe, suggestions, cached?.created ?: TimeSource.Monotonic.markNow())
                                 val outfit = suggestions.outfits.firstOrNull { it.items.isNotEmpty() }
                                     ?: throw IllegalArgumentException("Chưa có bộ đồ phù hợp để mặc thử. Hãy thêm trang phục hoặc đổi dịp.")
                                 mutableState.update { it.copy(suggestions = suggestions, suggestionsEvent = action.event.trim(),
@@ -143,10 +159,14 @@ class ShadowStore internal constructor(
                     }
                     is ShadowAction.Suggest -> {
                         if (action.event.isBlank() || action.event.length > 200 || action.notes.length > 300) return
+                        cachedStyle = null
                         mutableState.update { it.copy(suggestions = null, suggestionsLabel = "") }
                         run("Đang phối từ tủ đồ của bạn…") {
-                            val result = repo.suggest(action.event.trim(), action.notes.trim(), locationProvider())
+                            val location = locationProvider()
+                            val result = repo.suggest(action.event.trim(), action.notes.trim(), location)
                             currentCoroutineContext().ensureActive()
+                            cachedStyle = CachedStyle(action.event.trim(), action.notes.trim(), location,
+                                currentState.wardrobe, result, TimeSource.Monotonic.markNow())
                             mutableState.update { it.copy(suggestions = result, suggestionsLabel = shadowSourceLabel(result.source), suggestionsEvent = action.event.trim()) }
                         }
                     }
@@ -157,6 +177,7 @@ class ShadowStore internal constructor(
     }
 
     private fun connect(action: ShadowAction.Connect) {
+        cachedStyle = null
         lastConnection = action
         operation?.cancel()
         repository?.close()
@@ -170,8 +191,11 @@ class ShadowStore internal constructor(
                 val health = repo.health()
                 // /api/health is ungated, so validate the code explicitly before loading anything.
                 if (health.accessRequired) repo.authenticate(action.code.trim())
-                val skills = repo.skills()
-                val wardrobe = repo.wardrobe()
+                val (skills, wardrobe) = coroutineScope {
+                    val skills = async { repo.skills() }
+                    val wardrobe = async { repo.wardrobe() }
+                    skills.await() to wardrobe.await()
+                }
                 currentCoroutineContext().ensureActive()
                 mutableState.update { it.copy(endpoint = endpoint, connected = true,
                     modeLabel = shadowSourceLabel(health.mode), skills = skills, wardrobe = wardrobe) }
@@ -184,9 +208,12 @@ class ShadowStore internal constructor(
     }
 
     private suspend fun refresh(repo: ShadowRepository) {
-        val health = repo.health()
-        val skills = repo.skills()
-        val wardrobe = repo.wardrobe()
+        val (health, skills, wardrobe) = coroutineScope {
+            val health = async { repo.health() }
+            val skills = async { repo.skills() }
+            val wardrobe = async { repo.wardrobe() }
+            Triple(health.await(), skills.await(), wardrobe.await())
+        }
         currentCoroutineContext().ensureActive()
         mutableState.update { it.copy(skills = skills, wardrobe = wardrobe,
             modeLabel = shadowSourceLabel(health.mode), suggestions = null, suggestionsLabel = "") }

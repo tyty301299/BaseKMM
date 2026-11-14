@@ -16,11 +16,9 @@ struct RootView: View {
     @StateObject private var looks: LookModel
     @StateObject private var studio: StudioModel
     @StateObject private var feedback = StudioFeedback()
-    @State private var serviceTab = 0
-    @State private var serviceSettings = false
+    @State private var servicePresentation: ServicePresentation?
     @State private var tab = 0
     @State private var showCamera = false
-    @State private var showService = false
     @State private var selectedRecord: LookRecordRoute?
     @State private var retryAfterDismiss = false
 
@@ -36,7 +34,7 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ShadowCameraScreen(container: container, shadow: shadow, cameraVisible: !showService,
+            ShadowCameraScreen(container: container, shadow: shadow, cameraVisible: servicePresentation == nil,
                 onWardrobe: { openService(1) }, onLessons: { openService(0) })
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Route.self) { route in
@@ -45,7 +43,7 @@ struct RootView: View {
                         StudioDestination(route: destination, model: studio, looks: looks, shadow: shadow,
                             navigate: navigate, openCamera: openCamera,
                             homeTab: { tab = $0; path = $0 == 3 ? [.history] : [] }, service: openService,
-                            connectionSettings: { serviceTab = 0; serviceSettings = true; showService = true })
+                            connectionSettings: { servicePresentation = ServicePresentation(section: 0, settings: true) })
                     case .history:
                         LookHistoryView(model: looks, studio: studio,
                             onRecord: { selectedRecord = LookRecordRoute(id: $0) },
@@ -68,18 +66,18 @@ struct RootView: View {
                 path = [.history]
             }, onSettings: { showCamera = false; navigate(.settings) }, onNetworkRestored: { shadow.send(ShadowActionReconnect.shared) }, container: container, shadow: shadow).modifier(StudioFeedbackOverlay())
         }
-        .sheet(isPresented: $showService) {
+        .sheet(item: $servicePresentation) { presentation in
             NavigationStack {
-                HomeView(container: container, initialTab: serviceTab, initialSettings: serviceSettings, existingModel: shadow,
+                HomeView(container: container, initialTab: presentation.section, initialSettings: presentation.settings, existingModel: shadow,
                          onGuideCompleted: { session, skill, title, manual in
                              looks.send(LookActionSaveGuideCompletion(sessionId: session, skillId: skill, title: title,
                                  source: manual ? "manual" : (title.hasSuffix(" · Demo") ? "demo" : "ai")))
                          })
                     .toolbar { ToolbarItem(placement: .navigationBarLeading) {
-                        Button { showService = false } label: {
+                        Button { servicePresentation = nil } label: {
                             Image(systemName: "xmark")
                                 .font(.subheadline.weight(.semibold))
-                                .frame(width: 36, height: 36)
+                                .frame(width: 44, height: 44)
                                 .background(.secondary.opacity(0.12), in: Circle())
                         }
                         .buttonStyle(.plain).foregroundStyle(Color(red: 1, green: 210/255, blue: 63/255))
@@ -124,7 +122,7 @@ struct RootView: View {
     }
 
     private func navigate(_ route: StudioRoute) { path.append(.studio(route)) }
-    private func openService(_ section: Int) { serviceTab = section; serviceSettings = false; showService = true }
+    private func openService(_ section: Int) { servicePresentation = ServicePresentation(section: section, settings: false) }
 
     private func openCamera() {
         guard !looks.state.saving else { return }
@@ -134,3 +132,9 @@ struct RootView: View {
 }
 
 private struct LookRecordRoute: Identifiable { let id: String }
+
+private struct ServicePresentation: Identifiable {
+    let id = UUID()
+    let section: Int
+    let settings: Bool
+}

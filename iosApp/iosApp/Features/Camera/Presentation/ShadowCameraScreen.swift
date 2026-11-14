@@ -15,6 +15,9 @@ struct ShadowCameraScreen: View {
     let cameraVisible: Bool
     @Environment(\.scenePhase) private var scenePhase
     @State private var settings = false
+    @State private var wardrobeQuery = ""
+    @State private var wardrobeGender = "all"
+    @State private var manageWardrobeAfterDismiss = false
     @State private var draftEndpoint = ""
     @State private var draftCode = ""
     @State private var settingsError: String?
@@ -59,11 +62,14 @@ struct ShadowCameraScreen: View {
                         Text("SKI").font(.system(size: 18, weight: .bold)).tracking(2)
                     }
                     Spacer(minLength: 4)
-                    navigationButton("Tủ đồ", action: onWardrobe)
+                    navigationButton("Tủ đồ") { typing = false; model.wardrobePresented = true }
                     navigationButton("Bài đã học", action: onLessons)
                 }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
                 HStack(spacing: 6) {
-                    Button(gps.label) { gps.request(container) }.font(.system(size: 11)).foregroundStyle(accent)
+                    Button { gps.request(container) } label: {
+                        Text(gps.label).font(.system(size: 11)).padding(.horizontal, 10).frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }.buttonStyle(.plain).foregroundStyle(accent)
                     Circle().fill(model.live.connected ? accent : .gray).frame(width: 6, height: 6)
                     Text(model.live.connected ? "Live · nghe liên tục" : model.live.status == .connecting ? "Đang mở Live…" : "Live đang tắt")
                         .font(.system(size: 11)).foregroundStyle(.white.opacity(0.7))
@@ -126,9 +132,10 @@ struct ShadowCameraScreen: View {
                 }.foregroundStyle(.white).accessibilityLabel("Cuộc trò chuyện")
                 ForEach(Array(model.links.enumerated()), id: \.offset) { _, link in
                     Button("\(link.label)  →") {
-                        if ["wardrobe", "stylist", "tryon-photo", "tryon-live"].contains(link.route) { onWardrobe() }
+                        if ["wardrobe", "stylist", "tryon-photo", "tryon-live"].contains(link.route) { model.wardrobePresented = true }
                         else { onLessons() }
-                    }.font(.system(size: 14)).foregroundStyle(accent).padding(.top, 8)
+                    }.font(.system(size: 14)).foregroundStyle(accent).buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule).controlSize(.large).padding(.top, 8)
                 }
                 Text(status).font(.system(size: 12)).lineSpacing(3)
                     .foregroundStyle(model.live.error != nil || model.state.error != nil || shadow.state.error != nil ? Color(red: 1, green: 0.79, blue: 0.66) : .white.opacity(0.68))
@@ -163,11 +170,15 @@ struct ShadowCameraScreen: View {
                 Spacer()
             }.padding(.top, 100).padding(.trailing, 14)
         }
+        .sheet(isPresented: $model.wardrobePresented, onDismiss: {
+            if manageWardrobeAfterDismiss { manageWardrobeAfterDismiss = false; onWardrobe() }
+        }) { wardrobePicker.presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
         .preferredColorScheme(.dark)
         .onAppear { gps.refresh(container); configureLive(); if cameraVisible { model.start() } }
         .onDisappear { model.stop(); gps.stop() }
         .onChange(of: shadow.state.endpoint) { _ in configureLive() }
         .onChange(of: shadow.state.connected) { _ in configureLive() }
+        .onChange(of: gps.label) { _ in model.syncLocation() }
         .onChange(of: cameraVisible) { visible in
             if visible && scenePhase == .active && !settings { model.start() } else { model.stop() }
         }
@@ -193,10 +204,83 @@ struct ShadowCameraScreen: View {
         }
     }
 
+    private var wardrobePicker: some View {
+        let items = shadow.state.wardrobe.filter { item in
+            (wardrobeGender == "all" || item.gender == wardrobeGender || item.gender == "unisex")
+                && (wardrobeQuery.isEmpty || item.name.localizedCaseInsensitiveContains(wardrobeQuery))
+        }
+        return NavigationStack {
+            VStack(spacing: 12) {
+                Picker("Trang phục", selection: $wardrobeGender) {
+                    Text("Tất cả").tag("all"); Text("Nam").tag("men"); Text("Nữ").tag("women")
+                }.pickerStyle(.segmented).padding(.horizontal)
+                Text("Chọn tối đa 3 món để phối cùng nhau").font(.caption).foregroundStyle(.secondary)
+                ScrollView {
+                    if !shadow.state.busy.isEmpty && shadow.state.wardrobe.isEmpty { ProgressView("Đang tải tủ đồ…").padding() }
+                    if let error = shadow.state.error { Text(error).foregroundStyle(.red).padding() }
+                    if items.isEmpty && shadow.state.busy.isEmpty { Text("Chưa có trang phục phù hợp.").foregroundStyle(.secondary).padding() }
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 135))], spacing: 12) {
+                        ForEach(items, id: \.id) { item in wardrobeItem(item) }
+                    }.padding(.horizontal).padding(.bottom)
+                }
+                HStack(spacing: 12) {
+                    Button("Thêm quần áo") {
+                        manageWardrobeAfterDismiss = true; model.wardrobePresented = false
+                    }.buttonStyle(.bordered).controlSize(.large)
+                    Button("Phối \(model.selectedWardrobeIDs.count) món") {
+                        let names = shadow.state.wardrobe.filter { model.selectedWardrobeIDs.contains($0.id) }.map(\.name)
+                        model.wardrobePresented = false; model.styleSelectedWardrobe(names: names)
+                    }.buttonStyle(.borderedProminent).controlSize(.large)
+                        .disabled(model.selectedWardrobeIDs.isEmpty || !shadow.state.connected)
+                }.padding(.horizontal).padding(.bottom)
+            }
+            .navigationTitle("Tủ đồ").navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $wardrobeQuery, prompt: "Tìm áo, quần, áo khoác…")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { model.wardrobePresented = false } label: {
+                        Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle())
+                    }.accessibilityLabel("Đóng tủ đồ")
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button { shadow.send(ShadowActionRefresh.shared) } label: {
+                        Image(systemName: "arrow.clockwise").frame(width: 44, height: 44).contentShape(Rectangle())
+                    }.accessibilityLabel("Tải lại tủ đồ").disabled(!shadow.state.busy.isEmpty)
+                }
+            }
+            .onAppear { if shadow.state.wardrobe.isEmpty && shadow.state.busy.isEmpty { shadow.send(ShadowActionRefresh.shared) } }
+        }.tint(accent).preferredColorScheme(.dark)
+    }
+
+    private func wardrobeItem(_ item: WardrobeItem) -> some View {
+        let selected = model.selectedWardrobeIDs.contains(item.id)
+        return Button {
+            var ids = model.selectedWardrobeIDs
+            if selected { ids.removeAll { $0 == item.id } } else if ids.count < 3 { ids.append(item.id) }
+            model.selectWardrobe(ids)
+        } label: {
+            VStack(alignment: .leading, spacing: 7) {
+                RemoteImage(url: item.imageUrl, headers: shadow.mediaHeaders, height: 145, fit: true)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                Text(item.name).font(.caption).lineLimit(2)
+                HStack {
+                    Text(["men": "Nam", "women": "Nữ", "unisex": "Unisex"][item.gender] ?? "Chưa gắn nhãn").font(.caption2)
+                    Spacer()
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle").foregroundStyle(selected ? accent : .secondary)
+                }
+            }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                .background(.white.opacity(selected ? 0.12 : 0.05), in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(selected ? accent : .white.opacity(0.15), lineWidth: selected ? 2 : 1))
+                .contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+            .disabled(!selected && model.selectedWardrobeIDs.count >= 3)
+    }
+
     private var visibleTurns: [LiveTranscript] { Array(model.messages.suffix(6)) }
     private func configureLive() {
         model.configure(endpoint: shadow.state.endpoint, headers: shadow.mediaHeaders, connected: shadow.state.connected)
         model.getLocation = { gps.liveLocation }
+        model.getCity = { gps.liveLocation == nil ? nil : gps.city }
     }
     private var status: String {
         if let error = model.live.error { return error }
@@ -222,9 +306,10 @@ struct ShadowCameraScreen: View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 18, weight: .regular))
                 .foregroundStyle(highlighted ? Color(red: 23/255, green: 27/255, blue: 20/255) : .white)
-                .frame(width: 44, height: 44)
+                .frame(width: 48, height: 48)
                 .background(highlighted ? accent : .black.opacity(0.24), in: Circle())
                 .overlay(Circle().stroke(.white.opacity(highlighted ? 0 : 0.24), lineWidth: 1))
+                .contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityLabel(label)
     }
     private func openSettings() {
@@ -250,6 +335,8 @@ struct ShadowCameraScreen: View {
 @MainActor
 private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var label = "Bật GPS"
+    private(set) var city: String?
+    private let geocoder = CLGeocoder()
     private var fix: CLLocation?
     var liveLocation: [String: Double]? {
         guard [.authorizedAlways, .authorizedWhenInUse].contains(manager.authorizationStatus),
@@ -275,10 +362,13 @@ private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLoc
             timeout = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 10_000_000_000)
                 guard !Task.isCancelled else { return }
-                self?.stop(); self?.fix = nil; self?.container?.clearLocation(); self?.label = "Thử lại GPS"
+                self?.stop(); self?.fix = nil; self?.city = nil; self?.geocoder.cancelGeocode(); self?.container?.clearLocation(); self?.label = "Thử lại GPS"
             }
+        case .notDetermined:
+            fix = nil; city = nil; container.clearLocation(); label = "Cho phép GPS"
+            manager.requestWhenInUseAuthorization()
         default:
-            fix = nil; container.clearLocation(); label = "Bật GPS"
+            fix = nil; city = nil; geocoder.cancelGeocode(); container.clearLocation(); label = "Bật GPS"
         }
     }
     func request(_ container: AppContainer) {
@@ -296,11 +386,20 @@ private final class ForegroundStylingLocation: NSObject, ObservableObject, CLLoc
               let fix = locations.last, fix.horizontalAccuracy >= 0, abs(fix.timestamp.timeIntervalSinceNow) < 600 else { return }
         stop()
         self.fix = fix
+        city = nil
         container?.updateLocation(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
         label = "GPS ✓"
+        geocoder.cancelGeocode()
+        geocoder.reverseGeocodeLocation(fix, preferredLocale: Locale(identifier: "vi_VN")) { [weak self] places, _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.fix === fix, self.liveLocation != nil else { return }
+                self.city = places?.first?.locality ?? places?.first?.administrativeArea
+                if let city = self.city, !city.isEmpty { self.label = "GPS · " + city }
+            }
+        }
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        stop(); fix = nil; container?.clearLocation(); label = "Thử lại GPS"
+        stop(); fix = nil; city = nil; geocoder.cancelGeocode(); container?.clearLocation(); label = "Thử lại GPS"
     }
     func stop() { timeout?.cancel(); timeout = nil; manager.stopUpdatingLocation() }
 }

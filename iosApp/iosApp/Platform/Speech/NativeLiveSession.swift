@@ -84,6 +84,8 @@ final class NativeLiveSession {
     var executeClientControl: (([String: Any]) async -> [String: Any])?
     var getFrame: () -> String? = { nil }
     var getLocation: () -> [String: Double]? = { nil }
+    var getCity: () -> String? = { nil }
+    private var lastLocationContext: String?
     var getTaskContext: () -> [String: Any] = { ["current_task": "chat"] }
 
     private let audio: LiveAudioStreaming
@@ -132,7 +134,7 @@ final class NativeLiveSession {
         snapshot.error = nil
         setStatus(.connecting, "Đang mở trò chuyện Live…")
         do {
-            let descriptor = try await request("/api/live/session", body: ["history": initialHistory, "configured_city": ""], timeout: 20)
+            let descriptor = try await request("/api/live/session", body: ["history": initialHistory, "configured_city": getLocation() == nil ? "" : (getCity() ?? "")], timeout: 20)
             guard epoch == generation, !Task.isCancelled else { return }
             guard let token = descriptor["token"] as? String, !token.isEmpty,
                   let rawURL = descriptor["socketUrl"] as? String,
@@ -211,7 +213,7 @@ final class NativeLiveSession {
         receiveTask?.cancel(); sendTask?.cancel(); setupTimeout?.cancel(); limitTask?.cancel(); videoTask?.cancel()
         receiveTask = nil; sendTask = nil; setupTimeout = nil; limitTask = nil; videoTask = nil
         cancelTools(); completed.removeAll(); outbound.removeAll(); notices.removeAll(); pendingBytes = 0
-        socket?.close(); socket = nil; audio.stop()
+        socket?.close(); socket = nil; audio.stop(); lastLocationContext = nil
         toolSessionID = ""; headers = [:]; origin = nil
         awaitingTurn = true; typedTurnPending = false; discardOutput = false; audioPlaying = false
         if notify { snapshot.error = nil; setStatus(.idle, "Live đã tắt. Bấm micro để trò chuyện tiếp.") }
@@ -268,15 +270,18 @@ final class NativeLiveSession {
             if self.awaitingTurn && self.snapshot.status == .speaking {
                 self.setStatus(.listening, "Đang nghe. Bạn có thể nói tiếp hoặc nói chen để ngắt lời.")
             }
+            self.syncLocationContext()
         }, onFailure: { [weak self] in
             guard let self, epoch == self.generation else { return }
             self.fail(LiveFailure(message: "Âm thanh bị gián đoạn. Bấm micro để kết nối lại."))
         })
         setStatus(.listening, "Đang nghe. Bạn cứ nói tự nhiên nhé.")
+        syncLocationContext()
         videoTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_100_000_000)
                 guard !Task.isCancelled, let self, epoch == self.generation else { return }
+                self.syncLocationContext()
                 if let frame = self.getFrame(), frame.hasPrefix("data:image/jpeg;base64,"), frame.utf8.count <= 500000 {
                     self.enqueue(["realtimeInput": ["video": ["data": String(frame.dropFirst(23)), "mimeType": "image/jpeg"]]], droppable: true)
                 }
@@ -330,6 +335,7 @@ final class NativeLiveSession {
             if content["turnComplete"] as? Bool == true && !interrupted && content["interactionStatus"] as? String != "IN_PROGRESS" {
                 awaitingTurn = true; typedTurnPending = false; discardOutput = false
                 if !audioPlaying { setStatus(.listening, "Đang nghe. Bạn cứ nói tiếp nhé.") }
+                syncLocationContext()
             }
         }
         if let calls = value["toolCall"] as? [String: Any], let functions = calls["functionCalls"] as? [[String: Any]] {
@@ -358,7 +364,7 @@ final class NativeLiveSession {
         var body = getTaskContext()
         body.merge(["session_id": toolSessionID, "call_id": id, "name": name, "arguments": arguments,
                     "history": history(), "request_text": currentInput]) { _, new in new }
-        if name == "get_weather" { body["location"] = getLocation().map { $0 as Any } ?? NSNull() }
+        body["location"] = getLocation().map { $0 as Any } ?? NSNull()
         tools[id] = Task { [weak self] in
             guard let self else { return }
             defer { if epoch == self.generation && currentTurn == self.turn { self.tools.removeValue(forKey: id) } }
@@ -375,6 +381,9 @@ final class NativeLiveSession {
                         result["camera_decision"] = decision
                     } else { result["execution"] = execution; if let error = execution["error"] { result["error"] = error } }
                 }
+                if name == "list_wardrobe", result["items"] != nil, result["error"] == nil {
+                    self.onEvent(["type": "wardrobe"])
+                }
                 for event in data["events"] as? [[String: Any]] ?? [] { self.onEvent(event) }
                 let response: [String: Any] = ["id": id, "name": name, "response": result["camera_decision"] ?? result]
                 self.completed[id] = (fingerprint, response)
@@ -388,6 +397,24 @@ final class NativeLiveSession {
                 self.setStatus(.thinking, message)
             }
         }
+    }
+
+    /// Update application context without starting an assistant turn or showing a fake user message.
+    func syncLocationContext() {
+        // clientContent updates can interrupt generation; wait until the current reply drains.
+        guard snapshot.connected, awaitingTurn, !audioPlaying, snapshot.status == .listening else { return }
+        let location = getLocation()
+        var context: [String: Any] = ["gps_available": location != nil]
+        if let location {
+            context["coordinates"] = location
+            if let city = getCity(), !city.isEmpty { context["city"] = city }
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: context, options: .sortedKeys),
+              let value = String(data: data, encoding: .utf8), value != lastLocationContext else { return }
+        lastLocationContext = value
+        let text = "[SKI_APP_CONTEXT] Vị trí hiện tại từ ứng dụng: " + value
+            + ". Khi gps_available=true, đã có vị trí GPS: không hỏi lại người dùng đang ở đâu; dùng get_weather để lấy thời tiết thật nếu cần. Nếu chưa có tên thành phố, không tự đoán tên từ tọa độ. Địa điểm, ngày hoặc mùa người dùng yêu cầu luôn được ưu tiên hơn vị trí và thời tiết hiện tại. Đây là cập nhật ngữ cảnh, không cần nói lời xác nhận."
+        enqueue(["clientContent": ["turns": [["role": "user", "parts": [["text": text]]]], "turnComplete": false]])
     }
 
     private func request(_ path: String, body: [String: Any], timeout: TimeInterval) async throws -> [String: Any] {

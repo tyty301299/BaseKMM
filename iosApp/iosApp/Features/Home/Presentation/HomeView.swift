@@ -117,7 +117,7 @@ struct HomeView: View {
                 Button { showSettings = true } label: {
                     Image(systemName: "gearshape")
                         .font(.subheadline.weight(.semibold))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                         .background(.secondary.opacity(0.12), in: Circle())
                 }
                 .buttonStyle(.plain).foregroundStyle(Color(red: 1, green: 210/255, blue: 63/255))
@@ -330,7 +330,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Tủ đồ của bạn").font(.largeTitle.bold())
             Text("Thêm quần áo từ điện thoại, dùng chung tủ đồ với website.").foregroundStyle(.secondary)
-            primaryButton("+ Thêm đồ từ điện thoại", disabled: !model.state.connected || busy) {
+            primaryButton("Thêm quần áo", disabled: !model.state.connected || busy) {
                 model.send(ShadowActionClearWardrobeUpload.shared)
                 addingWardrobeItem = true
             }

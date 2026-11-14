@@ -27,6 +27,9 @@ final class NativeCameraChatModel: ObservableObject {
     @Published private(set) var lessonSteps = 0
     @Published private var liveLinks: [ConversationLink] = []
     var getLocation: () -> [String: Double]? = { nil }
+    var getCity: () -> String? = { nil }
+    @Published private(set) var selectedWardrobeIDs: [String] = []
+    @Published var wardrobePresented = false
     let camera = NativeServices.makeCamera()
     private let session = NativeServices.makeLiveSession()
     let teaching = NativeLessonSession()
@@ -90,6 +93,7 @@ final class NativeCameraChatModel: ObservableObject {
             return self.camera.capture(maxSide: 640)
         }
         session.getLocation = { [weak self] in self?.getLocation() }
+        session.getCity = { [weak self] in self?.getCity() }
         session.getTaskContext = { [weak self] in self?.taskContext() ?? ["current_task": "chat"] }
         session.onEvent = { [weak self] in self?.handleEvent($0) }
         session.executeClientControl = { [weak self] result in
@@ -167,6 +171,12 @@ final class NativeCameraChatModel: ObservableObject {
     func cancel() { if live.connected { session.cancelResponse() } else { store.cancel() } }
     func clear() { stop(); session.clear(); store.clear(); teaching.reset(); text = ""; wantsLive = true; clearLesson(); outfitItems = []; showsOutfit = false }
 
+    func syncLocation() { session.syncLocationContext() }
+    func selectWardrobe(_ ids: [String]) { selectedWardrobeIDs = Array(ids.prefix(3)) }
+    func styleSelectedWardrobe(names: [String]) {
+        text = String(("Tư vấn phối đồ với các món tôi vừa chọn trong tủ đồ: " + names.joined(separator: ", ")).prefix(500))
+        send()
+    }
     func saveTeaching() { _ = teaching.control(["command": "save", "revision": teaching.revision], messages: live.messages) }
 
     func imageHeaders(_ value: String) -> [String: String] {
@@ -174,7 +184,9 @@ final class NativeCameraChatModel: ObservableObject {
         return headers
     }
     private func handleEvent(_ event: [String: Any]) {
-        if event["type"] as? String == "outfits", let outfit = (event["outfits"] as? [[String: Any]])?.first {
+        if event["type"] as? String == "wardrobe" {
+            wardrobePresented = true
+        } else if event["type"] as? String == "outfits", let outfit = (event["outfits"] as? [[String: Any]])?.first {
             outfitTitle = outfit["title"] as? String ?? "Trang phục gợi ý"
             outfitReason = outfit["reason"] as? String ?? ""
             outfitItems = (outfit["items"] as? [[String: Any]] ?? []).compactMap { item in
@@ -184,6 +196,7 @@ final class NativeCameraChatModel: ObservableObject {
                 let image = ["https", "http"].contains(url?.scheme) ? url?.absoluteString ?? "" : ""
                 return LiveOutfitItem(id: id, name: item["name"] as? String ?? "Trang phục", imageURL: image)
             }
+            wardrobePresented = false
             showsOutfit = true
         } else if event["type"] as? String == "action", let route = event["route"] as? String {
             liveLinks = [ConversationLink(route: route, label: event["label"] as? String ?? "Mở", id: event["id"] as? String ?? "")]
@@ -191,7 +204,7 @@ final class NativeCameraChatModel: ObservableObject {
     }
     private func taskContext() -> [String: Any] {
         if teaching.hasWork { return ["current_task": teaching.mode, "task_title": teaching.title, "lesson_state": teaching.snapshot] }
-        var value: [String: Any] = ["current_task": lesson == nil ? "chat" : "guiding", "suggested_item_ids": outfitItems.prefix(3).map(\.id)]
+        var value: [String: Any] = ["current_task": lesson == nil ? "chat" : "guiding", "suggested_item_ids": outfitItems.prefix(3).map(\.id), "selected_item_ids": selectedWardrobeIDs]
         if lesson != nil { value["lesson_state"] = lessonSnapshot(); value["task_title"] = lessonTitle }
         return value
     }
