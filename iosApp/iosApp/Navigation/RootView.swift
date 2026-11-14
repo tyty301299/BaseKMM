@@ -75,7 +75,16 @@ struct RootView: View {
                              looks.send(LookActionSaveGuideCompletion(sessionId: session, skillId: skill, title: title,
                                  source: manual ? "manual" : (title.hasSuffix(" · Demo") ? "demo" : "ai")))
                          })
-                    .toolbar { ToolbarItem(placement: .navigationBarLeading) { Button(language.text("close")) { showService = false } } }
+                    .toolbar { ToolbarItem(placement: .navigationBarLeading) {
+                        Button { showService = false } label: {
+                            Image(systemName: "xmark")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 36, height: 36)
+                                .background(.secondary.opacity(0.12), in: Circle())
+                        }
+                        .buttonStyle(.plain).foregroundStyle(Color(red: 1, green: 210/255, blue: 63/255))
+                        .accessibilityLabel(language.text("close"))
+                    } }
             }
         }
         .onAppear {

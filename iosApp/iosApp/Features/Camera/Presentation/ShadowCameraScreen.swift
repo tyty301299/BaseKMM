@@ -53,14 +53,14 @@ struct ShadowCameraScreen: View {
                 }.padding(36).foregroundStyle(.white)
             }
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 16) {
+                HStack(spacing: 8) {
                     HStack(spacing: 7) {
                         Image("SkiLogo").resizable().scaledToFit().frame(width: 32, height: 32).clipShape(RoundedRectangle(cornerRadius: 9)).accessibilityHidden(true)
                         Text("SKI").font(.system(size: 18, weight: .bold)).tracking(2)
                     }
                     Spacer(minLength: 4)
-                    Button("Tủ đồ", action: onWardrobe)
-                    Button("Bài đã học", action: onLessons)
+                    navigationButton("Tủ đồ", action: onWardrobe)
+                    navigationButton("Bài đã học", action: onLessons)
                 }.font(.system(size: 13)).foregroundStyle(.white).frame(height: 44)
                 HStack(spacing: 6) {
                     Button(gps.label) { gps.request(container) }.font(.system(size: 11)).foregroundStyle(accent)
@@ -207,6 +207,16 @@ struct ShadowCameraScreen: View {
         if model.state.busy { return "Đang phân tích yêu cầu…" }
         if model.listening { return "Đang nghe bạn nói…" }
         return shadow.state.connected ? "Thử áo, trò chuyện, học hoặc dạy một kỹ năng." : "Mở Cài đặt để kiểm tra kết nối."
+    }
+    private func navigationButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(.system(size: 13, weight: .semibold))
+                .padding(.horizontal, 14).frame(minHeight: 44)
+                .background(.black.opacity(0.35), in: Capsule())
+                .overlay(Capsule().stroke(.white.opacity(0.3), lineWidth: 1))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
     private func control(_ symbol: String, _ label: String, highlighted: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {

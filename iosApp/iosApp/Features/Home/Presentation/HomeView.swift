@@ -115,8 +115,13 @@ struct HomeView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showSettings = true } label: {
-                    Label(language.text("settings_title"), systemImage: "gearshape")
+                    Image(systemName: "gearshape")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 36, height: 36)
+                        .background(.secondary.opacity(0.12), in: Circle())
                 }
+                .buttonStyle(.plain).foregroundStyle(Color(red: 1, green: 210/255, blue: 63/255))
+                .accessibilityLabel(language.text("settings_title"))
             }
         }
         .onAppear {
@@ -221,6 +226,7 @@ struct HomeView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) {
                     Button(language.text("close")) { showSettings = false }
+                        .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.large)
                 } }
             }
                 .tint(ShadowStyle.accent)
@@ -280,10 +286,7 @@ struct HomeView: View {
                 Text(language.text("learn_description"))
                     .foregroundStyle(.secondary)
             }
-            Button(language.text("teach_camera")) { teaching = true }
-                .frame(maxWidth: .infinity, minHeight: 48)
-                .buttonStyle(.borderedProminent)
-                .disabled(!model.state.connected || busy)
+            primaryButton(language.text("teach_camera"), disabled: !model.state.connected || busy) { teaching = true }
                 .fullScreenCover(isPresented: $teaching) {
                     LiveTeachView(container: container, shadow: model.shadowStore) {
                         teaching = false
@@ -446,9 +449,10 @@ struct HomeView: View {
 
     private func primaryButton(_ title: String, disabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).fontWeight(.semibold).frame(maxWidth: .infinity, minHeight: 36)
+            Text(title).fontWeight(.semibold).frame(maxWidth: .infinity, minHeight: 48)
         }
-        .buttonStyle(.borderedProminent).foregroundStyle(.black).disabled(disabled)
+        .buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
+        .foregroundStyle(.black).disabled(disabled)
     }
 
     private func webButton(_ title: String, detail: String, route: String) -> some View {
@@ -467,7 +471,11 @@ struct HomeView: View {
             Label(title, systemImage: symbol).font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .foregroundStyle(tab == value ? ShadowStyle.accent : .secondary)
-        }.accessibilityAddTraits(tab == value ? .isSelected : [])
+                .background(ShadowStyle.accent.opacity(tab == value ? 0.16 : 0.06), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(tab == value ? .isSelected : [])
     }
 }
 
@@ -488,8 +496,11 @@ private struct ShadowLessonView: View {
                         Text(lesson.title).font(.largeTitle.bold())
                         Text(language.text("guide_description"))
                             .foregroundStyle(.secondary)
-                        Button(language.text("start_guide")) { guiding = true }
-                            .frame(minHeight: 44)
+                        Button { guiding = true } label: {
+                            Text(language.text("start_guide"))
+                                .fontWeight(.semibold).frame(maxWidth: .infinity, minHeight: 48)
+                        }
+                            .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).foregroundStyle(.black)
                             .fullScreenCover(isPresented: $guiding) {
                                 LiveGuideView(skillId: lesson.id, skillTitle: lesson.title,
                                               container: container, shadow: model.shadowStore,
@@ -534,7 +545,10 @@ private struct ShadowLessonView: View {
                 }
             }
             .background(ShadowStyle.background)
-            .toolbar { Button(language.text("close")) { model.send(ShadowActionCloseLesson.shared) } }
+            .toolbar {
+                Button(language.text("close")) { model.send(ShadowActionCloseLesson.shared) }
+                    .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.large)
+            }
         }
     }
 }
