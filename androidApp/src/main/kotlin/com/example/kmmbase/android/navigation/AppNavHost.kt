@@ -93,7 +93,7 @@ internal fun AppNavHost(container: AppContainer) {
     LaunchedEffect(remote) {
         val preferences = context.getSharedPreferences("shadow", android.content.Context.MODE_PRIVATE)
         val endpoint = preferences.getString("endpoint", null) ?: com.example.kmmbase.domain.model.DEFAULT_SHADOW_ORIGIN
-        val code = if (endpoint == com.example.kmmbase.domain.model.DEFAULT_SHADOW_ORIGIN) com.example.kmmbase.domain.model.DEFAULT_SHADOW_ACCESS_CODE else ""
+        val code = preferences.getString("access_code", "") ?: ""
         remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Connect(endpoint, code))
     }
 
@@ -122,13 +122,19 @@ internal fun AppNavHost(container: AppContainer) {
                     }
                     composable<CameraRoute> {
                         CompositionLocalProvider(LocalLookDark provides true) {
-                            LookCameraScreen(looks, remoteState.skills, remoteState.connected, remoteState.modeLabel,
-                                { nav.navigate(HistoryRoute) }, { go(StudioPageKey.SETTINGS) },
-                                { remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Reconnect) },
-                                { nav.navigate(TeachCameraRoute) }, { id, title -> nav.navigate(GuideCameraRoute(id, title)) },
-                                { kind -> remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.PrepareBuiltinGuide(kind)) },
-                                { nav.navigate(LiveTryOnRoute) },
-                                guideBusy = remoteState.busy.isNotEmpty(), guideError = remoteState.error)
+                            com.example.kmmbase.android.features.camera.presentation.ShadowCameraScreen(container, remote,
+                                onWardrobe = { nav.navigate(ServiceRoute(1)) },
+                                onLessons = { nav.navigate(ServiceRoute(0)) },
+                                onAction = { link -> when (link.route) {
+                                    "wardrobe", "stylist", "tryon-photo" -> nav.navigate(ServiceRoute(1))
+                                    "teach" -> nav.navigate(TeachCameraRoute)
+                                    "guide" -> if (link.id.isNotBlank()) nav.navigate(GuideCameraRoute(link.id, link.label)) else nav.navigate(ServiceRoute(0))
+                                    "tryon-live" -> nav.navigate(LiveTryOnRoute)
+                                    else -> nav.navigate(ServiceRoute(0))
+                                } },
+                                onConnectionChanged = { endpoint, code ->
+                                    remote.dispatch(com.example.kmmbase.presentation.shadow.ShadowAction.Connect(endpoint, code))
+                                })
                         }
                     }
                     composable<LiveTryOnRoute> {

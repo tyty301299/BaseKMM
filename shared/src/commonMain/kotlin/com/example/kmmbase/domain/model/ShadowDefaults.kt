@@ -1,14 +1,12 @@
 package com.example.kmmbase.domain.model
 
 /**
- * The team's deployed server. Baked in so nobody has to type a URL on stage; the Connect screen
- * still accepts another origin.
+ * Shared hosted backend. Camera connection settings can override this origin,
+ * including http://localhost:8001 for local development.
  */
-const val DEFAULT_SHADOW_ORIGIN = "https://fourward.thangqt.com"
+const val DEFAULT_SHADOW_ORIGIN = "https://hackathon.trioxstudios.com"
 
 /**
- * Access code for the public demo deployment, shared openly in the event link. It only gates a
- * throwaway hackathon server, and having it here means nobody types a code on stage. Leave blank
- * for any deployment holding real user data.
+ * Deployment access codes belong in connection settings, never in the app binary.
  */
-const val DEFAULT_SHADOW_ACCESS_CODE = "fourward-codex-1411"
+const val DEFAULT_SHADOW_ACCESS_CODE = ""

@@ -18,6 +18,7 @@ class ShadowStoreTest {
         var accessRequired = false
         var enteredCode: String? = null
         var askCount = 0
+        var suggestedLocation: StylingLocation? = null
         var suggestionResult = ShadowSuggestions(emptyList(), "mock")
         var savedDraft: TeachDraft? = null
         var tryonCalls = 0
@@ -25,6 +26,11 @@ class ShadowStoreTest {
         var tryonGate: CompletableDeferred<TryonResult>? = null
         var answerGate: CompletableDeferred<ShadowAnswer>? = null
         var skillGate: CompletableDeferred<List<ShadowSkill>>? = null
+        var uploadCalls = 0
+        var uploadImage = ""
+        var uploadName = ""
+        var uploadCategory = ""
+        var uploadGate: CompletableDeferred<WardrobeItem>? = null
         override suspend fun health() = ShadowHealth("mock", accessRequired)
         override suspend fun authenticate(code: String) { enteredCode = code }
         override suspend fun skills() = skillGate?.await() ?: listOf(ShadowSkill("stand", "Lắp giá", "", "Tuấn", 1))
@@ -35,8 +41,13 @@ class ShadowStoreTest {
         }
         override suspend fun deleteSkill(id: String) = Unit
         override suspend fun wardrobe() = emptyList<WardrobeItem>()
-        override suspend fun suggest(event: String, notes: String, city: String) =
-            suggestionResult
+        override suspend fun addWardrobeItem(image: String, name: String, category: String): WardrobeItem {
+            uploadCalls++; uploadImage = image; uploadName = name; uploadCategory = category
+            return uploadGate?.await() ?: WardrobeItem("phone-1", name, category, false, "https://one.example/wardrobe-media/images/phone-1.jpg")
+        }
+        override suspend fun suggest(event: String, notes: String, location: StylingLocation?): ShadowSuggestions {
+            suggestedLocation = location; return suggestionResult
+        }
         override suspend fun rules() = emptyList<ShadowRule>()
         override suspend fun addRule(text: String, taughtBy: String) = Unit
         override suspend fun compileSkill(request: TeachRequest) =
@@ -54,6 +65,66 @@ class ShadowStoreTest {
         override fun openSession(): com.example.kmmbase.domain.repository.ShadowSessionSocket =
             throw UnsupportedOperationException("not used in these tests")
         override fun close() { closed = true }
+    }
+
+    @Test fun stylistUsesDeviceCoordinatesAndDoesNotDefaultToHanoi() = runTest {
+        val repo = FakeShadow()
+        var gps: StylingLocation? = StylingLocation(10.8, 106.6)
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler), locationProvider = { gps })
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.Suggest("Đi làm ngày mai", ""))
+        assertEquals(gps, repo.suggestedLocation)
+        gps = null
+        store.dispatch(ShadowAction.Suggest("Mùa hè", ""))
+        assertNull(repo.suggestedLocation)
+        store.close()
+    }
+
+    @Test fun phoneUploadSavesToConnectedServerAndImmediatelyUpdatesWardrobe() = runTest {
+        val repo = FakeShadow()
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64,YQ==", "  Áo của tôi  ", "top"))
+        assertEquals(1, repo.uploadCalls)
+        assertEquals("Áo của tôi", repo.uploadName)
+        assertEquals("top", repo.uploadCategory)
+        assertEquals("data:image/jpeg;base64,YQ==", repo.uploadImage)
+        assertEquals("phone-1", store.currentState.wardrobe.single().id)
+        assertEquals("phone-1", store.currentState.wardrobeAddedId)
+        assertEquals("", store.currentState.busy)
+        store.dispatch(ShadowAction.ClearWardrobeUpload)
+        assertNull(store.currentState.wardrobeAddedId)
+        store.close()
+    }
+
+    @Test fun phoneUploadRejectsInvalidFieldsAndDoubleTapWhileSaving() = runTest {
+        val repo = FakeShadow().apply { uploadGate = CompletableDeferred() }
+        val store = ShadowStore({ _, _ -> repo }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64,YQ==", "", "top"))
+        assertEquals(0, repo.uploadCalls)
+        assertNotNull(store.currentState.error)
+        val action = ShadowAction.AddWardrobeItem("data:image/jpeg;base64,YQ==", "Áo", "top")
+        store.dispatch(action); store.dispatch(action)
+        assertEquals(1, repo.uploadCalls)
+        assertEquals("Đang thêm đồ vào tủ…", store.currentState.busy)
+        repo.uploadGate!!.complete(WardrobeItem("saved", "Áo", "top", false))
+        assertEquals("saved", store.currentState.wardrobeAddedId)
+        store.close()
+    }
+
+    @Test fun changingServerDuringUploadDoesNotAppendOldServerItem() = runTest {
+        val old = FakeShadow().apply { uploadGate = CompletableDeferred() }
+        val fresh = FakeShadow()
+        val store = ShadowStore({ host, _ -> if (host.contains("one")) old else fresh }, { it }, UnconfinedTestDispatcher(testScheduler))
+        store.dispatch(ShadowAction.Connect("https://one.example", ""))
+        store.dispatch(ShadowAction.AddWardrobeItem("data:image/jpeg;base64,YQ==", "Áo", "top"))
+        store.dispatch(ShadowAction.Connect("https://two.example", ""))
+        old.uploadGate!!.complete(WardrobeItem("old", "Áo", "top", false))
+        assertTrue(store.currentState.wardrobe.isEmpty())
+        assertNull(store.currentState.wardrobeAddedId)
+        assertEquals("https://two.example", store.currentState.endpoint)
+        store.close()
     }
 
     @Test fun preparesBuiltinGuideOnlyAfterConnectingAndExposesItForNavigation() = runTest {

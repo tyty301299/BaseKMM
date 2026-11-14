@@ -59,7 +59,9 @@ fun CameraPreview(frames: CameraFrameSource, modifier: Modifier = Modifier, fron
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val providerFuture = remember(context) { ProcessCameraProvider.getInstance(context) }
 
-    val previewView = remember(context) { PreviewView(context) }
+    val previewView = remember(context) { PreviewView(context).apply {
+        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+    } }
     DisposableEffect(Unit) {
         onDispose {
             analysisExecutor.shutdown()

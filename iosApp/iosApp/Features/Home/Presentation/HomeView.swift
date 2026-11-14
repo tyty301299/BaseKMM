@@ -50,6 +50,7 @@ struct HomeView: View {
     @State private var endpoint = ""
     @State private var accessCode = ""
     @State private var tab = 0
+    @State private var addingWardrobeItem = false
     @State private var showSettings = false
     @State private var attemptedAutoConnect = false
     @State private var teaching = false
@@ -105,6 +106,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
         }
+        .sheet(isPresented: $addingWardrobeItem) { WardrobeAddSheet(model: model) }
         .modifier(StudioFeedbackOverlay())
         .background(ShadowStyle.background)
         .tint(ShadowStyle.accent)
@@ -129,6 +131,7 @@ struct HomeView: View {
             if !attemptedAutoConnect {
                 attemptedAutoConnect = true
                 if !model.state.connected && !busy { connect() }
+                else if !busy { model.send(ShadowActionRefresh.shared) }
             }
         }
         .task(id: personPhoto) {
@@ -322,11 +325,12 @@ struct HomeView: View {
 
     private var wardrobe: some View {
         VStack(alignment: .leading, spacing: 20) {
-            personPhotoSection
-            Text(language.text("wardrobe_heading")).font(.largeTitle.bold())
-            Text(language.text("wardrobe_description"))
-                .foregroundStyle(.secondary)
-            webButton(language.text("manage_wardrobe"), detail: language.text("manage_wardrobe_detail"), route: "wardrobe")
+            Text("Tủ đồ của bạn").font(.largeTitle.bold())
+            Text("Thêm trang phục từ điện thoại, dùng chung tủ đồ với website.").foregroundStyle(.secondary)
+            primaryButton("+ Thêm đồ từ điện thoại", disabled: !model.state.connected || busy) {
+                model.send(ShadowActionClearWardrobeUpload.shared)
+                addingWardrobeItem = true
+            }
             HStack {
                 Text(language.format("wardrobe_count", String(model.state.wardrobe.count))).font(.title2.bold())
                 Spacer()
@@ -346,6 +350,7 @@ struct HomeView: View {
                     }
                 }
             }
+            personPhotoSection
             Text(language.text("occasion_prompt")).font(.headline)
             Picker(language.text("occasion"), selection: $event) {
                 Text(language.text("work")).tag("Đi làm")
@@ -378,7 +383,7 @@ struct HomeView: View {
             if let result = model.state.suggestions {
                 Text(language.format("suggestions_for", String(model.state.suggestionsEvent))).font(.headline)
                 Text(language.systemText(model.state.suggestionsLabel)).font(.caption.bold()).foregroundStyle(ShadowStyle.accent)
-                if let weather = result.weather, weather.available {
+                if let weather = result.weather, !weather.summary.isEmpty {
                     Text(weather.summary).font(.subheadline).foregroundStyle(.cyan)
                 }
                 if !result.rulesUsed.isEmpty {
@@ -573,7 +578,7 @@ private struct ImportedPersonVideo: Transferable {
     }
 }
 
-private enum ShadowPhoto {
+enum ShadowPhoto {
     static func videoFrame(_ url: URL, seconds: Double) async throws -> Data {
         let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
         generator.appliesPreferredTrackTransform = true

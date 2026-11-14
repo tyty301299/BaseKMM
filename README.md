@@ -1,6 +1,8 @@
 # KmmBase
 
-> **SHADOW mobile:** App native Android + iOS có bốn tab Phối đồ, Tủ đồ, Học & làm, Lịch sử; tự kết nối nền với `https://fourward.thangqt.com`.
+> **Màn chính mới:** Camera toàn màn hình với chữ trò chuyện trong suốt, dựng bằng **Compose trên Android và SwiftUI trên iOS**. App gọi API backend trực tiếp. Mặc định nối `https://hackathon.trioxstudios.com`; nút Cài đặt trên camera cho đổi Base URL và mã truy cập. Xem [chạy local, kiến trúc và phạm vi kiểm tra](docs/NATIVE_CAMERA.md).
+> **Thêm đồ trên điện thoại:** Tủ đồ → + Thêm đồ từ điện thoại → chụp/chọn ảnh → nhập tên và loại → Lưu vào tủ đồ. Android/iOS gọi trực tiếp API BE, dùng chung dữ liệu với website.
+> Các màn native Phối đồ, Tủ đồ, Học & làm, Lịch sử và logic shared hiện có được giữ trong source.
 > Chọn **Phối đồ cho hôm nay** để nhập ảnh người hoặc chọn một khung hình từ video, lấy bộ đồ gợi ý và tạo ảnh mặc thử. **SHADOW trực tuyến** có **Dạy** (camera + giọng nói) và **Hướng dẫn** (camera + WebSocket).
 > Settings có trạng thái kết nối/reconnect và ngôn ngữ Việt/English. Các luồng mẫu local được ghi rõ; video nhập vào chỉ tạo ảnh từ khung hình, chưa xuất video thử đồ.
 > Xem [giao thức, kiến trúc, cách build và những gì chưa kiểm tra](docs/SHADOW_MOBILE.md).
@@ -165,3 +167,5 @@ Khi đổi schema, tăng `schemaVersion` và thêm migration khi cần chuyển 
 - App mở được màn hình Home trên Android emulator API 35 và iPhone 17 Pro simulator iOS 26.5.
 
 Chưa kiểm tra target `iosSimulatorArm64` trên Mac Apple Silicon và chưa chạy trên thiết bị thật.
+
+Chuẩn bị bản iOS nội bộ: [TestFlight](docs/TESTFLIGHT.md).

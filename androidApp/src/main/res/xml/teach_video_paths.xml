@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android"><files-path name="teach_video" path="teach-videos/" /></paths>
+<paths xmlns:android="http://schemas.android.com/apk/res/android"><files-path name="teach_video" path="teach-videos/" /><cache-path name="wardrobe_photos" path="wardrobe-capture/" /></paths>
